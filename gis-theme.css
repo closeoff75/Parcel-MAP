@@ -1,0 +1,629 @@
+/**
+ * ==============================================================================
+ * GIS & LAND PARCEL INTELLIGENCE — PRODUCTION COLOR SYSTEM
+ * ==============================================================================
+ * Tailored for: "Map Every Parcel, Understand Every Boundary"
+ * 
+ * FINALIZED THEMES:
+ * 1. LIGHT MODE : Emerald Terra (Modern Geospatial & Land Intelligence)
+ * 2. DARK MODE  : Obsidian Satellite & Electric Cyan (Pro GIS Command Center)
+ *
+ * ACTIVATION MODES:
+ * - System Default: Follows user's OS preference (@media prefers-color-scheme)
+ * - Explicit Light: <html data-theme="light"> or class="theme-light"
+ * - Explicit Dark : <html data-theme="dark">  or class="theme-dark" or class="dark"
+ * ==============================================================================
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ==============================================================================
+   1. CORE DESIGN TOKENS (LIGHT MODE — EMERALD TERRA)
+   ============================================================================== */
+:root,
+[data-theme="light"],
+[data-theme="emerald-terra"],
+.theme-light {
+  /* Meta */
+  --theme-mode: "light";
+  --theme-label: "Emerald Terra (Modern Geospatial)";
+
+  /* Typography Fonts */
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Surfaces & Backgrounds */
+  --bg-canvas: #f5f9f6;             /* Crisp topographic tint (98% L) */
+  --bg-subtle: #eef5f0;             /* Alternating section backgrounds */
+  --bg-muted: #e2ede5;              /* Recessed containers, inset chips */
+  --surface-card: #ffffff;          /* Pure white card elevation */
+  --surface-card-hover: #ffffff;
+  --surface-elevated: #ffffff;      /* Modals, floating inspector panels */
+  --surface-overlay: rgba(17, 29, 23, 0.4);
+
+  /* Borders & Dividers */
+  --border-subtle: #dbe7df;         /* 1px soft division */
+  --border-medium: #c2d8ca;         /* Input outlines, dividers */
+  --border-strong: #059669;         /* High-emphasis emerald boundary */
+  --border-focus: #10b981;          /* Interactive focus ring */
+
+  /* Brand Primary (Vibrant Emerald) */
+  --brand-primary: #059669;         /* Core brand color & parcel selection */
+  --brand-primary-hover: #047857;
+  --brand-primary-light: #ecfdf5;   /* Tint for badges, chip backgrounds */
+  --brand-on-primary: #ffffff;      /* Contrast text on primary button */
+
+  /* Brand Secondary / Anchors (Deep Forest Pine) */
+  --brand-secondary: #0f392b;       /* Dark anchor for main CTA buttons & Nav */
+  --brand-secondary-hover: #0a261d;
+  --brand-on-secondary: #ffffff;
+
+  /* Accent & Call-to-Action (Amber Topo) */
+  --accent-action: #d97706;         /* Survey pin & spotlight badge */
+  --accent-action-hover: #b45309;
+  --accent-on-action: #ffffff;
+  --accent-soft: #fef3c7;
+
+  /* Typography Colors */
+  --text-headline: #111d17;         /* Deepest emerald-black (15.2:1 contrast) */
+  --text-body: #32473c;             /* Neutral dark moss (7.4:1 contrast) */
+  --text-muted: #627b6f;            /* Metadata, subheadings, labels */
+  --text-subtle: #8da499;           /* Placeholders, disabled states */
+  --text-invert: #ffffff;
+
+  /* GIS & Cadastre Vector Map Tokens */
+  --map-canvas-bg: #e5efe8;         /* Topographic land base */
+  --map-grid-line: #dbe7df;         /* Lat/Long grid crosshairs */
+  --map-road-network: #d2ded5;      /* Secondary transit lines */
+  --map-water-body: #bfe0e8;        /* Lakes, rivers, coastal lines */
+  --map-parcel-stroke: #059669;     /* Cadastral parcel line */
+  --map-parcel-fill: rgba(255, 255, 255, 0.65); /* Unselected lot */
+  --map-parcel-active-stroke: #059669;
+  --map-parcel-active-fill: rgba(16, 185, 129, 0.22); /* Selected parcel */
+  --map-pin-accent: #d97706;        /* Pin beacon */
+  --map-inspector-bg: rgba(255, 255, 255, 0.95);
+  --map-inspector-border: #dbe7df;
+
+  /* Status / Feedback */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #0284c7;
+
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 3px rgba(15, 57, 43, 0.05);
+  --shadow-md: 0 8px 24px -4px rgba(15, 57, 43, 0.08), 0 2px 6px -1px rgba(15, 57, 43, 0.04);
+  --shadow-lg: 0 20px 32px -8px rgba(15, 57, 43, 0.12), 0 4px 12px -2px rgba(15, 57, 43, 0.06);
+  --shadow-floating: 0 24px 48px -12px rgba(15, 57, 43, 0.18);
+}
+
+/* ==============================================================================
+   2. CORE DESIGN TOKENS (DARK MODE — OBSIDIAN SATELLITE & ELECTRIC CYAN)
+   ============================================================================== */
+[data-theme="dark"],
+[data-theme="obsidian-satellite"],
+.theme-dark,
+.dark {
+  /* Meta */
+  --theme-mode: "dark";
+  --theme-label: "Obsidian Satellite & Electric Cyan";
+
+  /* Typography Fonts (inherited) */
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Surfaces & Backgrounds */
+  --bg-canvas: #090d14;             /* Deep space obsidian (ultra-dark) */
+  --bg-subtle: #0f1622;             /* Secondary module background */
+  --bg-muted: #162030;              /* Inset control panels, recessed zones */
+  --surface-card: #121b2b;          /* Raised module surface */
+  --surface-card-hover: #182438;
+  --surface-elevated: #162236;      /* Dropdowns, dialogs, inspectors */
+  --surface-overlay: rgba(0, 0, 0, 0.75);
+
+  /* Borders & Dividers */
+  --border-subtle: #1e2c42;         /* 1px low-glare boundary */
+  --border-medium: #2c3e5c;         /* High-contrast container border */
+  --border-strong: #10b981;         /* Terminal phosphorescent border */
+  --border-focus: #38bdf8;          /* Electric cyan focus ring */
+
+  /* Brand Primary (Luminous Neon Emerald) */
+  --brand-primary: #10b981;         /* Radar phosphorescent green */
+  --brand-primary-hover: #34d399;
+  --brand-primary-light: rgba(16, 185, 129, 0.14);
+  --brand-on-primary: #090d14;      /* High contrast dark text on bright neon */
+
+  /* Brand Secondary / Anchors (Electric Cyan & Navy Slate) */
+  --brand-secondary: #38bdf8;       /* Luminous sky cyan CTA */
+  --brand-secondary-hover: #7dd3fc;
+  --brand-on-secondary: #090d14;
+
+  /* Accent & Call-to-Action */
+  --accent-action: #10b981;         /* High-viz green */
+  --accent-action-hover: #34d399;
+  --accent-on-action: #090d14;
+  --accent-soft: rgba(56, 189, 248, 0.15);
+
+  /* Typography Colors */
+  --text-headline: #f8fafc;         /* Crisp near-white (18.5:1 contrast) */
+  --text-body: #cbd5e1;             /* Slate 300 readable text (11.2:1) */
+  --text-muted: #8092a8;            /* Low-glare muted slate (5.8:1) */
+  --text-subtle: #4b5e77;           /* Coordinate numbers, inactive state */
+  --text-invert: #090d14;
+
+  /* GIS & Cadastre Vector Map Tokens */
+  --map-canvas-bg: #0d1522;         /* Nocturnal radar canvas */
+  --map-grid-line: #172436;         /* Latitude/Longitude grid crosshairs */
+  --map-road-network: #1a273b;      /* Nocturnal road contour lines */
+  --map-water-body: #112a45;        /* Deep marine waters */
+  --map-parcel-stroke: #10b981;     /* Luminescent parcel perimeter */
+  --map-parcel-fill: rgba(22, 32, 48, 0.65);
+  --map-parcel-active-stroke: #10b981;
+  --map-parcel-active-fill: rgba(16, 185, 129, 0.28); /* Phosphor active fill */
+  --map-pin-accent: #38bdf8;        /* Electric cyan beacon */
+  --map-inspector-bg: rgba(18, 27, 43, 0.94);
+  --map-inspector-border: #2c3e5c;
+
+  /* Status / Feedback */
+  --status-success: #10b981;
+  --status-warning: #fbbf24;
+  --status-error: #f87171;
+  --status-info: #38bdf8;
+
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 32px rgba(0, 0, 0, 0.7);
+  --shadow-floating: 0 24px 48px rgba(0, 0, 0, 0.85);
+}
+
+/* ==============================================================================
+   3. AUTOMATIC OS PREFERENCE (DARK MODE DEFAULT IF USER PREFERS DARK)
+   ============================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.theme-light) {
+    --theme-mode: "dark";
+    --theme-label: "Obsidian Satellite & Electric Cyan";
+
+    --bg-canvas: #090d14;
+    --bg-subtle: #0f1622;
+    --bg-muted: #162030;
+    --surface-card: #121b2b;
+    --surface-card-hover: #182438;
+    --surface-elevated: #162236;
+    --surface-overlay: rgba(0, 0, 0, 0.75);
+
+    --border-subtle: #1e2c42;
+    --border-medium: #2c3e5c;
+    --border-strong: #10b981;
+    --border-focus: #38bdf8;
+
+    --brand-primary: #10b981;
+    --brand-primary-hover: #34d399;
+    --brand-primary-light: rgba(16, 185, 129, 0.14);
+    --brand-on-primary: #090d14;
+
+    --brand-secondary: #38bdf8;
+    --brand-secondary-hover: #7dd3fc;
+    --brand-on-secondary: #090d14;
+
+    --accent-action: #10b981;
+    --accent-action-hover: #34d399;
+    --accent-on-action: #090d14;
+    --accent-soft: rgba(56, 189, 248, 0.15);
+
+    --text-headline: #f8fafc;
+    --text-body: #cbd5e1;
+    --text-muted: #8092a8;
+    --text-subtle: #4b5e77;
+    --text-invert: #090d14;
+
+    --map-canvas-bg: #0d1522;
+    --map-grid-line: #172436;
+    --map-road-network: #1a273b;
+    --map-water-body: #112a45;
+    --map-parcel-stroke: #10b981;
+    --map-parcel-fill: rgba(22, 32, 48, 0.65);
+    --map-parcel-active-stroke: #10b981;
+    --map-parcel-active-fill: rgba(16, 185, 129, 0.28);
+    --map-pin-accent: #38bdf8;
+    --map-inspector-bg: rgba(18, 27, 43, 0.94);
+    --map-inspector-border: #2c3e5c;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 20px 32px rgba(0, 0, 0, 0.7);
+    --shadow-floating: 0 24px 48px rgba(0, 0, 0, 0.85);
+  }
+}
+
+/* ==============================================================================
+   4. BASE GLOBAL RESETS & TRANSITIONS
+   ============================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bg-canvas);
+  color: var(--text-body);
+  line-height: 1.55;
+  transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  color: var(--text-headline);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* ==============================================================================
+   5. READY-TO-USE WIREFRAME COMPONENT STYLES
+   ============================================================================== */
+
+/* Background Utilities */
+.bg-canvas         { background-color: var(--bg-canvas) !important; }
+.bg-subtle         { background-color: var(--bg-subtle) !important; }
+.bg-muted          { background-color: var(--bg-muted) !important; }
+.bg-card           { background-color: var(--surface-card) !important; }
+.bg-elevated       { background-color: var(--surface-elevated) !important; }
+.bg-primary        { background-color: var(--brand-primary) !important; color: var(--brand-on-primary) !important; }
+.bg-secondary      { background-color: var(--brand-secondary) !important; color: var(--brand-on-secondary) !important; }
+
+/* Text Utilities */
+.text-headline     { color: var(--text-headline) !important; }
+.text-body         { color: var(--text-body) !important; }
+.text-muted        { color: var(--text-muted) !important; }
+.text-brand        { color: var(--brand-primary) !important; }
+.text-accent       { color: var(--accent-action) !important; }
+.text-mono         { font-family: var(--font-mono) !important; }
+
+/* Border Utilities */
+.border-subtle     { border: 1px solid var(--border-subtle) !important; }
+.border-medium     { border: 1px solid var(--border-medium) !important; }
+.border-primary    { border: 1px solid var(--brand-primary) !important; }
+
+/* Interactive Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--brand-secondary);
+  color: var(--brand-on-secondary);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.btn-primary:hover {
+  background-color: var(--brand-secondary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--brand-primary);
+  color: var(--brand-on-primary);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.btn-accent:hover {
+  background-color: var(--brand-primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--surface-card);
+  color: var(--text-headline);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: 1px solid var(--border-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.btn-secondary:hover {
+  background-color: var(--bg-subtle);
+  border-color: var(--text-muted);
+}
+
+/* Card & Bento Grid Modules */
+.gis-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.gis-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-md);
+}
+
+/* Tag / Category Chips */
+.gis-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background-color: var(--brand-primary-light);
+  color: var(--brand-primary);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+/* Search Input */
+.gis-search-bar {
+  display: flex;
+  align-items: center;
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  padding: 8px 14px;
+  box-shadow: var(--shadow-md);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.gis-search-bar:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+.gis-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-headline);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  padding: 6px 12px;
+}
+.gis-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Floating Map Inspector Panel */
+.gis-inspector {
+  background: var(--map-inspector-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--map-inspector-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-floating);
+  padding: 18px 20px;
+}
+
+/* Vector Map Canvas & Parcels */
+.gis-map-canvas {
+  background-color: var(--map-canvas-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.gis-map-parcel {
+  fill: var(--map-parcel-fill);
+  stroke: var(--map-parcel-stroke);
+  stroke-width: 1.5;
+  transition: fill 0.2s ease, stroke-width 0.2s ease;
+}
+.gis-map-parcel:hover {
+  fill: var(--map-parcel-active-fill);
+  cursor: pointer;
+}
+.gis-map-parcel.active {
+  fill: var(--map-parcel-active-fill);
+  stroke: var(--map-parcel-active-stroke);
+  stroke-width: 2.5;
+}
+
+/* Theme Switcher Toggle Pill */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-medium);
+  color: var(--text-headline);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+.theme-toggle-btn:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+/* ==============================================================================
+   6. DYNAMIC MOTION & INTERACTION UTILITIES (open-design.ai Inspired)
+   ============================================================================== */
+
+/* Live Cadastre Ticker Wire */
+.cadastre-wire-bar {
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  height: 38px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.wire-badge-fixed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  background: var(--surface-card);
+  border-right: 1px solid var(--border-subtle);
+  font-weight: 700;
+  color: var(--text-headline);
+  height: 100%;
+  flex-shrink: 0;
+}
+.wire-radar-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  position: relative;
+  display: inline-block;
+}
+.wire-radar-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid var(--brand-primary);
+  animation: radarPulse 1.8s infinite cubic-bezier(0, 0.2, 0.8, 1);
+}
+@keyframes radarPulse {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.wire-marquee-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 36px;
+  animation: wireMarquee 38s linear infinite;
+  will-change: transform;
+  padding-left: 20px;
+}
+.cadastre-wire-bar:hover .wire-marquee-track {
+  animation-play-state: paused;
+}
+@keyframes wireMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* macOS-Style Proximity Dock */
+.gis-dock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-medium);
+  border-radius: 999px;
+  box-shadow: var(--shadow-floating);
+}
+[data-theme="dark"] .gis-dock,
+.dark .gis-dock {
+  background: rgba(18, 27, 43, 0.88);
+}
+.dock-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.2s ease;
+  will-change: transform;
+}
+.dock-item:hover {
+  color: var(--text-headline);
+  background: rgba(0, 0, 0, 0.05);
+}
+[data-theme="dark"] .dock-item:hover,
+.dark .dock-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.dock-item.active {
+  color: var(--brand-primary);
+  background: var(--brand-primary-light);
+}
+
+/* Cursor-Tracking Spotlight Shader Cards */
+.spotlight-card {
+  position: relative;
+  border-radius: 16px;
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+.spotlight-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: radial-gradient(350px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), var(--brand-primary), transparent 45%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+.spotlight-card:hover::before {
+  opacity: 0.85;
+}
+
+/* Kinetic Text Scroll-Reveal */
+.reveal-word {
+  display: inline-block;
+  opacity: 0.22;
+  transition: opacity 0.12s ease, color 0.15s ease;
+  will-change: opacity;
+}
+.reveal-word.lit {
+  opacity: 1;
+  color: var(--brand-primary);
+}
+
