@@ -768,6 +768,33 @@ class Database {
     this.save();
     return item;
   }
+  deleteImagery(id, projectId = null) {
+    this.reload();
+    const idx = this.data.imagery.findIndex(img => img.id === id && (!projectId || img.project_id === projectId));
+    if (idx === -1) return null;
+    const [deletedImg] = this.data.imagery.splice(idx, 1);
+
+    // Remove associated detected features
+    this.data.detectedFeatures = (this.data.detectedFeatures || []).filter(f => f.imagery_id !== id);
+
+    // Remove associated parcels for this imagery
+    this.data.parcels = (this.data.parcels || []).filter(p => p.imagery_id !== id);
+
+    // Remove associated parcel versions for this imagery
+    this.data.parcel_versions = (this.data.parcel_versions || []).filter(v => v.imagery_id !== id);
+
+    // Log activity
+    if (deletedImg.project_id) {
+      this.logActivity(deletedImg.project_id, {
+        title: 'Drone Imagery Deleted',
+        description: `Image "${deletedImg.file_name}" was deleted from the project.`,
+        type: 'imagery'
+      });
+    }
+
+    this.save();
+    return deletedImg;
+  }
 
   // --- Detected Features ---
   getFeaturesByProjectId(projectId, imageryId = null) {

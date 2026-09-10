@@ -308,7 +308,11 @@
             </div>
           </div>
 
-          <div style="display: flex; justify-content: flex-end; width: 100%;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <button class="btn-pm" id="btnDeleteImageryCard" style="font-size: 11px; padding: 6px 12px; color: #ef4444; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;">
+              <span>🗑️</span>
+              <span>Delete Imagery</span>
+            </button>
             <button class="btn-pm btn-pm-primary" id="btnNextToAiDetection">
               Proceed to AI Detection &rarr;
             </button>
@@ -340,9 +344,15 @@
 
             <!-- Image Information Box (Section 9) -->
             <div style="background: var(--bg-subtle); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; font-size: 11px;">
-              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span>📷</span>
-                <span>Image Information</span>
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>📷</span>
+                  <span>Image Information</span>
+                </div>
+                <button id="btnDeleteSelectedImage" title="Delete current image" style="background: transparent; border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; cursor: pointer; font-size: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 4px; transition: all 0.15s ease;" onmouseover="this.style.background='rgba(239,68,68,0.15)'" onmouseout="this.style.background='transparent'">
+                  <span>🗑️</span>
+                  <span>Delete</span>
+                </button>
               </div>
               <div style="display: grid; grid-template-columns: 80px 1fr; row-gap: 4px; color: var(--text-secondary);">
                 <span style="color: var(--text-dim);">File:</span>

@@ -288,6 +288,24 @@ class ParcelMapWorkspace {
       this.switchView('detection');
     });
 
+    document.getElementById('btnDeleteImageryCard')?.addEventListener('click', () => {
+      const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
+      if (currentImg) {
+        this.promptDeleteImagery(currentImg.id, currentImg.file_name);
+      } else {
+        this.showToast('No imagery uploaded to delete.', 'warning');
+      }
+    });
+
+    document.getElementById('btnDeleteSelectedImage')?.addEventListener('click', () => {
+      const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
+      if (currentImg) {
+        this.promptDeleteImagery(currentImg.id, currentImg.file_name);
+      } else {
+        this.showToast('No imagery selected to delete.', 'warning');
+      }
+    });
+
     document.getElementById('btnProceedToReasoning')?.addEventListener('click', async () => {
       const imageryId = this.selectedImageryId || this.imagery?.[0]?.id;
       if (imageryId && this.features && this.features.length > 0) {
@@ -674,6 +692,11 @@ class ParcelMapWorkspace {
         badge.textContent = 'Awaiting Orthomosaic / Image Upload';
       }
     }
+
+    const btnDelCard = document.getElementById('btnDeleteImageryCard');
+    if (btnDelCard) {
+      btnDelCard.style.display = currentImg ? 'inline-flex' : 'none';
+    }
   }
 
   updateDetectionViewUI() {
@@ -691,19 +714,26 @@ class ParcelMapWorkspace {
       } else {
         container.innerHTML = this.imagery.map(img => {
           const isSel = img.id === (currentImg ? currentImg.id : null);
+          const safeName = (img.file_name || '').replace(/"/g, '&quot;');
           return `
             <div class="imagery-select-item" data-id="${img.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-radius: 4px; cursor: pointer; background: ${isSel ? 'rgba(16, 185, 129, 0.12)' : 'transparent'}; border: 1px solid ${isSel ? 'var(--accent-emerald)' : 'transparent'};">
-              <span style="font-size: 11px; display: flex; align-items: center; gap: 6px; color: ${isSel ? 'var(--text-primary)' : 'var(--text-secondary)'}; font-weight: ${isSel ? '600' : 'normal'};">
-                <span style="color: ${isSel ? 'var(--accent-emerald)' : 'var(--text-dim)'};">${isSel ? '●' : '○'}</span>
-                <span style="max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${img.file_name}</span>
+              <span style="font-size: 11px; display: flex; align-items: center; gap: 6px; color: ${isSel ? 'var(--text-primary)' : 'var(--text-secondary)'}; font-weight: ${isSel ? '600' : 'normal'}; min-width: 0; flex: 1; margin-right: 6px;">
+                <span style="color: ${isSel ? 'var(--accent-emerald)' : 'var(--text-dim)'}; flex-shrink: 0;">${isSel ? '●' : '○'}</span>
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${safeName}">${img.file_name}</span>
               </span>
-              <span style="font-size: 10px; font-family: var(--font-mono); color: var(--text-dim);">${img.file_size}</span>
+              <span style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                <span style="font-size: 10px; font-family: var(--font-mono); color: var(--text-dim);">${img.file_size}</span>
+                <button type="button" class="btn-del-img" data-id="${img.id}" data-filename="${safeName}" title="Delete image">
+                  🗑️
+                </button>
+              </span>
             </div>
           `;
         }).join('');
 
         container.querySelectorAll('.imagery-select-item').forEach(item => {
-          item.addEventListener('click', async () => {
+          item.addEventListener('click', async (e) => {
+            if (e.target.closest('.btn-del-img')) return;
             this.selectedImageryId = item.dataset.id;
             localStorage.setItem('pm_selected_imagery_id', this.selectedImageryId);
             await this.loadProjectData(this.activeProjectId);
@@ -711,10 +741,24 @@ class ParcelMapWorkspace {
             this.renderDetectionMap();
           });
         });
+
+        container.querySelectorAll('.btn-del-img').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            const fname = btn.dataset.filename || 'this image';
+            this.promptDeleteImagery(id, fname);
+          });
+        });
       }
     }
 
     // Image Information Box (Section 9)
+    const btnDelSelected = document.getElementById('btnDeleteSelectedImage');
+    if (btnDelSelected) {
+      btnDelSelected.style.display = currentImg ? 'inline-flex' : 'none';
+    }
+
     if (currentImg) {
       document.getElementById('infoImgFile').textContent = currentImg.file_name;
       document.getElementById('infoImgResolution').textContent = currentImg.resolution || `${currentImg.width} × ${currentImg.height} px`;
@@ -793,6 +837,66 @@ class ParcelMapWorkspace {
 
     const elWater = document.getElementById('lblConfWater');
     if (elWater) elWater.textContent = getAvgConf(['WATER', 'Water']);
+  }
+
+  async promptDeleteImagery(imageryId, fileName = 'this image') {
+    if (!imageryId) {
+      this.showToast('No image selected to delete', 'warning');
+      return;
+    }
+
+    const confirmed = window.confirm(`Are you sure you want to delete "${fileName}"?\n\nThis will remove this image and any unverified detections or parcels associated with it.`);
+    if (!confirmed) return;
+
+    try {
+      this.showToast(`Deleting ${fileName}...`, 'info');
+      let res = await fetch(`${this.apiBase}/projects/${this.activeProjectId}/imagery/${imageryId}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) {
+        // Fallback to /api/imagery/:id
+        res = await fetch(`${this.apiBase}/imagery/${imageryId}`, {
+          method: 'DELETE'
+        });
+      }
+
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        data = null;
+      }
+
+      if (res.ok && data && data.success) {
+        this.showToast(`Image "${fileName}" deleted successfully!`, 'success');
+
+        // Reset selected imagery ID if we deleted the currently selected one
+        if (this.selectedImageryId === imageryId) {
+          this.selectedImageryId = null;
+          localStorage.removeItem('pm_selected_imagery_id');
+        }
+
+        // Reload data for the active project (this auto-picks the next available image if any)
+        await this.loadProjectData(this.activeProjectId);
+
+        // Update all UI stages
+        this.updateImageryViewUI();
+        this.updateDetectionViewUI();
+        this.renderDetectionMap();
+        if (typeof this.updateVerificationUI === 'function') {
+          this.updateVerificationUI();
+        }
+        if (typeof this.renderVerificationMap === 'function') {
+          this.renderVerificationMap();
+        }
+      } else {
+        const errMsg = data?.error || `Server returned HTTP ${res.status}`;
+        this.showToast(`Failed to delete image: ${errMsg}`, 'error');
+      }
+    } catch (err) {
+      console.error('[Delete Imagery Error]:', err);
+      this.showToast(`Delete failed: ${err.message || 'Network error'}`, 'error');
+    }
   }
 
   /* --------------------------------------------------------------------------

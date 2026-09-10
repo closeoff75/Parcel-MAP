@@ -1799,3 +1799,41 @@ input:checked + .slider:before {
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.3) !important;
 }
 
+/* Drone Imagery List Item & Delete Button */
+.imagery-select-item {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.imagery-select-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.btn-del-img {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.45;
+  transition: all 0.18s ease;
+}
+
+.imagery-select-item:hover .btn-del-img {
+  opacity: 0.85;
+}
+
+.btn-del-img:hover {
+  opacity: 1 !important;
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.18) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  transform: scale(1.08);
+}
+
+

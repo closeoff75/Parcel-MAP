@@ -280,6 +280,77 @@ router.get('/projects/:id/imagery', (req, res) => {
   }
 });
 
+// DELETE /api/projects/:projectId/imagery/:imageryId
+router.delete('/projects/:projectId/imagery/:imageryId', (req, res) => {
+  try {
+    const { projectId, imageryId } = req.params;
+    const deleted = db.deleteImagery(imageryId, projectId);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Imagery not found or already deleted' });
+    }
+    
+    // Safely remove physical uploaded file (except baseline demo orthomosaic)
+    if (deleted.file_url) {
+      const fname = path.basename(deleted.file_url);
+      if (fname && !fname.includes('wagholi_east_ortho')) {
+        const filePath = path.join(uploadDir, fname);
+        if (fs.existsSync(filePath)) {
+          try {
+            fs.unlinkSync(filePath);
+            console.log(`[Delete Imagery] Unlinked file: ${filePath}`);
+          } catch (fErr) {
+            console.warn(`[Delete Imagery] File unlink error: ${fErr.message}`);
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Image "${deleted.file_name}" deleted successfully`,
+      deleted
+    });
+  } catch (err) {
+    console.error('[Delete Imagery Error]:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /api/imagery/:id
+router.delete('/imagery/:id', (req, res) => {
+  try {
+    const deleted = db.deleteImagery(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Imagery not found or already deleted' });
+    }
+    
+    // Safely remove physical uploaded file (except baseline demo orthomosaic)
+    if (deleted.file_url) {
+      const fname = path.basename(deleted.file_url);
+      if (fname && !fname.includes('wagholi_east_ortho')) {
+        const filePath = path.join(uploadDir, fname);
+        if (fs.existsSync(filePath)) {
+          try {
+            fs.unlinkSync(filePath);
+            console.log(`[Delete Imagery] Unlinked file: ${filePath}`);
+          } catch (fErr) {
+            console.warn(`[Delete Imagery] File unlink error: ${fErr.message}`);
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Image "${deleted.file_name}" deleted successfully`,
+      deleted
+    });
+  } catch (err) {
+    console.error('[Delete Imagery Error]:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ==========================================
 // AI DETECTION API
 // ==========================================
