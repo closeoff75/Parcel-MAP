@@ -1,0 +1,157 @@
+[
+  {
+    "label": "Coastal Regression",
+    "path": "uploads/uav_1788964523242_0f14jo.png",
+    "elapsed_sec": 8.63,
+    "summary": {
+      "buildings": 21,
+      "roads": 7,
+      "fields": 0,
+      "walls": 6,
+      "fences": 4,
+      "vegetation": 3,
+      "water": 1,
+      "water_body": 1,
+      "water_canal": 0,
+      "total": 42
+    },
+    "accepted": 42,
+    "rejected": 3592,
+    "raw_candidates": 3683,
+    "rejection_reasons": {
+      "Water crossing": 5,
+      "Unsupported line": 20,
+      "Image-edge artifact": 103,
+      "Insufficient continuity": 0,
+      "Invalid geometry": 5,
+      "Duplicate geometry": 2606,
+      "Weak evidence": 852,
+      "Excessive size": 1,
+      "Disconnected feature": 0
+    }
+  },
+  {
+    "label": "IMAGE A \u2014 Rural",
+    "path": "test_assets/image_a_rural.png",
+    "elapsed_sec": 6.1,
+    "summary": {
+      "buildings": 8,
+      "roads": 2,
+      "fields": 2,
+      "walls": 6,
+      "fences": 4,
+      "vegetation": 5,
+      "water": 1,
+      "water_body": 1,
+      "water_canal": 0,
+      "total": 28
+    },
+    "accepted": 28,
+    "rejected": 528,
+    "raw_candidates": 581,
+    "rejection_reasons": {
+      "Water crossing": 2,
+      "Unsupported line": 5,
+      "Image-edge artifact": 34,
+      "Insufficient continuity": 0,
+      "Invalid geometry": 1,
+      "Duplicate geometry": 331,
+      "Weak evidence": 155,
+      "Excessive size": 0,
+      "Disconnected feature": 0
+    }
+  },
+  {
+    "label": "IMAGE B \u2014 Urban",
+    "path": "test_assets/image_b_urban.png",
+    "elapsed_sec": 4.48,
+    "summary": {
+      "buildings": 29,
+      "roads": 2,
+      "fields": 1,
+      "walls": 6,
+      "fences": 4,
+      "vegetation": 6,
+      "water": 1,
+      "water_body": 1,
+      "water_canal": 0,
+      "total": 49
+    },
+    "accepted": 49,
+    "rejected": 579,
+    "raw_candidates": 681,
+    "rejection_reasons": {
+      "Water crossing": 3,
+      "Unsupported line": 1,
+      "Image-edge artifact": 55,
+      "Insufficient continuity": 0,
+      "Invalid geometry": 0,
+      "Duplicate geometry": 351,
+      "Weak evidence": 169,
+      "Excessive size": 0,
+      "Disconnected feature": 0
+    }
+  },
+  {
+    "label": "IMAGE C \u2014 Coastal",
+    "path": "test_assets/image_c_coastal.png",
+    "elapsed_sec": 5.58,
+    "summary": {
+      "buildings": 9,
+      "roads": 2,
+      "fields": 0,
+      "walls": 6,
+      "fences": 3,
+      "vegetation": 6,
+      "water": 1,
+      "water_body": 1,
+      "water_canal": 0,
+      "total": 27
+    },
+    "accepted": 27,
+    "rejected": 186,
+    "raw_candidates": 239,
+    "rejection_reasons": {
+      "Water crossing": 0,
+      "Unsupported line": 3,
+      "Image-edge artifact": 20,
+      "Insufficient continuity": 0,
+      "Invalid geometry": 1,
+      "Duplicate geometry": 119,
+      "Weak evidence": 43,
+      "Excessive size": 0,
+      "Disconnected feature": 0
+    }
+  },
+  {
+    "label": "IMAGE D \u2014 Agricultural",
+    "path": "test_assets/image_d_agricultural.png",
+    "elapsed_sec": 3.62,
+    "summary": {
+      "buildings": 2,
+      "roads": 2,
+      "fields": 1,
+      "walls": 6,
+      "fences": 4,
+      "vegetation": 4,
+      "water": 1,
+      "water_body": 1,
+      "water_canal": 0,
+      "total": 20
+    },
+    "accepted": 20,
+    "rejected": 624,
+    "raw_candidates": 656,
+    "rejection_reasons": {
+      "Water crossing": 0,
+      "Unsupported line": 0,
+      "Image-edge artifact": 57,
+      "Insufficient continuity": 0,
+      "Invalid geometry": 2,
+      "Duplicate geometry": 396,
+      "Weak evidence": 168,
+      "Excessive size": 1,
+      "Disconnected feature": 0
+    }
+  }
+]

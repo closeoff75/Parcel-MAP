@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="amethyst-terra">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parcel Intelligence & Land Analytics — GeoParcel.ai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="gis-theme.css">
+  <style>
+    .search-panel {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 40px;
+    }
+    .search-input-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--surface-bg);
+      border: 1px solid var(--border-subtle);
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 15px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--brand-primary);
+    }
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+      align-items: center;
+    }
+    .preset-chip {
+      background: var(--surface-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .preset-chip:hover, .preset-chip.active {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: var(--brand-primary-light);
+    }
+
+    /* Dossier Grid */
+    .dossier-grid {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr;
+      gap: 32px;
+    }
+    @media (max-width: 960px) {
+      .dossier-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .dossier-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+    }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 14px;
+    }
+    .data-row:last-child {
+      border-bottom: none;
+    }
+    .data-key {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .data-val {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      text-align: right;
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+      margin-top: 16px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: var(--border-subtle);
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    .timeline-item:last-child {
+      margin-bottom: 0;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -28px;
+      top: 4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--brand-primary);
+      border: 3px solid var(--surface-card);
+    }
+    .timeline-year {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--brand-primary);
+      margin-bottom: 4px;
+    }
+    .timeline-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .timeline-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Risk meter */
+    .risk-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .risk-low { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .risk-med { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .risk-high { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       NAVBAR WITH RIGHT UPPER CORNER THEME TOGGLE
+       ========================================================================== -->
+  <nav class="site-header">
+    <div class="nav-wrapper">
+      <div class="nav-left">
+        <a href="index.html" class="brand-logo" style="text-decoration:none;">
+          <div class="logo-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+          </div>
+          <span>GeoParcel<span style="color: var(--brand-primary)">.ai</span></span>
+        </a>
+
+        <div class="nav-links">
+          <a href="intelligence.html" class="nav-link active">Parcel</a>
+          <a href="platform.html" class="nav-link">Platform</a>
+          <a href="layers.html" class="nav-link">GIS Layers</a>
+          <a href="enterprise.html" class="nav-link">API</a>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- SINGLE BUTTON: LIGHT / DARK MODE TOGGLE (RIGHT UPPER CORNER) -->
+        <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Light and Dark Mode" title="Switch to Dark Mode">
+          <span class="theme-toggle-indicator">
+            <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+          <span id="themeToggleText">Dark Mode</span>
+        </button>
+
+        <a href="map.html" class="btn btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+          <span>Launch MAP</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==========================================================================
+       PAGE HERO
+       ========================================================================== -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="badge-tag">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        Cadastral Deep Dossier
+      </div>
+      <h1 class="hero-title" style="font-size: 42px;">Autonomous Parcel Intelligence</h1>
+      <p class="hero-sub" style="max-width: 760px; margin: 0 auto;">
+        Instant deed history extraction, ownership tracing, assessment metrics, zoning envelope constraints, and environmental hazard screening for 154M+ properties.
+      </p>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       INTERACTIVE DOSSIER SEARCH & VIEWER
+       ========================================================================== -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container">
+
+      <!-- Search Card -->
+      <div class="search-panel">
+        <h3 style="margin: 0; font-size: 18px;">Inspect Parcel Record by APN or Address</h3>
+        <div class="search-input-group">
+          <input type="text" id="apnSearchInput" class="search-input" value="489-021-394" placeholder="Enter APN (e.g. 489-021-394) or 104 Industrial Way, Austin TX...">
+          <button class="btn btn-primary" onclick="searchParcel()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Query Cadastral Record
+          </button>
+        </div>
+
+        <div class="preset-chips">
+          <span style="font-size: 12px; color: var(--text-muted);">Quick Sample Records:</span>
+          <span class="preset-chip active" onclick="loadPreset('travis')">Travis County, TX [APN 489-021-394]</span>
+          <span class="preset-chip" onclick="loadPreset('orange')">Orange County, CA [APN 049-218-402]</span>
+          <span class="preset-chip" onclick="loadPreset('maricopa')">Maricopa County, AZ [APN 102-944-118]</span>
+          <span class="preset-chip" onclick="loadPreset('miami')">Miami-Dade, FL [APN 30-4119-002-0140]</span>
+        </div>
+      </div>
+
+      <!-- Dossier Content Grid -->
+      <div class="dossier-grid">
+        <!-- Left: Core Property Specs & AI Summary -->
+        <div>
+          <div class="dossier-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+              <div>
+                <span class="badge-tag" id="propType">Commercial Light Industrial</span>
+                <h2 style="font-size: 24px; margin: 8px 0 4px;" id="propAddress">104 Industrial Pkwy, Austin, TX 78744</h2>
+                <div style="font-family: var(--font-mono); font-size: 13px; color: var(--text-muted);" id="propFips">FIPS 48453 | Travis County | Lat: 30.2184°, Lon: -97.7421°</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">EST. MARKET VALUE</div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--brand-primary); font-family: var(--font-display);" id="propValue">$4,850,000</div>
+              </div>
+            </div>
+
+            <!-- AI Summary Box -->
+            <div style="background: var(--brand-primary-light); border: 1px solid var(--brand-primary); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color: var(--brand-primary);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <strong style="font-size: 14px; color: var(--text-primary);">GeoParcel AI Cadastral Synopsis</strong>
+              </div>
+              <p style="font-size: 13px; line-height: 1.6; margin: 0; color: var(--text-secondary);" id="propAiSummary">
+                Clean title chain with zero unresolved boundary disputes. Site is 100% outside the 100-year FEMA floodway (Zone X). Max building envelope allows up to 65ft height and 0.85 FAR. Ideal for logistics expansion or light assembly warehouse conversion.
+              </p>
+            </div>
+
+            <!-- Key Specs Table -->
+            <div class="data-row">
+              <span class="data-key">Assessor Parcel Number (APN)</span>
+              <span class="data-val" id="specApn">489-021-394</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Deeded Acreage / Sq Ft</span>
+              <span class="data-val" id="specArea">3.42 Acres / 148,975 sq ft</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Owner of Record</span>
+              <span class="data-val" id="specOwner">AUSTIN LOGISTICS VENTURES LLC</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Legal Subdivision</span>
+              <span class="data-val" id="specSubdiv">METRO INDUSTRIAL PARK SEC 4, LOT 2-A</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Zoning Classification</span>
+              <span class="data-val" id="specZoning">LI-CO-NP (Light Industrial / Conditional Overlay)</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Last Arm's Length Sale Date</span>
+              <span class="data-val" id="specSale">Nov 14, 2023 ($3,920,000)</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Annual Property Taxes</span>
+              <span class="data-val" id="specTax">$89,410.12 (2025 Tax Year)</span>
+            </div>
+          </div>
+
+          <!-- Environmental & Hazard Screening -->
+          <div class="dossier-card">
+            <h3 style="font-size: 18px; margin: 0 0 16px;">Environmental & Topographic Screening</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+              <div style="background: var(--surface-bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">FEMA Flood Risk</div>
+                <div class="risk-pill risk-low" id="riskFlood">ZONE X (Minimal)</div>
+              </div>
+              <div style="background: var(--surface-bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">Slope / Topo Gradient</div>
+                <div class="risk-pill risk-low" id="riskSlope">&lt; 2.5% Flat Grade</div>
+              </div>
+              <div style="background: var(--surface-bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">EPA Superfund Proximity</div>
+                <div class="risk-pill risk-low" id="riskEpa">&gt; 5.2 Miles (Clear)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Chain of Title Timeline & Zoning Envelopes -->
+        <div>
+          <div class="dossier-card">
+            <h3 style="font-size: 18px; margin: 0 0 16px;">Recorded Chain of Title</h3>
+            <div class="timeline" id="titleTimeline">
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-year">2023 · SPECIAL WARRANTY DEED</div>
+                <div class="timeline-title">Austin Logistics Ventures LLC</div>
+                <div class="timeline-desc">Doc #: 2023-149021 · $3,920,000 consideration recorded. Title insured by First American.</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-year">2017 · CORPORATE GRANT DEED</div>
+                <div class="timeline-title">Pinnacle Texas Warehousing Inc</div>
+                <div class="timeline-desc">Doc #: 2017-088192 · Conveyance from Capital Industrial Trust.</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-year">2005 · WARRANTY DEED WITH LIEN</div>
+                <div class="timeline-title">Capital Industrial Trust</div>
+                <div class="timeline-desc">Doc #: 2005-012903 · Original industrial park replat partition.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Zoning Envelope Rules -->
+          <div class="dossier-card">
+            <h3 style="font-size: 18px; margin: 0 0 16px;">Zoning Envelope & Setbacks</h3>
+            <div class="data-row">
+              <span class="data-key">Front Setback</span>
+              <span class="data-val" id="zoneFront">25.0 Feet</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Side / Rear Setback</span>
+              <span class="data-val" id="zoneRear">15.0 / 20.0 Feet</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Max Height</span>
+              <span class="data-val" id="zoneHeight">65.0 Feet (4 Stories)</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Max Floor Area Ratio (FAR)</span>
+              <span class="data-val" id="zoneFar">0.85 (126,628 SF Max GFA)</span>
+            </div>
+            <div class="data-row">
+              <span class="data-key">Max Impervious Cover</span>
+              <span class="data-val" id="zoneImperv">80.0%</span>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; margin-top: 20px; justify-content: center;" onclick="downloadDossierPdf()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Export Certified Dossier (PDF)
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col" style="grid-column: span 1.5;">
+          <div class="brand-logo" style="margin-bottom: 12px;">
+            <div class="logo-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon></svg>
+            </div>
+            <span>GeoParcel<span style="color: var(--brand-primary)">.ai</span></span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 280px;">
+            The enterprise spatial intelligence operating system for boundary surveying, cadastral records, and parcel analytics.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h5>Platform</h5>
+          <ul>
+            <li><a href="platform.html">System Architecture</a></li>
+            <li><a href="platform.html#pipeline">Real-Time GIS Pipeline</a></li>
+            <li><a href="platform.html#accuracy">Survey-Grade Benchmarks</a></li>
+            <li><a href="platform.html#security">SOC2 & Geodetic Compliance</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>GIS Data & Layers</h5>
+          <ul>
+            <li><a href="layers.html">15cm Orthoimagery</a></li>
+            <li><a href="layers.html">LiDAR 2ft Elevation Contours</a></li>
+            <li><a href="layers.html">FEMA 100-Year Floodplains</a></li>
+            <li><a href="layers.html">Zoning & Land Use Overlays</a></li>
+            <li><a href="layers.html">Cadastral Boundary Shp/GeoJSON</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Solutions</h5>
+          <ul>
+            <li><a href="solutions.html#surveyors">Land Surveyors</a></li>
+            <li><a href="solutions.html#brokers">CRE Land Brokers</a></li>
+            <li><a href="solutions.html#energy">Renewable Energy Developers</a></li>
+            <li><a href="solutions.html#municipal">Municipal GIS Departments</a></li>
+            <li><a href="solutions.html">ROI Savings Calculator</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Open GIS Resources</h5>
+          <ul>
+            <li><a href="enterprise.html">Spatial API Documentation</a></li>
+            <li><a href="enterprise.html#playground">Interactive API Sandbox</a></li>
+            <li><a href="enterprise.html#webhooks">Real-time Webhooks</a></li>
+            <li><a href="platform.html">Open Spatial Engine</a></li>
+            <li><a href="layers.html">Public Cadastral Feeds</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom-bar">
+        <div>© 2026 GeoParcel Technologies, Inc. All rights reserved.</div>
+        <div style="display: flex; gap: 20px;">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Theme Management with localStorage persistence
+    function setTheme(themeKey) {
+      document.documentElement.setAttribute('data-theme', themeKey);
+      const isDark = themeKey === 'obsidian-satellite' || themeKey === 'dark';
+      const toggleBtn = document.getElementById('themeToggleBtn');
+      const toggleText = document.getElementById('themeToggleText');
+      const sunIcon = document.querySelector('.theme-icon-sun');
+      const moonIcon = document.querySelector('.theme-icon-moon');
+
+      if (toggleBtn) toggleBtn.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+      if (toggleText) toggleText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+      if (sunIcon && moonIcon) {
+        sunIcon.style.display = isDark ? 'none' : 'block';
+        moonIcon.style.display = isDark ? 'block' : 'none';
+      }
+      try { localStorage.setItem('geoparcel_theme', themeKey); } catch (e) {}
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'amethyst-terra';
+      const isDark = current === 'obsidian-satellite' || current === 'dark';
+      setTheme(isDark ? 'amethyst-terra' : 'obsidian-satellite');
+    }
+
+    try {
+      let savedTheme = localStorage.getItem('geoparcel_theme') || 'amethyst-terra';
+      if (savedTheme === 'emerald-terra') savedTheme = 'amethyst-terra';
+      setTheme(savedTheme);
+    } catch(e) {
+      setTheme('amethyst-terra');
+    }
+
+    // Interactive Preset Records
+    const RECORDS = {
+      travis: {
+        type: 'Commercial Light Industrial',
+        address: '104 Industrial Pkwy, Austin, TX 78744',
+        fips: 'FIPS 48453 | Travis County | Lat: 30.2184°, Lon: -97.7421°',
+        value: '$4,850,000',
+        ai: 'Clean title chain with zero unresolved boundary disputes. Site is 100% outside the 100-year FEMA floodway (Zone X). Max building envelope allows up to 65ft height and 0.85 FAR. Ideal for logistics expansion or light assembly warehouse conversion.',
+        apn: '489-021-394',
+        area: '3.42 Acres / 148,975 sq ft',
+        owner: 'AUSTIN LOGISTICS VENTURES LLC',
+        subdiv: 'METRO INDUSTRIAL PARK SEC 4, LOT 2-A',
+        zoning: 'LI-CO-NP (Light Industrial / Conditional Overlay)',
+        sale: 'Nov 14, 2023 ($3,920,000)',
+        tax: '$89,410.12 (2025 Tax Year)',
+        flood: 'ZONE X (Minimal)',
+        slope: '< 2.5% Flat Grade',
+        epa: '> 5.2 Miles (Clear)',
+        front: '25.0 Feet',
+        rear: '15.0 / 20.0 Feet',
+        height: '65.0 Feet (4 Stories)',
+        far: '0.85 (126,628 SF Max GFA)',
+        imperv: '80.0%'
+      },
+      orange: {
+        type: 'Commercial Mixed-Use',
+        address: '880 Harbor Blvd, Anaheim, CA 92805',
+        fips: 'FIPS 06059 | Orange County | Lat: 33.8366°, Lon: -117.9143°',
+        value: '$8,200,000',
+        ai: 'Located within Anaheim Commercial Corridor Overlay. High pedestrian traffic corridor. Frontage along Harbor Blvd with 180.5ft right-of-way easement on northern boundary. 0% environmental flags.',
+        apn: '049-218-402',
+        area: '1.24 Acres / 54,014 sq ft',
+        owner: 'HARBOR PLAZA EQUITIES LLC',
+        subdiv: 'TRACT 10488 BLOCK C LOT 12',
+        zoning: 'C-2 (General Commercial District)',
+        sale: 'Jun 22, 2022 ($7,450,000)',
+        tax: '$104,220.45 (2025 Tax Year)',
+        flood: 'ZONE X (500-Yr Levee Protected)',
+        slope: '< 1.0% Level Ground',
+        epa: '> 3.8 Miles (Clear)',
+        front: '15.0 Feet',
+        rear: '10.0 / 10.0 Feet',
+        height: '75.0 Feet (6 Stories)',
+        far: '1.25 (67,517 SF Max GFA)',
+        imperv: '90.0%'
+      },
+      maricopa: {
+        type: 'Renewable Solar Utility Parcel',
+        address: 'Sec 14 T1S R4W, Buckeye, AZ 85326',
+        fips: 'FIPS 04013 | Maricopa County | Lat: 33.3703°, Lon: -112.6289°',
+        value: '$1,950,000',
+        ai: 'Unencumbered agricultural desert tract adjacent to 230kV transmission sub-station corridor (0.4 miles). Direct solar irradiance rating 5.8 kWh/m²/day. Ideal candidate for utility-scale photovoltaic development.',
+        apn: '102-944-118',
+        area: '40.00 Acres / 1,742,400 sq ft',
+        owner: 'SONORAN CLEAN ENERGY PARTNERS',
+        subdiv: 'UNSUBDIVIDED SEC 14 G&SRB&M',
+        zoning: 'RU-43 (Rural Zoning / Utility Permitted)',
+        sale: 'Mar 10, 2024 ($1,600,000)',
+        tax: '$4,120.80 (Ag Exemption Active)',
+        flood: 'ZONE A (Unnumbered Arroyos)',
+        slope: '1.8% Southwest Aspect',
+        epa: '> 14.5 Miles (Clear)',
+        front: '40.0 Feet',
+        rear: '40.0 / 40.0 Feet',
+        height: '35.0 Feet',
+        far: '0.20 (Solar Array Uncapped)',
+        imperv: '25.0%'
+      },
+      miami: {
+        type: 'Urban Multi-Family High-Density',
+        address: '450 NE 2nd Ave, Miami, FL 33132',
+        fips: 'FIPS 12086 | Miami-Dade County | Lat: 25.7781°, Lon: -80.1903°',
+        value: '$14,500,000',
+        ai: 'Prime Downtown Miami 21 zoning. High-density transit-oriented development hub with zero minimum parking mandates. High sea level rise vulnerability assessment: finished floor elevation must exceed 12.0 ft NAVD88.',
+        apn: '30-4119-002-0140',
+        area: '0.85 Acres / 37,026 sq ft',
+        owner: 'BISCAYNE SKYLINE HOLDINGS CORP',
+        subdiv: 'MIAMI NORTH SEC 1 PB 1-1',
+        zoning: 'T6-24-O (Urban Core 24 Stories)',
+        sale: 'Jan 18, 2025 ($13,800,000)',
+        tax: '$182,400.00 (2025 Tax Year)',
+        flood: 'ZONE AE (EL 9 FT - Coastal)',
+        slope: '< 0.5% Level Elevation 7ft',
+        epa: '> 2.1 Miles (Clear)',
+        front: '0.0 Feet (Build-to Line)',
+        rear: '0.0 / 10.0 Feet',
+        height: '240.0 Feet (24 Stories)',
+        far: '5.00 (185,130 SF Max GFA)',
+        imperv: '95.0%'
+      }
+    };
+
+    function loadPreset(key) {
+      const rec = RECORDS[key];
+      if (!rec) return;
+
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+
+      document.getElementById('apnSearchInput').value = rec.apn;
+      document.getElementById('propType').textContent = rec.type;
+      document.getElementById('propAddress').textContent = rec.address;
+      document.getElementById('propFips').textContent = rec.fips;
+      document.getElementById('propValue').textContent = rec.value;
+      document.getElementById('propAiSummary').textContent = rec.ai;
+
+      document.getElementById('specApn').textContent = rec.apn;
+      document.getElementById('specArea').textContent = rec.area;
+      document.getElementById('specOwner').textContent = rec.owner;
+      document.getElementById('specSubdiv').textContent = rec.subdiv;
+      document.getElementById('specZoning').textContent = rec.zoning;
+      document.getElementById('specSale').textContent = rec.sale;
+      document.getElementById('specTax').textContent = rec.tax;
+
+      document.getElementById('riskFlood').textContent = rec.flood;
+      document.getElementById('riskSlope').textContent = rec.slope;
+      document.getElementById('riskEpa').textContent = rec.epa;
+
+      document.getElementById('zoneFront').textContent = rec.front;
+      document.getElementById('zoneRear').textContent = rec.rear;
+      document.getElementById('zoneHeight').textContent = rec.height;
+      document.getElementById('zoneFar').textContent = rec.far;
+      document.getElementById('zoneImperv').textContent = rec.imperv;
+    }
+
+    function searchParcel() {
+      const query = document.getElementById('apnSearchInput').value.trim();
+      alert('Retrieved verified cadastral record for query: ' + query);
+    }
+
+    function downloadDossierPdf() {
+      alert('Generating certified cadastral land dossier PDF with geodetic seal...');
+    }
+  </script>
+</body>
+</html>

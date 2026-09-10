@@ -1,0 +1,8 @@
+node_modules
+.vite
+dist
+*.log
+uploads/*
+!uploads/.gitkeep
+__pycache__
+*.pyc

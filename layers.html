@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="amethyst-terra">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GIS Layers & Overlays — GeoParcel.ai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="gis-theme.css">
+  <style>
+    .layers-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 32px;
+      margin-top: 40px;
+    }
+    @media (max-width: 960px) {
+      .layers-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .layer-control-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .layer-item {
+      padding: 14px 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      background: var(--surface-bg);
+      transition: all 0.2s ease;
+    }
+    .layer-item.active {
+      border-color: var(--brand-primary);
+      background: var(--brand-primary-light);
+    }
+    .layer-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .layer-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-raster { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .badge-vector { background: rgba(151, 88, 234, 0.15); color: #9758ea; }
+    .badge-hazard { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .badge-topo { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+    .layer-slider-row {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .layer-slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--brand-primary);
+    }
+    .layer-slider-row span {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 32px;
+    }
+
+    /* Visualizer viewport */
+    .viewport-box {
+      background: #0b131f;
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      position: relative;
+      overflow: hidden;
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-md);
+    }
+    .viewport-hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+    .hud-badge {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f1f5f9;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+      pointer-events: auto;
+    }
+    .map-stage {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+    .map-canvas-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.25s ease;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .format-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .format-pill svg {
+      color: var(--brand-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       NAVBAR WITH RIGHT UPPER CORNER THEME TOGGLE
+       ========================================================================== -->
+  <nav class="site-header">
+    <div class="nav-wrapper">
+      <div class="nav-left">
+        <a href="index.html" class="brand-logo" style="text-decoration:none;">
+          <div class="logo-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+          </div>
+          <span>GeoParcel<span style="color: var(--brand-primary)">.ai</span></span>
+        </a>
+
+        <div class="nav-links">
+          <a href="intelligence.html" class="nav-link">Parcel</a>
+          <a href="platform.html" class="nav-link">Platform</a>
+          <a href="layers.html" class="nav-link active">GIS Layers</a>
+          <a href="enterprise.html" class="nav-link">API</a>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- SINGLE BUTTON: LIGHT / DARK MODE TOGGLE (RIGHT UPPER CORNER) -->
+        <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Light and Dark Mode" title="Switch to Dark Mode">
+          <span class="theme-toggle-indicator">
+            <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+          <span id="themeToggleText">Dark Mode</span>
+        </button>
+
+        <a href="map.html" class="btn btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+          <span>Launch MAP</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==========================================================================
+       HERO SECTION
+       ========================================================================== -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="badge-tag">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        Multi-Source Spatial Stack
+      </div>
+      <h1 class="hero-title" style="font-size: 42px;">High-Fidelity GIS Layer Matrix</h1>
+      <p class="hero-sub" style="max-width: 760px; margin: 0 auto;">
+        Stack, blend, and query nationwide vector parcels, 15cm orthoimagery, 2ft LiDAR contour models, FEMA floodways, and zoning polygons across all 3,144 U.S. counties.
+      </p>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       INTERACTIVE LAYER STACKER
+       ========================================================================== -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container">
+      <div class="layers-layout">
+        <!-- Controls Column -->
+        <div class="layer-control-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; font-size: 18px;">Active Layer Stack</h3>
+            <span style="font-size: 11px; font-family: var(--font-mono); color: var(--brand-primary); background: var(--brand-primary-light); padding: 3px 8px; border-radius: 4px;">5 / 5 ACTIVE</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Toggle layer visibility and slide opacity to preview how GeoParcel blends multi-sensor datasets in real time.</p>
+
+          <!-- Layer 1: Satellite -->
+          <div class="layer-item active" id="control-sat">
+            <div class="layer-header-row" onclick="toggleLayer('sat')">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="check-sat" checked onchange="toggleLayer('sat')">
+                <span style="font-weight: 700; font-size: 14px;">15cm Orthoimagery</span>
+              </div>
+              <span class="layer-badge badge-raster">Raster</span>
+            </div>
+            <div class="layer-slider-row">
+              <input type="range" id="opacity-sat" min="0" max="100" value="100" oninput="setOpacity('sat', this.value)">
+              <span id="label-sat">100%</span>
+            </div>
+          </div>
+
+          <!-- Layer 2: Contours -->
+          <div class="layer-item active" id="control-topo">
+            <div class="layer-header-row" onclick="toggleLayer('topo')">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="check-topo" checked onchange="toggleLayer('topo')">
+                <span style="font-weight: 700; font-size: 14px;">2ft LiDAR Topo Contours</span>
+              </div>
+              <span class="layer-badge badge-topo">LiDAR</span>
+            </div>
+            <div class="layer-slider-row">
+              <input type="range" id="opacity-topo" min="0" max="100" value="85" oninput="setOpacity('topo', this.value)">
+              <span id="label-topo">85%</span>
+            </div>
+          </div>
+
+          <!-- Layer 3: FEMA -->
+          <div class="layer-item active" id="control-flood">
+            <div class="layer-header-row" onclick="toggleLayer('flood')">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="check-flood" checked onchange="toggleLayer('flood')">
+                <span style="font-weight: 700; font-size: 14px;">FEMA Floodplain 100-Yr</span>
+              </div>
+              <span class="layer-badge badge-hazard">Hazard</span>
+            </div>
+            <div class="layer-slider-row">
+              <input type="range" id="opacity-flood" min="0" max="100" value="70" oninput="setOpacity('flood', this.value)">
+              <span id="label-flood">70%</span>
+            </div>
+          </div>
+
+          <!-- Layer 4: Zoning -->
+          <div class="layer-item active" id="control-zone">
+            <div class="layer-header-row" onclick="toggleLayer('zone')">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="check-zone" checked onchange="toggleLayer('zone')">
+                <span style="font-weight: 700; font-size: 14px;">Zoning & Setback Bounds</span>
+              </div>
+              <span class="layer-badge badge-vector">Vector</span>
+            </div>
+            <div class="layer-slider-row">
+              <input type="range" id="opacity-zone" min="0" max="100" value="65" oninput="setOpacity('zone', this.value)">
+              <span id="label-zone">65%</span>
+            </div>
+          </div>
+
+          <!-- Layer 5: Cadastral Parcels -->
+          <div class="layer-item active" id="control-parcel">
+            <div class="layer-header-row" onclick="toggleLayer('parcel')">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="check-parcel" checked onchange="toggleLayer('parcel')">
+                <span style="font-weight: 700; font-size: 14px;">Legal Parcel Boundaries</span>
+              </div>
+              <span class="layer-badge badge-vector">Cadastral</span>
+            </div>
+            <div class="layer-slider-row">
+              <input type="range" id="opacity-parcel" min="0" max="100" value="100" oninput="setOpacity('parcel', this.value)">
+              <span id="label-parcel">100%</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 10px;">
+            <button class="btn btn-secondary" style="flex: 1; font-size: 12px; padding: 8px 12px;" onclick="resetLayers()">Reset Defaults</button>
+            <button class="btn btn-primary" style="flex: 1; font-size: 12px; padding: 8px 12px;" onclick="exportPreset()">Export OGC WMS</button>
+          </div>
+        </div>
+
+        <!-- Interactive Map Preview -->
+        <div class="viewport-box">
+          <div class="viewport-hud">
+            <div class="hud-badge">
+              <span style="color: #a855f7; font-weight: 800;">● LIVE CRS</span> EPSG:3857 (Web Mercator) | 37.7849° N, 122.4094° W
+            </div>
+            <div class="hud-badge">
+              <span>Zoom Level: 18.4x</span>
+            </div>
+          </div>
+
+          <div class="map-stage" id="mapStage">
+            <!-- Simulated Sat Base -->
+            <div id="layer-sat" class="map-canvas-layer" style="opacity: 1.0; background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="gridSat" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#gridSat)" />
+                <!-- Roadways -->
+                <path d="M -50 200 C 200 220, 500 160, 900 190" stroke="#334155" stroke-width="26" fill="none" />
+                <path d="M -50 200 C 200 220, 500 160, 900 190" stroke="#fbbf24" stroke-width="2" stroke-dasharray="8,8" fill="none" />
+                <path d="M 350 -50 C 370 200, 410 400, 420 650" stroke="#334155" stroke-width="20" fill="none" />
+              </svg>
+            </div>
+
+            <!-- Topo Elevation Lines -->
+            <div id="layer-topo" class="map-canvas-layer" style="opacity: 0.85;">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <path d="M 50 100 Q 200 60 400 110 T 750 80" stroke="#f59e0b" stroke-width="1.8" fill="none" opacity="0.6"/>
+                <text x="760" y="85" fill="#f59e0b" font-size="10" font-family="monospace">540'</text>
+                <path d="M 40 160 Q 220 120 420 170 T 780 140" stroke="#f59e0b" stroke-width="1.8" fill="none" opacity="0.7"/>
+                <text x="790" y="145" fill="#f59e0b" font-size="10" font-family="monospace">538'</text>
+                <path d="M 30 220 Q 240 180 440 230 T 800 200" stroke="#f59e0b" stroke-width="2.5" fill="none" opacity="0.9"/>
+                <text x="810" y="205" fill="#f59e0b" font-size="10" font-family="monospace">536' [INDEX]</text>
+                <path d="M 20 280 Q 260 240 460 290 T 820 260" stroke="#f59e0b" stroke-width="1.8" fill="none" opacity="0.7"/>
+                <path d="M 10 340 Q 280 300 480 350 T 840 320" stroke="#f59e0b" stroke-width="1.8" fill="none" opacity="0.6"/>
+              </svg>
+            </div>
+
+            <!-- FEMA Floodplain -->
+            <div id="layer-flood" class="map-canvas-layer" style="opacity: 0.70;">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <path d="M 120 320 C 250 280, 480 350, 720 310 L 850 550 L 50 550 Z" fill="rgba(239, 68, 68, 0.28)" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5"/>
+                <text x="320" y="440" fill="#fca5a5" font-size="13" font-family="monospace" font-weight="700">ZONE AE (100-YR FLOODPLAIN) - BFE 532.4 FT</text>
+              </svg>
+            </div>
+
+            <!-- Zoning Overlay -->
+            <div id="layer-zone" class="map-canvas-layer" style="opacity: 0.65;">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <rect x="80" y="40" width="320" height="240" fill="rgba(151, 88, 234, 0.18)" stroke="#9758ea" stroke-width="1.5"/>
+                <text x="95" y="70" fill="#b782f4" font-size="12" font-family="monospace" font-weight="bold">ZONING: C-2 (GENERAL COMMERCIAL)</text>
+
+                <rect x="420" y="40" width="360" height="240" fill="rgba(99, 102, 241, 0.18)" stroke="#6366f1" stroke-width="1.5"/>
+                <text x="435" y="70" fill="#a5b4fc" font-size="12" font-family="monospace" font-weight="bold">ZONING: R-3 (HIGH-DENSITY MULTI-FAMILY)</text>
+              </svg>
+            </div>
+
+            <!-- Parcels Cadastral -->
+            <div id="layer-parcel" class="map-canvas-layer" style="opacity: 1.0;">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <!-- Parcel 1 -->
+                <polygon points="120,70 340,70 340,240 120,240" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+                <circle cx="120" cy="70" r="4" fill="#38bdf8"/>
+                <circle cx="340" cy="70" r="4" fill="#38bdf8"/>
+                <circle cx="340" cy="240" r="4" fill="#38bdf8"/>
+                <circle cx="120" cy="240" r="4" fill="#38bdf8"/>
+                <text x="135" y="105" fill="#bae6fd" font-size="13" font-family="monospace" font-weight="bold">APN: 049-218-402</text>
+                <text x="135" y="125" fill="#7dd3fc" font-size="11" font-family="monospace">1.24 AC | 54,014 SQ FT</text>
+
+                <!-- Parcel 2 (Adjacent) -->
+                <polygon points="340,70 560,70 560,240 340,240" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+                <circle cx="560" cy="70" r="4" fill="#38bdf8"/>
+                <circle cx="560" cy="240" r="4" fill="#38bdf8"/>
+                <text x="355" y="105" fill="#bae6fd" font-size="13" font-family="monospace" font-weight="bold">APN: 049-218-403</text>
+                <text x="355" y="125" fill="#7dd3fc" font-size="11" font-family="monospace">1.22 AC | 53,142 SQ FT</text>
+
+                <!-- Dimension lines -->
+                <line x1="120" y1="60" x2="340" y2="60" stroke="#f8fafc" stroke-width="1.2" stroke-dasharray="3,3"/>
+                <text x="210" y="55" fill="#f8fafc" font-size="11" font-family="monospace">220.00'</text>
+              </svg>
+            </div>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 16px; font-size: 12px; color: #94a3b8; font-family: var(--font-mono);">
+              <span><span>Projection:</span> NAD83 / California Zone 3</span>
+              <span><span>Source:</span> County Cadastral & USGS 3DEP</span>
+            </div>
+            <div style="font-size: 12px; color: #38bdf8; font-family: var(--font-mono);">
+              Status: 100% Synced
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       LAYER SPECIFICATIONS MATRIX TABLE
+       ========================================================================== -->
+  <section class="section">
+    <div class="container">
+      <div style="text-align: center; max-width: 680px; margin: 0 auto 40px;">
+        <h2 style="font-size: 32px; font-weight: 800;">Nationwide Layer Specifications</h2>
+        <p style="color: var(--text-secondary);">Every dataset is cleansed, topologically verified, and aligned to official geodetic datums before pipeline ingestion.</p>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="gis-table">
+          <thead>
+            <tr>
+              <th>Layer Designation</th>
+              <th>Data Type</th>
+              <th>Precision / Ground Resolution</th>
+              <th>Coverage Scope</th>
+              <th>Refresh Cadence</th>
+              <th>Supported Protocols</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Cadastral Parcel Geometries</strong></td>
+              <td><span class="layer-badge badge-vector">Vector (Polygon)</span></td>
+              <td>Sub-0.05m RTK / Plat Bound</td>
+              <td>3,144 U.S. Counties (100%)</td>
+              <td>Daily / Real-Time Sync</td>
+              <td>WFS, GeoJSON, MVT, STAC</td>
+            </tr>
+            <tr>
+              <td><strong>Aerial Orthomosaics</strong></td>
+              <td><span class="layer-badge badge-raster">COG (Raster)</span></td>
+              <td>15cm - 30cm GSD</td>
+              <td>Contiguous U.S. & AK/HI</td>
+              <td>Quarterly Flyovers</td>
+              <td>WMTS, XYZ, WMS, COG</td>
+            </tr>
+            <tr>
+              <td><strong>LiDAR 3DEP Elevation Contours</strong></td>
+              <td><span class="layer-badge badge-topo">Vector / Point Cloud</span></td>
+              <td>2ft & 1ft Index Contours</td>
+              <td>98.4% National Coverage</td>
+              <td>Monthly USGS Aggregation</td>
+              <td>WFS, LAZ, GeoTIFF, DEM</td>
+            </tr>
+            <tr>
+              <td><strong>FEMA National Flood Hazard (NFHL)</strong></td>
+              <td><span class="layer-badge badge-hazard">Vector (Polygon)</span></td>
+              <td>Official Base Flood Elevations</td>
+              <td>All Mapped Flood Zones (A, AE, V, X)</td>
+              <td>Bi-Weekly LOMR Updates</td>
+              <td>GeoJSON, WFS, REST API</td>
+            </tr>
+            <tr>
+              <td><strong>Municipal Zoning Overlays</strong></td>
+              <td><span class="layer-badge badge-vector">Vector (Attributes)</span></td>
+              <td>Parcel-level Setbacks & Heights</td>
+              <td>Top 450 Metros & Growth Counties</td>
+              <td>Monthly Municipal Review</td>
+              <td>GeoJSON, ESRI REST, API</td>
+            </tr>
+            <tr>
+              <td><strong>EPA Environmental Superfund & Hazards</strong></td>
+              <td><span class="layer-badge badge-hazard">Vector (Points / Buffers)</span></td>
+              <td>1/4 Mile Regulatory Radii</td>
+              <td>Nationwide Active CERCLIS Sites</td>
+              <td>Weekly Federal Pull</td>
+              <td>GeoJSON, Vector Tiles</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Export Formats Strip -->
+      <div style="margin-top: 48px; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 28px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;">
+          <div>
+            <h4 style="margin: 0 0 6px; font-size: 18px;">Supported Interoperability Formats</h4>
+            <p style="margin: 0; color: var(--text-muted); font-size: 14px;">GeoParcel natively exports into your existing CAD, GIS, and data warehouse tech stacks.</p>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+            <div class="format-pill">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              GeoJSON
+            </div>
+            <div class="format-pill">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon></svg>
+              Cloud-Optimized GeoTIFF (COG)
+            </div>
+            <div class="format-pill">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+              ESRI Shapefile (.shp)
+            </div>
+            <div class="format-pill">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon></svg>
+              FlatGeobuf (FGB)
+            </div>
+            <div class="format-pill">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+              Mapbox Vector Tiles (MVT)
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       CTA BANNER
+       ========================================================================== -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container">
+      <div style="background: linear-gradient(135deg, var(--brand-primary), #0284c7); border-radius: 20px; padding: 48px; text-align: center; color: #ffffff;">
+        <h2 style="font-size: 34px; font-weight: 800; margin-bottom: 16px; color: #ffffff;">Connect Custom Layer Feeds to Your Desktop GIS</h2>
+        <p style="font-size: 16px; max-width: 600px; margin: 0 auto 28px; opacity: 0.95;">
+          Directly stream WMS/WMTS/WFS layers into QGIS, ArcGIS Pro, AutoCAD Civil 3D, or custom Leaflet/MapLibre engines in minutes.
+        </p>
+        <div style="display: flex; justify-content: center; gap: 14px;">
+          <a href="enterprise.html#playground" class="btn" style="background: #ffffff; color: #0284c7; font-weight: 700;">Open Free WMS &amp; API Sandbox</a>
+          <a href="enterprise.html" class="btn btn-secondary" style="border-color: rgba(255,255,255,0.4); color: #ffffff;">Read API Documentation</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col" style="grid-column: span 1.5;">
+          <div class="brand-logo" style="margin-bottom: 12px;">
+            <div class="logo-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon></svg>
+            </div>
+            <span>GeoParcel<span style="color: var(--brand-primary)">.ai</span></span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 280px;">
+            The enterprise spatial intelligence operating system for boundary surveying, cadastral records, and parcel analytics.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h5>Platform</h5>
+          <ul>
+            <li><a href="platform.html">System Architecture</a></li>
+            <li><a href="platform.html#pipeline">Real-Time GIS Pipeline</a></li>
+            <li><a href="platform.html#accuracy">Survey-Grade Benchmarks</a></li>
+            <li><a href="platform.html#security">SOC2 & Geodetic Compliance</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>GIS Data & Layers</h5>
+          <ul>
+            <li><a href="layers.html">15cm Orthoimagery</a></li>
+            <li><a href="layers.html">LiDAR 2ft Elevation Contours</a></li>
+            <li><a href="layers.html">FEMA 100-Year Floodplains</a></li>
+            <li><a href="layers.html">Zoning & Land Use Overlays</a></li>
+            <li><a href="layers.html">Cadastral Boundary Shp/GeoJSON</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Solutions</h5>
+          <ul>
+            <li><a href="solutions.html#surveyors">Land Surveyors</a></li>
+            <li><a href="solutions.html#brokers">CRE Land Brokers</a></li>
+            <li><a href="solutions.html#energy">Renewable Energy Developers</a></li>
+            <li><a href="solutions.html#municipal">Municipal GIS Departments</a></li>
+            <li><a href="solutions.html">ROI Savings Calculator</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Open GIS Resources</h5>
+          <ul>
+            <li><a href="enterprise.html">Spatial API Documentation</a></li>
+            <li><a href="enterprise.html#playground">Interactive API Sandbox</a></li>
+            <li><a href="enterprise.html#webhooks">Real-time Webhooks</a></li>
+            <li><a href="platform.html">Open Spatial Engine</a></li>
+            <li><a href="layers.html">Public Cadastral Feeds</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom-bar">
+        <div>© 2026 GeoParcel Technologies, Inc. All rights reserved.</div>
+        <div style="display: flex; gap: 20px;">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Theme Management with localStorage persistence
+    function setTheme(themeKey) {
+      document.documentElement.setAttribute('data-theme', themeKey);
+      const isDark = themeKey === 'obsidian-satellite' || themeKey === 'dark';
+      const toggleBtn = document.getElementById('themeToggleBtn');
+      const toggleText = document.getElementById('themeToggleText');
+      const sunIcon = document.querySelector('.theme-icon-sun');
+      const moonIcon = document.querySelector('.theme-icon-moon');
+
+      if (toggleBtn) toggleBtn.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+      if (toggleText) toggleText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+      if (sunIcon && moonIcon) {
+        sunIcon.style.display = isDark ? 'none' : 'block';
+        moonIcon.style.display = isDark ? 'block' : 'none';
+      }
+      try { localStorage.setItem('geoparcel_theme', themeKey); } catch (e) {}
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'amethyst-terra';
+      const isDark = current === 'obsidian-satellite' || current === 'dark';
+      setTheme(isDark ? 'amethyst-terra' : 'obsidian-satellite');
+    }
+
+    try {
+      let savedTheme = localStorage.getItem('geoparcel_theme') || 'amethyst-terra';
+      if (savedTheme === 'emerald-terra') savedTheme = 'amethyst-terra';
+      setTheme(savedTheme);
+    } catch(e) {
+      setTheme('amethyst-terra');
+    }
+
+    // Interactive Layer Stacker Logic
+    function toggleLayer(key) {
+      const checkbox = document.getElementById('check-' + key);
+      const layerEl = document.getElementById('layer-' + key);
+      const controlEl = document.getElementById('control-' + key);
+      const slider = document.getElementById('opacity-' + key);
+
+      if (checkbox && layerEl && controlEl && slider) {
+        const isChecked = checkbox.checked;
+        layerEl.style.display = isChecked ? 'block' : 'none';
+        if (isChecked) {
+          controlEl.classList.add('active');
+          layerEl.style.opacity = slider.value / 100;
+        } else {
+          controlEl.classList.remove('active');
+        }
+      }
+    }
+
+    function setOpacity(key, val) {
+      const layerEl = document.getElementById('layer-' + key);
+      const label = document.getElementById('label-' + key);
+      if (layerEl) layerEl.style.opacity = val / 100;
+      if (label) label.textContent = val + '%';
+    }
+
+    function resetLayers() {
+      const defaults = {
+        sat: 100,
+        topo: 85,
+        flood: 70,
+        zone: 65,
+        parcel: 100
+      };
+      Object.keys(defaults).forEach(k => {
+        const check = document.getElementById('check-' + k);
+        const slider = document.getElementById('opacity-' + k);
+        if (check) check.checked = true;
+        if (slider) slider.value = defaults[k];
+        setOpacity(k, defaults[k]);
+        toggleLayer(k);
+      });
+    }
+
+    function exportPreset() {
+      alert('WMS Endpoint URL copied to clipboard:\nhttps://tiles.parcelmap.io/v2/wms?key=DEMO_FREE_TOKEN');
+    }
+  </script>
+</body>
+</html>

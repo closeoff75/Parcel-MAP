@@ -1,0 +1,2150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParcelMap — AI Cadastral Mapping &amp; Verification</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet GIS Map Engine -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Turf.js for Spatial Analysis -->
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
+
+  <!-- Minimalist Application Theme -->
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       TOP APPLICATION HEADER & MINIMAL NAVIGATION
+       ========================================================================== -->
+  <header class="pm-header">
+    <div class="pm-header-left">
+      <a href="index.html" class="pm-brand">
+        <div class="pm-brand-mark" aria-label="ParcelMap Map Logo">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" fill="rgba(16, 185, 129, 0.25)"></polygon>
+            <line x1="9" y1="3" x2="9" y2="18"></line>
+            <line x1="15" y1="6" x2="15" y2="21"></line>
+            <circle cx="9" cy="10" r="1.5" fill="#38bdf8" stroke="#38bdf8"></circle>
+          </svg>
+        </div>
+        <span class="pm-brand-title">ParcelMap</span>
+      </a>
+
+      <!-- Active Project Selector Pill -->
+      <div class="pm-project-pill">
+        <select id="selActiveProject" class="pm-project-select">
+          <option value="proj_wagholi_demo">Wagholi East Cadastre (Sheet #14)</option>
+        </select>
+        <span class="pm-status-tag tag-emerald" id="badgeProjectStatus">Verification 72%</span>
+      </div>
+    </div>
+
+    <!-- CLEAN 7-STAGE NAVIGATION (NO EMOJIS, MINIMALIST PILLS) -->
+    <nav class="pm-header-center">
+      <div class="pm-nav-tabs">
+        <button class="pm-nav-tab active" data-view="dashboard">Projects</button>
+        <button class="pm-nav-tab" data-view="imagery">Drone Imagery</button>
+        <button class="pm-nav-tab" data-view="detection">AI Detection</button>
+        <button class="pm-nav-tab" data-view="reasoning">Spatial Reasoning</button>
+        <button class="pm-nav-tab" data-view="quality">GIS Quality</button>
+        <button class="pm-nav-tab" data-view="verify">Verification</button>
+        <button class="pm-nav-tab" data-view="map">Final Map</button>
+        <button class="pm-nav-tab" data-view="report">Reports</button>
+      </div>
+    </nav>
+
+    <div class="pm-header-right">
+      <button class="btn-pm btn-pm-secondary" id="btnLaunchDemo" title="Reset and load authentic demo data">
+        Launch Demo
+      </button>
+
+      <button class="btn-pm btn-pm-primary" id="btnNewProjectModal">
+        <span>+</span> New Project
+      </button>
+
+      <div class="user-pill" title="Lead Surveyor">
+        <div class="user-avatar">AM</div>
+        <span>Alex Morgan</span>
+      </div>
+
+      <a href="index.html" class="btn-pm btn-pm-ghost" title="Exit to Landing Page">
+        Exit
+      </a>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       VIEW CONTAINER (ROUTED APPLICATION STAGES)
+       ========================================================================== -->
+  <div class="pm-view-container">
+
+    <!-- 1. PROJECT DASHBOARD VIEW -->
+    <section class="pm-view-stage active" id="viewDashboard">
+      <div class="dashboard-scroll">
+        <!-- Executive Minimalist Project Header -->
+        <div class="dash-header-card">
+          <div class="dash-meta-box">
+            <h1 class="dash-title" id="dashProjectName">Wagholi East Agricultural &amp; Settlement Zone</h1>
+            <div class="dash-chips-row">
+              <span>📍 Wagholi, Pune District, Maharashtra</span>
+              <span>&bull;</span>
+              <span>UAV Orthomosaic (GSD 2.8 cm/px)</span>
+              <span>&bull;</span>
+              <span>Lead: Alex Morgan</span>
+            </div>
+            <p class="dash-sub-desc" id="dashProjectDesc">
+              Demarcation of rural cadastral boundaries from high-resolution UAV drone orthomosaics using AI feature detection, road-based spatial reasoning, and surveyor verification.
+            </p>
+          </div>
+
+          <div class="dash-progress-box">
+            <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Verification</span>
+            <div class="progress-big-num" id="dashOverallProgress">72%</div>
+            <button class="btn-pm btn-pm-primary" id="btnStartMappingWorkflow" style="margin-top: 4px;">
+              Open Verification Workspace &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- Sleek Minimalist Pipeline Stepper Rail -->
+        <div class="pipeline-rail-card">
+          <div class="rail-header">
+            <span class="rail-label">Core GeoTech Pipeline Status</span>
+            <button class="btn-pm btn-pm-secondary" id="btnRunFullPipeline" style="font-size: 11px; padding: 3px 8px;">
+              Re-Run Pipeline
+            </button>
+          </div>
+
+          <div class="rail-steps-track">
+            <!-- Step 1 -->
+            <div class="rail-step completed">
+              <div class="rail-step-top">
+                <span class="rail-step-name">1. Drone Imagery</span>
+                <span class="rail-step-pct">100%</span>
+              </div>
+              <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 100%;"></div></div>
+              <span class="rail-step-sub">8192 x 6144 px &bull; 2.8 cm/px</span>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="rail-step completed">
+              <div class="rail-step-top">
+                <span class="rail-step-name">2. AI Detection</span>
+                <span class="rail-step-pct">100%</span>
+              </div>
+              <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 100%;"></div></div>
+              <span class="rail-step-sub">16 Features &bull; 90% Avg Conf</span>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="rail-step completed">
+              <div class="rail-step-top">
+                <span class="rail-step-name">3. Spatial Reasoning</span>
+                <span class="rail-step-pct">100%</span>
+              </div>
+              <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 100%;"></div></div>
+              <span class="rail-step-sub">3 Corridors &bull; Topology Graph</span>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="rail-step completed">
+              <div class="rail-step-top">
+                <span class="rail-step-name">4. Parcel Generation</span>
+                <span class="rail-step-pct">100%</span>
+              </div>
+              <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 100%;"></div></div>
+              <span class="rail-step-sub">24 Parcels &bull; 97.0 ha</span>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="rail-step active">
+              <div class="rail-step-top">
+                <span class="rail-step-name">5. Human Verification</span>
+                <span class="rail-step-pct" style="color: var(--accent-emerald);">72%</span>
+              </div>
+              <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 72%;"></div></div>
+              <span class="rail-step-sub">18 of 24 Audited</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clean Metric Summary Grid -->
+        <div class="stat-strip-grid">
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">Imagery Ingested</span>
+            <span class="stat-strip-val">342 MB</span>
+            <span class="stat-strip-sub">Orthomosaic Ready</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">Features Detected</span>
+            <span class="stat-strip-val" id="statFeaturesCount">16</span>
+            <span class="stat-strip-sub">Roads, Footprints, Walls</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">Parcels Generated</span>
+            <span class="stat-strip-val" id="statParcelsTotal">24</span>
+            <span class="stat-strip-sub" id="statParcelsArea">Demarcated Area</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">Human Verified</span>
+            <span class="stat-strip-val" style="color: var(--accent-emerald);" id="statParcelsVerified">18</span>
+            <span class="stat-strip-sub">Audited &amp; Signed</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">Requires Review</span>
+            <span class="stat-strip-val" style="color: var(--accent-amber);" id="statParcelsReview">6</span>
+            <span class="stat-strip-sub">Low Conf / Gap Flag</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">QC Anomalies</span>
+            <span class="stat-strip-val" style="color: var(--accent-rose);" id="statQcErrors">3</span>
+            <span class="stat-strip-sub">1 Overlap, 1 Gap, 1 Sliver</span>
+          </div>
+        </div>
+
+        <!-- Clean Projects List Table -->
+        <div class="minimal-table-card">
+          <div class="minimal-table-header">
+            <span class="minimal-table-title">Active Cadastral Mapping Projects</span>
+            <button class="btn-pm btn-pm-ghost" id="btnRefreshProjects" style="font-size: 11px;">Refresh</button>
+          </div>
+          <table class="minimal-table">
+            <thead>
+              <tr>
+                <th>Project Name</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Created By</th>
+                <th>Parcels</th>
+                <th>Progress</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="tblProjectsBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. DRONE IMAGERY VIEW -->
+    <section class="pm-view-stage" id="viewImagery">
+      <div class="dashboard-scroll" style="max-width: 880px;">
+        <div style="margin-bottom: 20px;">
+          <h2 style="font-size: 1.35rem; font-weight: 600; color: var(--text-primary);">Upload Drone Imagery</h2>
+          <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">
+            Ingest aerial UAV orthomosaics. Supported formats: GeoTIFF (.tif/.tiff), JPG, JPEG, PNG.
+          </p>
+        </div>
+
+        <!-- Clean Upload Box -->
+        <div style="border: 1px dashed var(--border-medium); border-radius: var(--radius-lg); padding: 40px 24px; text-align: center; background: var(--bg-panel); margin-bottom: 20px;" id="uavDropzone">
+          <div style="font-size: 32px; margin-bottom: 8px;">🛰️</div>
+          <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Upload Orthomosaic Dataset</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Drag and drop file or select from computer (max 500 MB)</div>
+          <input type="file" id="fileUavUpload" accept=".jpg,.jpeg,.png,.tif,.tiff" style="display: none;">
+          <div style="display: flex; justify-content: center; gap: 8px;">
+            <button class="btn-pm btn-pm-primary" onclick="document.getElementById('fileUavUpload').click()">
+              Select File
+            </button>
+            <button class="btn-pm btn-pm-secondary" id="btnLoadDemoImagery">
+              Load Demo Dataset
+            </button>
+          </div>
+        </div>
+
+        <!-- Ready Imagery Card -->
+        <div class="dash-header-card" id="cardImageryReady" style="flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="pm-status-tag tag-emerald" id="badgeImageryCardStatus">Ready</span>
+              <strong style="font-size: 13px;" id="lblImageryFileName">No imagery uploaded</strong>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);" id="lblImageryFileSize">-</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; font-size: 12px;">
+            <div style="background: var(--bg-card); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div style="color: var(--text-muted); font-size: 11px;">Resolution (GSD)</div>
+              <strong style="font-size: 13px; color: var(--accent-emerald);" id="lblImageryResolution">2.8 cm / pixel</strong>
+            </div>
+            <div style="background: var(--bg-card); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div style="color: var(--text-muted); font-size: 11px;">Dimensions</div>
+              <strong style="font-size: 13px;" id="lblImageryDimensions">4000 x 3000 px</strong>
+            </div>
+            <div style="background: var(--bg-card); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div style="color: var(--text-muted); font-size: 11px;">Sensor Model</div>
+              <strong style="font-size: 13px;" id="lblImagerySensor">DJI Zenmuse P1 45MP</strong>
+            </div>
+            <div style="background: var(--bg-card); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div style="color: var(--text-muted); font-size: 11px;">Status</div>
+              <strong style="font-size: 13px; color: var(--accent-emerald);" id="lblImageryStatus">Ready for AI Detection</strong>
+            </div>
+          </div>
+
+          <!-- Preview Frame with Actual Image -->
+          <div style="position: relative; height: 260px; width: 100%; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-subtle); background: #0b0f17; display: flex; align-items: center; justify-content: center;">
+            <img id="imgUavPreview" src="/uploads/wagholi_east_ortho.jpg" alt="Drone Orthomosaic" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: brightness(0.95);">
+            <div id="uavPreviewBadge" style="position: absolute; bottom: 10px; left: 10px; background: rgba(13, 18, 28, 0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-family: var(--font-mono); color: var(--text-secondary);">
+              Uploaded Drone Imagery &bull; Source Imagery Active
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; width: 100%;">
+            <button class="btn-pm btn-pm-primary" id="btnNextToAiDetection">
+              Proceed to AI Detection &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. AI DETECTION VIEW -->
+    <section class="pm-view-stage" id="viewDetection">
+      <div class="workspace-layout">
+        <aside class="ws-sidebar" style="width: 330px;">
+          <div class="sidebar-header">
+            <span class="sidebar-title">AI Feature Detection</span>
+            <span class="pm-status-tag tag-emerald" id="badgeDetectionStatus">READY</span>
+          </div>
+
+          <div class="sidebar-content">
+            <!-- Project Imagery Selector (Section 18) -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="layer-section-title" style="margin: 0;">Project Drone Imagery</span>
+                <span style="font-size: 10px; color: var(--text-dim);" id="lblImageryCount">1 Image</span>
+              </div>
+              <div id="listProjectImagery" style="display: flex; flex-direction: column; gap: 4px; max-height: 110px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 6px 8px;">
+                <!-- Populated dynamically: ● image-01.jpg -->
+              </div>
+            </div>
+
+            <!-- Image Information Box (Section 9) -->
+            <div style="background: var(--bg-subtle); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; font-size: 11px;">
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>📷</span>
+                <span>Image Information</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 80px 1fr; row-gap: 4px; color: var(--text-secondary);">
+                <span style="color: var(--text-dim);">File:</span>
+                <span style="font-weight: 500; word-break: break-all;" id="infoImgFile">-</span>
+                <span style="color: var(--text-dim);">Resolution:</span>
+                <span id="infoImgResolution">-</span>
+                <span style="color: var(--text-dim);">Size:</span>
+                <span id="infoImgSize">-</span>
+                <span style="color: var(--text-dim);">Status:</span>
+                <span id="infoImgStatus" style="color: var(--accent-emerald); font-weight: 600;">Ready for AI Detection</span>
+              </div>
+            </div>
+
+            <!-- AI Action Button & Processing State (Section 12, 19) -->
+            <div>
+              <button class="btn-pm btn-pm-primary" id="btnRunAiDetection" style="width: 100%; justify-content: center; padding: 9px 12px; font-weight: 600; font-size: 13px; gap: 8px;">
+                <span>⚡</span>
+                <span id="btnRunAiDetectionText">Run AI Detection</span>
+              </button>
+              
+              <div id="lblDetectionStage" style="font-size: 11px; font-family: var(--font-mono); color: var(--accent-emerald); text-align: center; margin-top: 6px; display: none; padding: 4px; background: rgba(16, 185, 129, 0.08); border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                Queued
+              </div>
+
+              <!-- Processing State Flow Strip (Step 6A Section 25) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 10px; font-family: var(--font-mono); color: var(--text-dim); padding: 4px 6px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                <span id="stepUploaded" class="proc-step active">UPLOADED</span>
+                <span>&rarr;</span>
+                <span id="stepReady" class="proc-step active">READY</span>
+                <span>&rarr;</span>
+                <span id="stepProcessing" class="proc-step">PROCESSING</span>
+                <span>&rarr;</span>
+                <span id="stepComplete" class="proc-step">COMPLETE</span>
+              </div>
+            </div>
+
+            <!-- Feature & Confidence Filter Controls (Step 6A Section 23) -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Filter Overlays</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <div>
+                  <label style="font-size: 10px; color: var(--text-dim); display: block; margin-bottom: 2px;">Feature Type</label>
+                  <select id="selFilterFeatureType" style="width: 100%; font-size: 11px; padding: 3px 6px; background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-primary); border-radius: 4px;">
+                    <option value="all">All Types</option>
+                    <option value="road">Roads</option>
+                    <option value="building">Buildings</option>
+                    <option value="field">Fields</option>
+                    <option value="wall">Walls</option>
+                    <option value="fence">Fences</option>
+                    <option value="vegetation">Vegetation</option>
+                    <option value="water">Water</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 10px; color: var(--text-dim); display: block; margin-bottom: 2px;">Confidence</label>
+                  <select id="selFilterConfidence" style="width: 100%; font-size: 11px; padding: 3px 6px; background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-primary); border-radius: 4px;">
+                    <option value="all">All Levels</option>
+                    <option value="high">High (≥80%)</option>
+                    <option value="medium">Medium (60-79%)</option>
+                    <option value="low">Low (40-59%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detected Features Section -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="layer-section-title" style="margin: 0;">Detected Features</span>
+                <span class="pm-status-tag tag-emerald" id="badgeFeatureTotal">0 Features</span>
+              </div>
+
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 11px; margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: var(--accent-emerald); font-weight: 700;" id="badgeAiMode">ML Detection Engine</span>
+                  <span style="font-size: 10px; font-family: var(--font-mono); color: var(--text-dim);" id="lblAiExecTime">-</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px;">
+                  <span style="color: var(--text-muted); font-size: 10px;" id="lblAiModelName">YOLOv8n-seg + Aerial CV</span>
+                  <span style="font-size: 9px; font-family: var(--font-mono); color: var(--accent-emerald);" id="lblAiProviderTag">LOCAL INFERENCE</span>
+                </div>
+              </div>
+
+              <!-- Feature Layer Toggles with Honest Provenance Tags -->
+              <div class="layer-row">
+                <label class="layer-info" for="chkFeatBuildings">
+                  <span class="layer-dot" style="background: #06b6d4;"></span>
+                  <div>
+                    <span style="font-weight: 600; display: block;">Building Footprints</span>
+                    <span style="font-size: 9px; color: var(--accent-emerald); font-family: var(--font-mono); text-transform: uppercase; font-weight: 700;">ML Detection</span>
+                  </div>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; font-family: var(--font-mono); color: #06b6d4;" id="lblConfBuildings">-</span>
+                  <label class="switch"><input type="checkbox" id="chkFeatBuildings" checked><span class="slider"></span></label>
+                </div>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="chkFeatRoads">
+                  <span class="layer-dot" style="background: #f59e0b;"></span>
+                  <div>
+                    <span style="font-weight: 600; display: block;">Roads &amp; Lanes</span>
+                    <span style="font-size: 9px; color: #f59e0b; font-family: var(--font-mono); text-transform: uppercase;">CV-derived Evidence</span>
+                  </div>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; font-family: var(--font-mono); color: #f59e0b;" id="lblConfRoads">-</span>
+                  <label class="switch"><input type="checkbox" id="chkFeatRoads" checked><span class="slider"></span></label>
+                </div>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="chkFeatWalls">
+                  <span class="layer-dot" style="background: #cbd5e1;"></span>
+                  <div>
+                    <span style="font-weight: 600; display: block;">Stone Walls</span>
+                    <span style="font-size: 9px; color: #94a3b8; font-family: var(--font-mono); text-transform: uppercase;">CV-derived Evidence</span>
+                  </div>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; font-family: var(--font-mono); color: #cbd5e1;" id="lblConfWalls">-</span>
+                  <label class="switch"><input type="checkbox" id="chkFeatWalls" checked><span class="slider"></span></label>
+                </div>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="chkFeatFences">
+                  <span class="layer-dot" style="background: #ec4899;"></span>
+                  <div>
+                    <span style="font-weight: 600; display: block;">Fences</span>
+                    <span style="font-size: 9px; color: #ec4899; font-family: var(--font-mono); text-transform: uppercase;">CV-derived Evidence</span>
+                  </div>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; font-family: var(--font-mono); color: #ec4899;" id="lblConfFences">-</span>
+                  <label class="switch"><input type="checkbox" id="chkFeatFences" checked><span class="slider"></span></label>
+                </div>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="chkFeatFieldEdges">
+                  <span class="layer-dot" style="background: #84cc16;"></span>
+                  <div>
+                    <span style="font-weight: 600; display: block;">Field Edges</span>
+                    <span style="font-size: 9px; color: #84cc16; font-family: var(--font-mono); text-transform: uppercase;">CV-derived Evidence</span>
+                  </div>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; font-family: var(--font-mono); color: #84cc16;" id="lblConfFieldEdges">-</span>
+                  <label class="switch"><input type="checkbox" id="chkFeatFieldEdges" checked><span class="slider"></span></label>
+                </div>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="chkFeatVegetation">
+                  <span class="layer-dot" style="background: #10b981;"></span>
+                  <div>
+                    <span style="font-weight: 600; display: block;">Vegetation Canopy</span>
+                    <span style="font-size: 9px; color: #10b981; font-family: var(--font-mono); text-transform: uppercase;">CV-derived Evidence</span>
+                  </div>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; font-family: var(--font-mono); color: #10b981;" id="lblConfVegetation">-</span>
+                  <label class="switch"><input type="checkbox" id="chkFeatVegetation" checked><span class="slider"></span></label>
+                </div>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="chkFeatWater">
+                  <span class="layer-dot" style="background: #38bdf8;"></span>
+                  <div>
+                    <span style="font-weight: 600; display: block;">Water (Bodies &amp; Canals)</span>
+                    <span style="font-size: 9px; color: #38bdf8; font-family: var(--font-mono); text-transform: uppercase;">CV-derived Evidence</span>
+                  </div>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; font-family: var(--font-mono); color: #38bdf8;" id="lblConfWater">-</span>
+                  <label class="switch"><input type="checkbox" id="chkFeatWater" checked><span class="slider"></span></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detection Opacity Slider (Step 6B Requirement 16) -->
+            <div style="margin: 10px 0 6px 0; padding: 10px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Detection Opacity</span>
+                <span style="font-size: 11px; font-family: var(--font-mono); color: var(--accent-emerald);" id="lblDetectionOpacityVal">40%</span>
+              </div>
+              <input type="range" id="rngDetectionOpacity" min="10" max="100" value="40" style="width: 100%; accent-color: var(--accent-emerald); cursor: pointer;">
+            </div>
+
+            <!-- Developer Debug Mode Toggle (Step 6B Requirement 24 & Step 6C Section 14) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <button id="btnToggleDebugMode" class="btn-pm btn-pm-ghost" style="font-size: 10px; padding: 4px 8px; color: var(--text-muted); width: 100%; justify-content: center;" title="Inspect AI Pipeline Stages & Rejections">
+                🛠️ Developer Debug Mode &amp; Audit
+              </button>
+            </div>
+
+            <button class="btn-pm btn-pm-primary" id="btnProceedToReasoning" style="width: 100%; justify-content: center; margin-top: 4px;">
+              Spatial Reasoning &rarr;
+            </button>
+          </div>
+        </aside>
+
+        <main class="ws-map-center" style="display: flex; flex-direction: column; position: relative;">
+          <!-- Developer Debug Drawer / Panel (Step 6C Requirement 14) -->
+          <!-- Diagnostic Mode Panel (Step 6B Final Requirement 8) -->
+          <div id="debugPipelineModal" style="display: none; position: absolute; top: 50px; right: 24px; z-index: 650; width: 440px; max-height: 85vh; overflow-y: auto; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(18px); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.75); color: var(--text-primary);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 14px;">🔬</span>
+                <span style="font-size: 13px; font-weight: 700; color: #fff;">Diagnostic Mode &mdash; Feature Quality Audit</span>
+              </div>
+              <button id="btnCloseDebugPipelineModal" style="background: transparent; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer;">✕</button>
+            </div>
+
+            <!-- Top Level Candidate Summary Cards (Step 6B Req 8) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+              <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 9px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">Raw Candidates</div>
+                <div style="font-size: 18px; font-weight: 700; font-family: var(--font-mono); color: #fff; margin-top: 2px;" id="dbgRawCandidatesCount">-</div>
+              </div>
+              <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 9px; text-transform: uppercase; color: #34d399; font-weight: 600; letter-spacing: 0.5px;">Accepted</div>
+                <div style="font-size: 18px; font-weight: 700; font-family: var(--font-mono); color: #10b981; margin-top: 2px;" id="dbgAcceptedCount">-</div>
+              </div>
+              <div style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.35); border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 9px; text-transform: uppercase; color: #fb7185; font-weight: 600; letter-spacing: 0.5px;">Rejected</div>
+                <div style="font-size: 18px; font-weight: 700; font-family: var(--font-mono); color: #f43f5e; margin-top: 2px;" id="dbgRejectedTotalCount">-</div>
+              </div>
+            </div>
+
+            <!-- Per-Class Detection Diagnostic Summary (Step 6B/C Req 13) -->
+            <div style="margin-bottom: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 4px;">
+                <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #38bdf8; letter-spacing: 0.5px;">Class Diagnostic Summary</span>
+                <span style="font-size: 9px; color: var(--text-dim); font-family: var(--font-mono);">Raw &rarr; Accepted &rarr; Rejected</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+                <!-- Buildings -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #06b6d4; margin-right: 4px;">🏠</span>Buildings</span>
+                  <span style="font-family: var(--font-mono); font-size: 10px;">
+                    <span id="dbgClassRaw_buildings" style="color: #94a3b8;">0</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassAcc_buildings" style="color: #10b981; font-weight: 700;">0 accepted</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassRej_buildings" style="color: #fb7185;">0 rejected</span>
+                  </span>
+                </div>
+                <!-- Roads -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #f59e0b; margin-right: 4px;">🛣️</span>Roads</span>
+                  <span style="font-family: var(--font-mono); font-size: 10px;">
+                    <span id="dbgClassRaw_roads" style="color: #94a3b8;">0</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassAcc_roads" style="color: #10b981; font-weight: 700;">0 accepted</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassRej_roads" style="color: #fb7185;">0 rejected</span>
+                  </span>
+                </div>
+                <!-- Fields -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #84cc16; margin-right: 4px;">🌾</span>Fields</span>
+                  <span style="font-family: var(--font-mono); font-size: 10px;">
+                    <span id="dbgClassRaw_fields" style="color: #94a3b8;">0</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassAcc_fields" style="color: #10b981; font-weight: 700;">0 accepted</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassRej_fields" style="color: #fb7185;">0 rejected</span>
+                  </span>
+                </div>
+                <!-- Walls -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #cbd5e1; margin-right: 4px;">🧱</span>Walls</span>
+                  <span style="font-family: var(--font-mono); font-size: 10px;">
+                    <span id="dbgClassRaw_walls" style="color: #94a3b8;">0</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassAcc_walls" style="color: #10b981; font-weight: 700;">0 accepted</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassRej_walls" style="color: #fb7185;">0 rejected</span>
+                  </span>
+                </div>
+                <!-- Fences -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #93c5fd; margin-right: 4px;">⛓️</span>Fences</span>
+                  <span style="font-family: var(--font-mono); font-size: 10px;">
+                    <span id="dbgClassRaw_fences" style="color: #94a3b8;">0</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassAcc_fences" style="color: #10b981; font-weight: 700;">0 accepted</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassRej_fences" style="color: #fb7185;">0 rejected</span>
+                  </span>
+                </div>
+                <!-- Vegetation -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #10b981; margin-right: 4px;">🌳</span>Vegetation</span>
+                  <span style="font-family: var(--font-mono); font-size: 10px;">
+                    <span id="dbgClassRaw_vegetation" style="color: #94a3b8;">0</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassAcc_vegetation" style="color: #10b981; font-weight: 700;">0 accepted</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassRej_vegetation" style="color: #fb7185;">0 rejected</span>
+                  </span>
+                </div>
+                <!-- Water -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #38bdf8; margin-right: 4px;">💧</span>Water</span>
+                  <span style="font-family: var(--font-mono); font-size: 10px;">
+                    <span id="dbgClassRaw_water" style="color: #94a3b8;">0</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassAcc_water" style="color: #10b981; font-weight: 700;">0 accepted</span>
+                    <span style="color: var(--text-dim); margin: 0 3px;">&rarr;</span>
+                    <span id="dbgClassRej_water" style="color: #fb7185;">0 rejected</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Standard 9 Rejection Reasons Table (Step 6B Req 8) -->
+            <div style="margin-bottom: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 4px;">
+                <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #fb7185; letter-spacing: 0.5px;">Rejection Reasons (Real Counts)</span>
+                <span style="font-size: 9px; color: var(--text-dim);">Strict Quality Gate</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #38bdf8; margin-right: 4px;">●</span>Water crossing</span>
+                  <span id="dbgRejWaterCrossing" style="font-family: var(--font-mono); font-weight: 700; color: #38bdf8;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #f59e0b; margin-right: 4px;">●</span>Unsupported line</span>
+                  <span id="dbgRejUnsupportedLine" style="font-family: var(--font-mono); font-weight: 700; color: #f59e0b;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #fb923c; margin-right: 4px;">●</span>Image-edge artifact</span>
+                  <span id="dbgRejImageEdgeArtifact" style="font-family: var(--font-mono); font-weight: 700; color: #fb923c;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #a78bfa; margin-right: 4px;">●</span>Insufficient continuity</span>
+                  <span id="dbgRejInsufficientContinuity" style="font-family: var(--font-mono); font-weight: 700; color: #a78bfa;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #f43f5e; margin-right: 4px;">●</span>Invalid geometry</span>
+                  <span id="dbgRejInvalidGeometry" style="font-family: var(--font-mono); font-weight: 700; color: #f43f5e;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #94a3b8; margin-right: 4px;">●</span>Duplicate geometry</span>
+                  <span id="dbgRejDuplicateGeometry" style="font-family: var(--font-mono); font-weight: 700; color: #94a3b8;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #e2e8f0; margin-right: 4px;">●</span>Weak evidence</span>
+                  <span id="dbgRejWeakEvidence" style="font-family: var(--font-mono); font-weight: 700; color: #e2e8f0;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #ef4444; margin-right: 4px;">●</span>Excessive size</span>
+                  <span id="dbgRejExcessiveSize" style="font-family: var(--font-mono); font-weight: 700; color: #ef4444;">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                  <span style="color: var(--text-secondary);"><span style="color: #c084fc; margin-right: 4px;">●</span>Disconnected feature</span>
+                  <span id="dbgRejDisconnectedFeature" style="font-family: var(--font-mono); font-weight: 700; color: #c084fc;">0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed Rejections Sample Stream -->
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Sample Rejected Candidates</span>
+                <span style="font-size: 10px; font-family: var(--font-mono); color: #f87171;" id="dbgRejectedSummary">0 rejected</span>
+              </div>
+              <div id="dbgRejectedList" style="max-height: 160px; overflow-y: auto; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(248, 113, 113, 0.25); border-radius: 4px; padding: 6px; display: flex; flex-direction: column; gap: 4px; font-family: var(--font-mono); font-size: 10px;">
+                <span style="color: var(--text-muted); font-style: italic;">Run AI detection to inspect real diagnostic data.</span>
+              </div>
+            </div>
+
+            <!-- Pipeline Timings & Road Network -->
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 8px;">
+              <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 4px;">Pipeline Timings & Topology</span>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+                <span>ML Inference: <span id="dbgTimingMl" style="color: var(--text-primary);">-</span></span>
+                <span>CV Analysis: <span id="dbgTimingCv" style="color: var(--text-primary);">-</span></span>
+                <span>Road Segments: <span id="dbgRoadSegs" style="color: var(--text-primary);">-</span></span>
+                <span>Intersections: <span id="dbgRoadInters" style="color: var(--text-primary);">-</span></span>
+              </div>
+            </div>
+          </div>
+          <!-- Non-Georeferenced Image Preview Banner (Step 6A Section 16 & 33) -->
+          <div id="bannerImagePreviewMode" style="display: flex; align-items: center; justify-content: space-between; background: rgba(245, 158, 11, 0.12); border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding: 8px 16px; font-size: 12px; z-index: 500;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #f59e0b; font-weight: 600;">📐 Image-Space Detection:</span>
+              <span style="color: var(--text-secondary);">Image-space detection: this image does not contain verified geographic reference information. Preliminary feature detection &mdash; human verification required.</span>
+            </div>
+            <span class="pm-status-tag tag-emerald" id="tagDetectionSourceType" style="font-size: 10px; font-weight: 600;">Uploaded Drone Imagery</span>
+          </div>
+
+          <div id="detectionMap" style="flex: 1; width: 100%; height: 100%; background: #0b0f17;"></div>
+
+          <!-- Interactive Detection Feature Inspector Panel (Step 6A Section 22) -->
+          <div class="final-parcel-details-card" id="detectionFeatureDetailsPanel" style="display: none; position: absolute; bottom: 24px; right: 24px; z-index: 600; width: 340px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 14px; box-shadow: 0 12px 32px rgba(0,0,0,0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+              <div>
+                <span style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); text-transform: uppercase;" id="dfFeatureCategory">FEATURE INSPECTION</span>
+                <h4 style="margin: 2px 0 0 0; font-size: 14px; font-weight: 700; color: #fff;" id="dfFeatureName">Road Corridor 1</h4>
+              </div>
+              <button id="btnCloseDetectionFeatureCard" style="background: transparent; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer;">✕</button>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 10px;">
+              <span class="pm-status-tag tag-emerald" id="dfConfidenceTag">High Confidence (94%)</span>
+              <span class="pm-status-tag tag-blue" id="dfGeometryType">LineString</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 100px 1fr; gap: 6px; font-size: 11px; color: var(--text-secondary); margin-bottom: 10px; border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+              <span style="color: var(--text-muted);">Detection ID:</span>
+              <span style="font-family: var(--font-mono); word-break: break-all; color: var(--text-primary);" id="dfDetectionId">-</span>
+              <span style="color: var(--text-muted);">Provider:</span>
+              <span style="color: var(--accent-emerald); font-weight: 600;" id="dfProvider">ML Detection</span>
+              <span style="color: var(--text-muted);">Model / Method:</span>
+              <span style="color: var(--text-primary); font-size: 10px;" id="dfModel">YOLOv8n-seg</span>
+              <span style="color: var(--text-muted);">Source:</span>
+              <span style="color: var(--text-primary); font-size: 10px;" id="dfSource">Aerial Building Model</span>
+              <span style="color: var(--text-muted);">Imagery ID:</span>
+              <span style="font-family: var(--font-mono); word-break: break-all; color: var(--text-primary);" id="dfImageryId">-</span>
+              <span style="color: var(--text-muted);">Dimensions:</span>
+              <span style="color: var(--text-primary);" id="dfDimensions">-</span>
+              <span style="color: var(--text-muted);">Coord Mode:</span>
+              <span style="font-family: var(--font-mono); color: var(--text-primary);" id="dfCoordinateMode">Image Space</span>
+              <span style="color: var(--text-muted);">Status:</span>
+              <span style="color: var(--accent-emerald); font-weight: 600;" id="dfStatus">Preliminary Evidence</span>
+              <span style="color: var(--text-muted);">Created Time:</span>
+              <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);" id="dfCreatedAt">-</span>
+            </div>
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+              <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 4px;">Supporting Evidence</span>
+              <div id="dfEvidenceBadges" style="display: flex; flex-wrap: wrap; gap: 4px;">
+                <!-- dynamic evidence badges -->
+              </div>
+            </div>
+          </div>
+
+          <div class="legal-disclaimer-pill" style="max-width: 90%;">
+            <span>AI-generated preliminary feature detection. Results require human verification. Non-georeferenced imagery is displayed in image space. AI-derived parcel boundaries are not legal cadastral boundaries.</span>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <!-- 4. ROAD-BASED SPATIAL REASONING VIEW -->
+    <section class="pm-view-stage" id="viewReasoning">
+      <div class="workspace-layout">
+        <aside class="ws-sidebar" style="width: 320px;">
+          <div class="sidebar-header">
+            <span class="sidebar-title">Spatial Reasoning</span>
+            <span class="pm-status-tag tag-neutral" id="tagReasoningStatus">NOT_STARTED</span>
+          </div>
+
+          <div class="sidebar-content">
+            <!-- Progression Stepper (Requirement 17) -->
+            <div id="boxReasoningProgress" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; font-size: 11px;">
+              <span class="layer-section-title" style="margin-bottom: 6px;">Pipeline Progression</span>
+              <div id="reasoningStepText" style="color: var(--accent-emerald); font-weight: 600; margin-bottom: 6px;">Ready to Process</div>
+              <div style="background: var(--bg-surface); height: 4px; border-radius: 2px; overflow: hidden;">
+                <div id="reasoningProgressBar" style="width: 0%; height: 100%; background: var(--accent-emerald); transition: width 0.3s ease;"></div>
+              </div>
+            </div>
+
+            <!-- Layer Toggles (Requirement 18) -->
+            <div>
+              <span class="layer-section-title">Spatial Layers</span>
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+                <div class="layer-row">
+                  <label class="layer-info" for="srChkRoads">
+                    <span class="layer-dot" style="background: #f59e0b;"></span>
+                    <span>Roads (Lines)</span>
+                  </label>
+                  <label class="switch"><input type="checkbox" id="srChkRoads" checked><span class="slider"></span></label>
+                </div>
+                <div class="layer-row">
+                  <label class="layer-info" for="srChkBuildings">
+                    <span class="layer-dot" style="background: #06b6d4;"></span>
+                    <span>Buildings (Polygons)</span>
+                  </label>
+                  <label class="switch"><input type="checkbox" id="srChkBuildings" checked><span class="slider"></span></label>
+                </div>
+                <div class="layer-row">
+                  <label class="layer-info" for="srChkFields">
+                    <span class="layer-dot" style="background: #84cc16;"></span>
+                    <span>Fields (Translucent)</span>
+                  </label>
+                  <label class="switch"><input type="checkbox" id="srChkFields" checked><span class="slider"></span></label>
+                </div>
+                <div class="layer-row">
+                  <label class="layer-info" for="srChkWalls">
+                    <span class="layer-dot" style="background: #cbd5e1;"></span>
+                    <span>Walls (Thin lines)</span>
+                  </label>
+                  <label class="switch"><input type="checkbox" id="srChkWalls" checked><span class="slider"></span></label>
+                </div>
+                <div class="layer-row">
+                  <label class="layer-info" for="srChkFences">
+                    <span class="layer-dot" style="background: #ec4899;"></span>
+                    <span>Fences (Thin lines)</span>
+                  </label>
+                  <label class="switch"><input type="checkbox" id="srChkFences" checked><span class="slider"></span></label>
+                </div>
+                <div class="layer-row">
+                  <label class="layer-info" for="srChkWater">
+                    <span class="layer-dot" style="background: #0284c7;"></span>
+                    <span>Water (Exclusion mask)</span>
+                  </label>
+                  <label class="switch"><input type="checkbox" id="srChkWater" checked><span class="slider"></span></label>
+                </div>
+                <div class="layer-row">
+                  <label class="layer-info" for="srChkParcels">
+                    <span class="layer-dot" style="background: #8b5cf6;"></span>
+                    <span>Preliminary Parcels</span>
+                  </label>
+                  <label class="switch"><input type="checkbox" id="srChkParcels" checked><span class="slider"></span></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Spatial Reasoning Summary & Diagnostics (Requirement 16) -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; font-size: 11px;">
+              <span class="layer-section-title" style="margin-bottom: 6px; display: block; font-weight: 700; letter-spacing: 0.5px;">SPATIAL REASONING</span>
+              <div style="display: flex; flex-direction: column; gap: 5px; color: var(--text-secondary);">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Validated detections:</span>
+                  <strong id="srDiagValidatedDetections" style="font-family: var(--font-mono); color: var(--text-primary);">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Road network:</span>
+                  <strong id="srDiagRoadNetwork" style="font-family: var(--font-mono); color: var(--text-primary);">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Boundary evidence:</span>
+                  <strong id="srDiagBoundaryEvidence" style="font-family: var(--font-mono); color: var(--text-primary);">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Land blocks:</span>
+                  <strong id="srDiagLandBlocks" style="font-family: var(--font-mono); color: var(--text-primary);">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 4px;">
+                  <span>Candidate parcels:</span>
+                  <strong id="srDiagCandidateParcels" style="font-family: var(--font-mono); color: var(--text-primary);">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--accent-emerald);">Accepted parcels:</span>
+                  <strong id="srDiagAcceptedParcels" style="font-family: var(--font-mono); color: var(--accent-emerald);">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #f59e0b;">Needs review:</span>
+                  <strong id="srDiagNeedsReview" style="font-family: var(--font-mono); color: #f59e0b;">-</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #f43f5e;">Rejected parcels:</span>
+                  <strong id="srDiagRejectedParcels" style="font-family: var(--font-mono); color: #f43f5e;">-</strong>
+                </div>
+              </div>
+
+              <!-- Real Rejection Reasons Counter -->
+              <div style="margin-top: 8px; border-top: 1px solid var(--border-subtle); padding-top: 6px;">
+                <span style="font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Rejection Reasons</span>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; font-size: 10px; color: var(--text-secondary);">
+                  <span>Water overlap:</span><strong id="srRejWaterOverlap" style="font-family: var(--font-mono); color: var(--text-primary);">0</strong>
+                  <span>Invalid geometry:</span><strong id="srRejInvalidGeom" style="font-family: var(--font-mono); color: var(--text-primary);">0</strong>
+                  <span>Insufficient evidence:</span><strong id="srRejInsuffEvidence" style="font-family: var(--font-mono); color: var(--text-primary);">0</strong>
+                  <span>Unsupported edge:</span><strong id="srRejUnsupportedEdge" style="font-family: var(--font-mono); color: var(--text-primary);">0</strong>
+                  <span>Huge polygon:</span><strong id="srRejHugePolygon" style="font-family: var(--font-mono); color: var(--text-primary);">0</strong>
+                  <span>Duplicate:</span><strong id="srRejDuplicate" style="font-family: var(--font-mono); color: var(--text-primary);">0</strong>
+                  <span>Disconnected geometry:</span><strong id="srRejDisconnectedGeom" style="font-family: var(--font-mono); color: var(--text-primary);">0</strong>
+                  <span>Weak boundary evidence:</span><strong id="srRejWeakBoundary" style="font-family: var(--font-mono); color: var(--text-primary);">0</strong>
+                </div>
+              </div>
+            </div>
+
+            <div id="srWarningBox" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 8px; font-size: 11px; color: #f59e0b;">
+              <strong>Notice:</strong> <span id="srWarningText">Insufficient visual evidence for reliable parcel generation.</span>
+            </div>
+
+            <button class="btn-pm btn-pm-secondary" id="btnRunSpatialReasoning" style="width: 100%; justify-content: center; margin-top: 4px;">
+              ⚡ Run Spatial Reasoning
+            </button>
+
+            <button class="btn-pm btn-pm-primary" id="btnProceedToQuality" style="width: 100%; justify-content: center;">
+              Continue to GIS Quality &rarr;
+            </button>
+          </div>
+        </aside>
+
+        <main class="ws-map-center" style="display: flex; flex-direction: column; position: relative;">
+          <!-- Non-Georeferenced Image Preview Banner (Requirement 8 & 12) -->
+          <div id="bannerReasoningPreviewMode" style="display: flex; align-items: center; justify-content: space-between; background: rgba(245, 158, 11, 0.12); border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding: 8px 16px; font-size: 12px; z-index: 500;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #f59e0b; font-weight: 600;">📐 Image-Space Preliminary Parcels:</span>
+              <span style="color: var(--text-secondary);">Area unavailable until imagery is georeferenced. Parcels mapped in image pixel coordinates.</span>
+            </div>
+            <span class="pm-status-tag tag-amber" id="tagReasoningCoordinateMode" style="font-size: 10px; font-weight: 600;">Image Coordinates</span>
+          </div>
+
+          <div id="reasoningMap" style="flex: 1; width: 100%; height: 100%; background: #0b0f17;"></div>
+          <div class="legal-disclaimer-pill">
+            <span>Preliminary AI parcel boundaries inferred from road network and visible surface boundaries. Not legally authoritative cadastral title.</span>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <!-- 5. PRELIMINARY PARCEL GENERATION VIEW -->
+    <section class="pm-view-stage" id="viewParcels">
+      <div class="workspace-layout">
+        <aside class="ws-sidebar">
+          <div class="sidebar-header">
+            <span class="sidebar-title">Generated Parcels</span>
+            <span class="pm-status-tag tag-emerald" id="lblGenParcelCount">24 Parcels</span>
+          </div>
+
+          <div class="sidebar-content">
+            <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px;">
+              <span class="layer-section-title">Confidence Breakdown</span>
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; margin-top: 6px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--accent-emerald);">High (90–100%)</span>
+                  <strong id="cntHighConf">15</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--accent-amber);">Medium (70–89%)</span>
+                  <strong id="cntMedConf">6</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--accent-rose);">Low (&lt;70%)</span>
+                  <strong id="cntLowConf">2</strong>
+                </div>
+              </div>
+            </div>
+
+            <div style="background: var(--bg-subtle); border: 1px solid var(--border-subtle); padding: 10px; border-radius: var(--radius-sm); font-size: 11px; color: var(--text-secondary);">
+              <strong style="color: var(--accent-amber);">Review Required:</strong> 2 low-confidence parcels flagged for surveyor field inspection due to tree shadow.
+            </div>
+
+            <button class="btn-pm btn-pm-primary" id="btnOpenVerificationWorkspace" style="width: 100%; justify-content: center;">
+              Open Verification Workspace &rarr;
+            </button>
+          </div>
+        </aside>
+
+        <main class="ws-map-center">
+          <div id="parcelsMap"></div>
+        </main>
+      </div>
+    </section>
+
+    <!-- 6. HUMAN VERIFICATION WORKSPACE (CORE INTERACTIVE WORKSPACE - Requirements 1-15) -->
+    <section class="pm-view-stage" id="viewVerify">
+      <!-- Verification Header / Summary Strip (Requirements 1, 9, 10, 12) -->
+      <div class="verify-top-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-medium); z-index: 20; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div>
+            <span style="font-weight: 700; font-size: 13px; color: #fff; letter-spacing: 0.3px;">Human Verification Workspace</span>
+            <span style="font-size: 10px; color: var(--text-dim); margin-left: 6px; font-family: var(--font-mono);" id="lblVerifyCurrentProjectImg">Project Active</span>
+          </div>
+          <!-- Coordinate Mode Pill / Warning (Requirement 12) -->
+          <div class="pm-status-tag tag-blue" id="verifyCoordinateNotice" style="font-size: 10px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+            <span>📐 Image-space preliminary parcels</span>
+          </div>
+        </div>
+
+        <!-- Real Summary Counts (Requirement 9) -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="verify-stat-pill" style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 3px 8px; font-size: 11px; display: flex; gap: 6px; align-items: center;">
+            <span style="color: var(--text-muted); font-size: 10px; text-transform: uppercase;">Total:</span>
+            <strong id="vsumTotal" style="color: #fff; font-family: var(--font-mono);">0</strong>
+          </div>
+          <div class="verify-stat-pill" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 4px; padding: 3px 8px; font-size: 11px; display: flex; gap: 6px; align-items: center;">
+            <span style="color: #34d399; font-size: 10px; text-transform: uppercase;">Accepted:</span>
+            <strong id="vsumAccepted" style="color: #10b981; font-family: var(--font-mono);">0</strong>
+          </div>
+          <div class="verify-stat-pill" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 4px; padding: 3px 8px; font-size: 11px; display: flex; gap: 6px; align-items: center;">
+            <span style="color: #fbbf24; font-size: 10px; text-transform: uppercase;">Needs Review:</span>
+            <strong id="vsumNeedsReview" style="color: #f59e0b; font-family: var(--font-mono);">0</strong>
+          </div>
+          <div class="verify-stat-pill" style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 4px; padding: 3px 8px; font-size: 11px; display: flex; gap: 6px; align-items: center;">
+            <span style="color: #fb7185; font-size: 10px; text-transform: uppercase;">Rejected:</span>
+            <strong id="vsumRejected" style="color: #f43f5e; font-family: var(--font-mono);">0</strong>
+          </div>
+        </div>
+
+        <!-- Finalization Action (Requirement 10) -->
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-pm btn-pm-primary" id="btnCompleteVerification" style="padding: 4px 14px; font-size: 11px; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+            ✓ Complete Verification &rarr;
+          </button>
+        </div>
+      </div>
+
+      <div class="workspace-layout" style="flex: 1; min-height: 0;">
+        <!-- 6.1 LEFT COLUMN: Parcel List & Layer Controls (Requirement 8 & 9) -->
+        <aside class="ws-sidebar" style="width: 320px; display: flex; flex-direction: column;">
+          <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px;">
+            <div style="display: flex; gap: 4px; background: var(--bg-subtle); padding: 2px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <button class="filter-pill active" id="tabVerifyParcelsList" style="padding: 3px 10px; font-size: 11px;">Parcels</button>
+              <button class="filter-pill" id="tabVerifyLayersList" style="padding: 3px 10px; font-size: 11px;">Layers</button>
+            </div>
+            <span class="pm-status-tag tag-emerald" id="lblVerifyParcelCount">0 Parcels</span>
+          </div>
+
+          <!-- SUBPANEL 1: PARCELS LIST WITH FILTERS (Requirement 9) -->
+          <div id="panelVerifyParcels" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
+            <!-- Filter Pills -->
+            <div class="parcel-filter-pills" id="verifyFilterPills" style="padding: 6px 10px; border-bottom: 1px solid var(--border-subtle); display: flex; gap: 4px; flex-wrap: wrap; background: var(--bg-card);">
+              <button class="filter-pill active" data-filter="all">All</button>
+              <button class="filter-pill" data-filter="pending">Pending</button>
+              <button class="filter-pill" data-filter="needs_review">Needs Review</button>
+              <button class="filter-pill" data-filter="accepted">Accepted</button>
+              <button class="filter-pill" data-filter="rejected">Rejected</button>
+              <button class="filter-pill" data-filter="low_conf">Low Conf</button>
+            </div>
+
+            <!-- Parcel ID Search -->
+            <div style="padding: 8px 10px; border-bottom: 1px solid var(--border-subtle);">
+              <input type="text" class="input-control" id="inputFilterParcelId" placeholder="🔍 Search parcel ID (e.g. PM-0001)..." style="font-size: 11px; padding: 5px 8px;">
+            </div>
+
+            <!-- Scrollable Parcel Cards List -->
+            <div class="sidebar-content" id="containerVerifyParcelList" style="flex: 1; overflow-y: auto; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="color: var(--text-dim); font-size: 11px; text-align: center; padding: 20px;">Loading parcels...</div>
+            </div>
+          </div>
+
+          <!-- SUBPANEL 2: MAP LAYERS -->
+          <div id="panelVerifyLayers" class="sidebar-content" style="display: none; flex: 1; overflow-y: auto;">
+            <div>
+              <span class="layer-section-title">Basemap &amp; Aerial</span>
+              <div class="layer-row">
+                <label class="layer-info" for="vchkDroneImagery">
+                  <span class="layer-dot" style="background: var(--accent-emerald);"></span>
+                  <span>Drone Orthomosaic (UAV)</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="vchkDroneImagery" checked><span class="slider"></span></label>
+              </div>
+              <div class="layer-row">
+                <label class="layer-info" for="vchkSatellite">
+                  <span class="layer-dot" style="background: #64748b;"></span>
+                  <span>Satellite Basemap</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="vchkSatellite" checked><span class="slider"></span></label>
+              </div>
+            </div>
+
+            <div>
+              <span class="layer-section-title">AI Spatial Evidence</span>
+              <div class="layer-row">
+                <label class="layer-info" for="vchkRoads">
+                  <span class="layer-dot" style="background: #f59e0b;"></span>
+                  <span>Roads &amp; Highways</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="vchkRoads" checked><span class="slider"></span></label>
+              </div>
+              <div class="layer-row">
+                <label class="layer-info" for="vchkBuildings">
+                  <span class="layer-dot" style="background: #06b6d4;"></span>
+                  <span>Building Footprints</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="vchkBuildings" checked><span class="slider"></span></label>
+              </div>
+              <div class="layer-row">
+                <label class="layer-info" for="vchkBoundaries">
+                  <span class="layer-dot" style="background: #ec4899;"></span>
+                  <span>Walls, Fences, Edges</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="vchkBoundaries" checked><span class="slider"></span></label>
+              </div>
+            </div>
+
+            <div>
+              <span class="layer-section-title">Boundaries</span>
+              <div class="layer-row">
+                <label class="layer-info" for="vchkAiParcels">
+                  <span class="layer-dot" style="background: #3b82f6;"></span>
+                  <span>AI Generated Boundaries</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="vchkAiParcels" checked><span class="slider"></span></label>
+              </div>
+              <div class="layer-row">
+                <label class="layer-info" for="vchkVerifiedParcels">
+                  <span class="layer-dot" style="background: var(--accent-emerald);"></span>
+                  <span>Verified Boundaries</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="vchkVerifiedParcels" checked><span class="slider"></span></label>
+              </div>
+              <div class="layer-row">
+                <label class="layer-info" for="vchkUncertainty">
+                  <span class="layer-dot" style="background: #f43f5e;"></span>
+                  <span>Review Flags &amp; Gaps</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="vchkUncertainty" checked><span class="slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 6.2 CENTER COLUMN: Interactive GIS Map & Minimal Toolbar -->
+        <main class="ws-map-center">
+          <!-- Minimalist Floating Toolbar (Felt Style) -->
+          <div class="map-floating-toolbar">
+            <button class="tool-action-btn active" id="toolSelectParcel" title="Select Parcel">
+              Select
+            </button>
+            <button class="tool-action-btn" id="toolEditVertices" title="Edit Boundary Vertices (Move, Add, Delete)">
+              Edit Vertices
+            </button>
+            <button class="tool-action-btn" id="toolSplitPolygon" title="Split Polygon across line">
+              Split
+            </button>
+            <button class="tool-action-btn" id="toolMergePolygons" title="Merge Adjacent Parcels">
+              Merge
+            </button>
+            <span style="width: 1px; height: 16px; background: var(--border-subtle); margin: 0 4px;"></span>
+            <button class="tool-action-btn" id="toolUndo" title="Undo (Ctrl+Z)">
+              Undo
+            </button>
+            <button class="tool-action-btn" id="toolRedo" title="Redo (Ctrl+Y)">
+              Redo
+            </button>
+            <button class="btn-pm btn-pm-primary" id="btnSaveParcelEdits" style="padding: 4px 12px; font-size: 11px;">
+              💾 Save
+            </button>
+          </div>
+
+          <!-- Centered Minimalist Search -->
+          <div class="map-floating-search">
+            <span class="search-icon-pos">🔍</span>
+            <input type="text" class="search-input-pill" id="wsQuickSearch" placeholder="Search Parcel ID (e.g. PM-0001)...">
+          </div>
+
+          <!-- Leaflet GIS Map Canvas -->
+          <div id="wsGisMap"></div>
+
+          <!-- Authoritative Legal Disclaimer (Requirement 12 & 23) -->
+          <div class="legal-disclaimer-pill">
+            <span>Image-space preliminary parcels &bull; AI-assisted parcel boundaries require human verification and are not legal cadastral boundaries.</span>
+          </div>
+        </main>
+
+        <!-- 6.3 RIGHT COLUMN: Selected Parcel Details & Actions (Requirements 2, 3, 4, 5, 6, 7, 8) -->
+        <aside class="ws-drawer">
+          <div class="drawer-header">
+            <div>
+              <div class="drawer-parcel-id">
+                <span id="drwParcelId">P-001</span>
+                <span class="pm-status-tag tag-emerald" id="drwStatusPill">PRELIMINARY</span>
+              </div>
+              <div style="font-size: 11px; color: var(--text-dim);" id="drwProjectId">Project: Wagholi East</div>
+              <div style="font-size: 11px; color: var(--accent-emerald); margin-top: 2px;" id="drwCreatedFromImagery">Imagery: UAV Orthomosaic</div>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 12px; font-family: var(--font-mono); color: var(--accent-emerald); font-weight: 700;" id="drwConfidenceBadge">94%</span>
+              <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Confidence</div>
+            </div>
+          </div>
+
+          <div class="drawer-content">
+            <!-- Metadata Strip: Source & Quality Status (Requirement 2) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+              <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 8px;">
+                <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block;">Source</span>
+                <strong style="font-size: 11px; color: #38bdf8;" id="drwSource">Spatial Reasoning</strong>
+              </div>
+              <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 8px;">
+                <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block;">Quality Status</span>
+                <strong style="font-size: 11px; color: #10b981;" id="drwQualityStatus">Topology Valid</strong>
+              </div>
+            </div>
+
+            <!-- Minimal Area Diff Grid (Only if georeferenced) -->
+            <div class="area-diff-grid">
+              <div class="area-cell">
+                <span class="area-cell-label">AI Calculated Area</span>
+                <span class="area-cell-val" id="drwAiArea">1.84 ha</span>
+                <span class="area-cell-sub" id="drwAiAreaSub">18,400 m²</span>
+              </div>
+              <div class="area-cell" style="border-left: 1px solid var(--border-subtle); padding-left: 10px;">
+                <span class="area-cell-label" style="color: var(--accent-emerald);">Verified Area</span>
+                <span class="area-cell-val" style="color: var(--accent-emerald);" id="drwVerifiedArea">1.84 ha</span>
+                <span class="area-cell-sub" id="drwVerifiedAreaSub">18,400 m²</span>
+              </div>
+            </div>
+
+            <!-- Supporting Evidence Tags (Requirement 2 & 10: Road, Field Edge, Building, Fence, Wall) -->
+            <div>
+              <span class="layer-section-title">Supporting Features</span>
+              <div id="drwSupportingFeatures" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Surveyor Notes -->
+            <div class="form-group" style="margin-top: 8px;">
+              <label class="form-label">Surveyor Verification Remarks</label>
+              <textarea class="input-control" id="drwReviewComments" rows="2" placeholder="Field remarks or boundary alignment notes..."></textarea>
+            </div>
+
+            <!-- Primary Decision & Action Buttons (Requirements 3, 4, 5, 6, 7) -->
+            <div class="ws-action-bar" style="display: flex; flex-direction: column; gap: 6px;">
+              <!-- Verification Decision Row -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
+                <button class="btn-action btn-verify-action" id="btnActionAccept" title="Accept Parcel (status = ACCEPTED)">
+                  ✓ Accept
+                </button>
+                <button class="btn-action" id="btnActionReview" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);" title="Needs Review (status = NEEDS_REVIEW)">
+                  ⚠ Review
+                </button>
+                <button class="btn-action btn-reject-action" id="btnActionReject" title="Reject Parcel (status = REJECTED)">
+                  ✕ Reject
+                </button>
+              </div>
+
+              <!-- Geometric Editing Row -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
+                <button class="btn-action btn-edit-action" id="btnActionEdit" title="Edit Boundary Vertices directly on map">
+                  ✎ Edit
+                </button>
+                <button class="btn-action" id="btnActionSplit" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);" title="Split Parcel into Two Polygons">
+                  ✂ Split
+                </button>
+                <button class="btn-action" id="btnActionMerge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);" title="Merge Adjacent Parcels">
+                  ⧉ Merge
+                </button>
+              </div>
+
+              <button class="btn-action" id="btnViewParcelHistory" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-subtle); justify-content: center; width: 100%;" title="View Version History Timeline">
+                📜 View Version History
+              </button>
+            </div>
+
+            <!-- Audit History Timeline (Requirement 8) -->
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="layer-section-title" style="margin: 0;">Change History</span>
+                <button id="btnQuickViewHistory" style="background: transparent; border: none; font-size: 11px; color: var(--accent-emerald); cursor: pointer;">Full History &rarr;</button>
+              </div>
+              <div class="timeline-list" id="drwTimelineList">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+
+    <!-- 7. GIS QUALITY CONTROL VIEW (Requirements 1-9, 18, 19, 22, 23, 24) -->
+    <section class="pm-view-stage" id="viewQuality">
+      <div class="dashboard-scroll">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2 style="font-size: 1.35rem; font-weight: 600; color: var(--text-primary);">GIS Quality Control &amp; Topology Audit</h2>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">
+              Automated geometry validation, gap analysis, overlap detection, and water exclusion verification from actual preliminary parcels.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-pm btn-pm-secondary" id="btnReviewQcIssuesTop">
+              ⚡ Review Issues
+            </button>
+            <button class="btn-pm btn-pm-primary" id="btnProceedToVerification">
+              Review Parcels &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- Failure / Empty State Notice (Requirement 23) -->
+        <div id="qcEmptyStateBox" style="display: none; background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.35); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 16px; color: #fb7185;">
+          <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;" id="qcEmptyStateTitle">No preliminary parcels available for quality review.</div>
+          <div style="font-size: 11px; color: var(--text-secondary);" id="qcEmptyStateDesc">Run Spatial Reasoning on uploaded drone imagery first to generate preliminary parcels.</div>
+        </div>
+
+        <!-- Metric Stat Strip (Requirement 2: All 8 real metrics) -->
+        <div class="stat-strip-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">TOTAL PARCELS</span>
+            <span class="stat-strip-val" id="qcTotalParcels">0</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">VALID PARCELS</span>
+            <span class="stat-strip-val" style="color: var(--accent-emerald);" id="qcValidPolygons">0</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">INVALID GEOMETRIES</span>
+            <span class="stat-strip-val" style="color: var(--accent-rose);" id="qcInvalidGeometries">0</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">OVERLAPPING PARCELS</span>
+            <span class="stat-strip-val" style="color: var(--accent-rose);" id="qcOverlaps">0</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">POSSIBLE GAPS</span>
+            <span class="stat-strip-val" style="color: var(--accent-amber);" id="qcGaps">0</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">LOW CONFIDENCE</span>
+            <span class="stat-strip-val" style="color: #f43f5e;" id="qcLowConfidence">0</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">SLIVER / SMALL PARCELS</span>
+            <span class="stat-strip-val" style="color: var(--accent-rose);" id="qcSlivers">0</span>
+          </div>
+
+          <div class="stat-strip-card">
+            <span class="stat-strip-label">READY FOR REVIEW</span>
+            <span class="stat-strip-val" style="color: var(--accent-emerald);" id="qcReadyForReview">0</span>
+          </div>
+        </div>
+
+        <!-- Quality Summary Card (Requirement 18) -->
+        <div class="qc-summary-rail" style="display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 16px; align-items: center;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 8px;">GIS QUALITY</span>
+          <span class="qc-pill-badge" style="color: var(--accent-emerald);">Valid Geometry: <strong id="qcPillValid">0</strong></span>
+          <span class="qc-pill-badge" style="color: var(--accent-rose);">Overlaps: <strong id="qcPillOverlaps">0</strong></span>
+          <span class="qc-pill-badge" style="color: var(--accent-amber);">Possible Gaps: <strong id="qcPillGaps">0</strong></span>
+          <span class="qc-pill-badge" style="color: #38bdf8;">Water Overlaps: <strong id="qcPillWaterOverlaps">0</strong></span>
+          <span class="qc-pill-badge" style="color: #f43f5e;">Low Confidence: <strong id="qcPillLowConf">0</strong></span>
+          <span class="qc-pill-badge" style="color: var(--accent-rose);">Sliver Parcels: <strong id="qcPillSlivers">0</strong></span>
+          <span class="qc-pill-badge" style="color: #f59e0b;">Needs Review: <strong id="qcPillNeedsReview">0</strong></span>
+          <span class="qc-pill-badge" style="color: var(--accent-emerald); border-color: var(--accent-emerald);">Ready for Verification: <strong id="qcPillReady">0</strong></span>
+          <button class="btn-pm btn-pm-secondary" id="btnReviewQcIssues" style="margin-left: auto; font-size: 11px; padding: 4px 10px;">
+            ⚡ Review Issues
+          </button>
+        </div>
+
+        <!-- GIS Quality Map & Interactive Layer Toggles (Requirement 9) -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-panel); border-bottom: 1px solid var(--border-subtle); flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-weight: 600; font-size: 12px; color: var(--text-primary);">GIS Quality Map &amp; Issue Inspection</span>
+              <span class="pm-status-tag tag-blue" id="qcCoordinateNotice">Image-Space Coordinates</span>
+            </div>
+            <!-- Layer Toggles -->
+            <div style="display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap; align-items: center;">
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="qchkParcels" checked>
+                <span class="layer-dot" style="background: #8b5cf6;"></span>
+                <span>Preliminary Parcels</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="qchkIssues" checked>
+                <span class="layer-dot" style="background: #f43f5e;"></span>
+                <span>Quality Issues</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="qchkRoads" checked>
+                <span class="layer-dot" style="background: #f59e0b;"></span>
+                <span>Roads</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="qchkBuildings" checked>
+                <span class="layer-dot" style="background: #06b6d4;"></span>
+                <span>Buildings</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="qchkFields" checked>
+                <span class="layer-dot" style="background: #84cc16;"></span>
+                <span>Fields</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="qchkWater" checked>
+                <span class="layer-dot" style="background: #0284c7;"></span>
+                <span>Water</span>
+              </label>
+            </div>
+          </div>
+          <div id="qcMap" style="height: 380px; width: 100%; background: #0b0f17;"></div>
+        </div>
+
+        <!-- Flagged Topological Anomalies Table (Requirement 8) -->
+        <div class="minimal-table-card" style="margin-bottom: 20px;">
+          <div class="minimal-table-header">
+            <div>
+              <span class="minimal-table-title">Flagged Topological &amp; Geometry Anomalies</span>
+              <span style="font-size: 11px; color: var(--text-dim); margin-left: 8px;">Click any issue to zoom directly on map and inspect affected geometry</span>
+            </div>
+            <span class="pm-status-tag tag-amber" id="tagQcIssueCount">0 Issues Found</span>
+          </div>
+          <table class="minimal-table">
+            <thead>
+              <tr>
+                <th>ISSUE TYPE</th>
+                <th>PARCEL</th>
+                <th>AREA / MAGNITUDE</th>
+                <th>SEVERITY</th>
+                <th>STATUS</th>
+                <th>DESCRIPTION</th>
+                <th style="text-align: right;">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="tblQcIssues">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Safe Geometry Repairs Performed Card (Requirement 3) -->
+        <div class="minimal-table-card" id="cardQcRepairs" style="display: none; margin-bottom: 20px;">
+          <div class="minimal-table-header">
+            <div>
+              <span class="minimal-table-title" style="color: var(--accent-emerald);">Safe Geometry Repairs Recorded</span>
+              <span style="font-size: 11px; color: var(--text-dim); margin-left: 8px;">Automatic ring closure and vertex deduplication</span>
+            </div>
+            <span class="pm-status-tag tag-emerald" id="tagQcRepairsCount">0 Repaired</span>
+          </div>
+          <table class="minimal-table">
+            <thead>
+              <tr>
+                <th>Parcel ID</th>
+                <th>Repair Actions Performed</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tblQcRepairs">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Low Confidence Parcels for Manual Review (Requirement 6 & 7) -->
+        <div class="minimal-table-card" id="cardLowConfidenceParcels" style="display: none; margin-bottom: 24px;">
+          <div class="minimal-table-header">
+            <div>
+              <span class="minimal-table-title" style="color: #f43f5e;">Low-Confidence Parcels (&lt; 60%)</span>
+              <span style="font-size: 11px; color: var(--text-dim); margin-left: 8px;">Prioritized for human verification due to weak boundary contrast</span>
+            </div>
+            <span class="pm-status-tag tag-rose" id="tagQcLowConfCount">0 Flagged</span>
+          </div>
+          <table class="minimal-table">
+            <thead>
+              <tr>
+                <th>PARCEL ID</th>
+                <th>CONFIDENCE</th>
+                <th>STATUS</th>
+                <th>SUPPORTING FEATURES</th>
+                <th>RECOMMENDATION</th>
+                <th style="text-align: right;">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="tblQcLowConfidence">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mandatory Legal & Coordinate Disclaimers (Requirement 22) -->
+        <div class="legal-disclaimer-pill" style="margin-top: 12px;">
+          <span>AI-assisted preliminary parcel boundaries require human verification. Parcels are represented in image-space coordinates. AI-derived boundaries do not constitute legal cadastral title or survey-grade boundary confirmation.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. FINAL MAP VIEW (Step 9: Final Verified Map + Export) -->
+    <section class="pm-view-stage" id="viewMap">
+      <div class="workspace-layout">
+        <!-- Sidebar: Summary, Progress, Layers & Export -->
+        <aside class="ws-sidebar" style="width: 320px; overflow-y: auto;">
+          <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span class="sidebar-title" style="font-weight: 700;">FINAL VERIFIED MAP</span>
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);" id="finalProjectSubId">FINAL HUMAN-VERIFIED PARCEL MAP</div>
+            </div>
+            <!-- Dynamic Final Map Status -->
+            <span class="pm-status-tag tag-emerald" id="badgeFinalStatus">VERIFIED</span>
+          </div>
+
+          <div class="sidebar-content" style="display: flex; flex-direction: column; gap: 12px; padding: 12px;">
+            
+            <!-- VERIFICATION PROGRESS -->
+            <div class="card-glass" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="layer-section-title" style="margin-bottom: 0;">VERIFICATION PROGRESS</span>
+                <span style="font-size: 12px; font-weight: 700; color: var(--accent-emerald);" id="finalVerifyProgressPct">0%</span>
+              </div>
+              <div class="rail-step-bar" style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 6px;">
+                <div class="rail-step-bar-fill" id="finalVerifyProgressFill" style="width: 0%; height: 100%; background: var(--accent-emerald); transition: width 0.3s ease;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary);">
+                <span id="finalVerifyProgressText">0 / 0 parcels verified</span>
+                <span style="color: var(--text-muted);">Human Verified</span>
+              </div>
+            </div>
+
+            <!-- FINAL MAP SUMMARY (Step 9 Section 6) -->
+            <div class="card-glass" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px;">
+              <span class="layer-section-title">FINAL VERIFIED MAP</span>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; font-size: 11px;">
+                <div style="background: var(--bg-subtle); padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-subtle);">
+                  <span style="color: var(--text-muted); display: block; font-size: 10px;">Total Final Parcels</span>
+                  <strong style="font-size: 13px; color: var(--accent-emerald);" id="finalSumVerified">0</strong>
+                </div>
+                <div style="background: var(--bg-subtle); padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-subtle);">
+                  <span style="color: var(--text-muted); display: block; font-size: 10px;">Verified Parcels</span>
+                  <strong style="font-size: 13px; color: var(--accent-emerald);" id="finalSumVerifiedBadge">0</strong>
+                </div>
+                <div style="background: var(--bg-subtle); padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-subtle);">
+                  <span style="color: var(--text-muted); display: block; font-size: 10px;">Needs Review</span>
+                  <strong style="font-size: 13px; color: var(--accent-amber);" id="finalSumReview">0</strong>
+                </div>
+                <div style="background: var(--bg-subtle); padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-subtle);">
+                  <span style="color: var(--text-muted); display: block; font-size: 10px;">Rejected Parcels</span>
+                  <strong style="font-size: 13px; color: var(--accent-rose);" id="finalSumRejected">0</strong>
+                </div>
+              </div>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 11px;">
+                <span style="color: var(--text-muted); display: block; font-size: 10px;">Total Area:</span>
+                <strong style="color: var(--text-primary); font-size: 11.5px; word-break: break-word;" id="finalSumArea">Area unavailable — imagery is not georeferenced.</strong>
+              </div>
+            </div>
+
+            <!-- MAP LAYER TOGGLES (Step 9 Section 8) -->
+            <div class="card-glass" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px;">
+              <span class="layer-section-title">FINAL MAP LAYERS</span>
+              
+              <div class="layer-row">
+                <label class="layer-info" for="fchkAccepted">
+                  <span class="layer-dot" style="background: var(--accent-emerald);"></span>
+                  <span>Final Parcels</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="fchkAccepted" checked><span class="slider"></span></label>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="fchkRoads">
+                  <span class="layer-dot" style="background: #f59e0b;"></span>
+                  <span>Roads</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="fchkRoads" checked><span class="slider"></span></label>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="fchkBuildings">
+                  <span class="layer-dot" style="background: #06b6d4;"></span>
+                  <span>Buildings</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="fchkBuildings" checked><span class="slider"></span></label>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="fchkFields">
+                  <span class="layer-dot" style="background: #84cc16;"></span>
+                  <span>Fields</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="fchkFields" checked><span class="slider"></span></label>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="fchkWater">
+                  <span class="layer-dot" style="background: #0284c7;"></span>
+                  <span>Water</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="fchkWater" checked><span class="slider"></span></label>
+              </div>
+
+              <span class="layer-section-title" style="margin-top: 10px;">ADDITIONAL AUDIT LAYERS</span>
+
+              <div class="layer-row">
+                <label class="layer-info" for="fchkPreliminary">
+                  <span class="layer-dot" style="background: #a855f7;"></span>
+                  <span>Preliminary Parcels</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="fchkPreliminary"><span class="slider"></span></label>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="fchkGisIssues">
+                  <span class="layer-dot" style="background: #f43f5e;"></span>
+                  <span>GIS Issues</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="fchkGisIssues"><span class="slider"></span></label>
+              </div>
+
+              <div class="layer-row">
+                <label class="layer-info" for="fchkSourceImagery">
+                  <span class="layer-dot" style="background: #64748b;"></span>
+                  <span>Source Imagery</span>
+                </label>
+                <label class="switch"><input type="checkbox" id="fchkSourceImagery" checked><span class="slider"></span></label>
+              </div>
+            </div>
+
+            <!-- EXPORT & REPORT ACTIONS -->
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn-pm btn-pm-primary" id="btnCompleteProject" style="width: 100%; justify-content: center; font-weight: 600;">
+                ✓ Complete Project
+              </button>
+
+              <!-- Download Project Dropdown Menu -->
+              <div class="dropdown-wrapper" style="position: relative; width: 100%;">
+                <button class="btn-pm btn-pm-secondary" id="btnDownloadProjectDropdown" style="width: 100%; justify-content: space-between;">
+                  <span>⬇ Export Data</span>
+                  <span>▾</span>
+                </button>
+                <div class="dropdown-menu" id="menuDownloadProject" style="display: none; position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); padding: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1000;">
+                  <button class="dropdown-item" id="btnDownloadPdf" style="width: 100%; text-align: left; padding: 8px 12px; background: transparent; border: none; color: var(--text-primary); font-size: 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    📄 Export Project PDF Report
+                  </button>
+                  <button class="dropdown-item" id="btnDownloadGeoJson" style="width: 100%; text-align: left; padding: 8px 12px; background: transparent; border: none; color: var(--text-primary); font-size: 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    🌐 Export GeoJSON
+                  </button>
+                  <button class="dropdown-item" id="btnDownloadCsv" style="width: 100%; text-align: left; padding: 8px 12px; background: transparent; border: none; color: var(--text-primary); font-size: 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    📊 Export CSV Register
+                  </button>
+                  <div style="border-top: 1px solid var(--border-subtle); margin: 4px 0;"></div>
+                  <button class="dropdown-item" id="btnDownloadAllZip" style="width: 100%; text-align: left; padding: 8px 12px; background: rgba(16, 185, 129, 0.1); border: none; color: var(--accent-emerald); font-weight: 600; font-size: 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    📦 Export Full ZIP Package
+                  </button>
+                </div>
+              </div>
+
+              <button class="btn-pm btn-pm-ghost" id="btnNavToReport" style="width: 100%; justify-content: center; font-size: 11px;">
+                View Reports &amp; Dossier &rarr;
+              </button>
+            </div>
+
+          </div>
+        </aside>
+
+        <!-- Main Final Map Center -->
+        <main class="ws-map-center" style="position: relative;">
+          <!-- Map container -->
+          <div id="finalMap" style="width: 100%; height: 100%;"></div>
+
+          <!-- Coordinate Mode Notice -->
+          <div id="finalMapCoordinateNotice" class="pm-status-tag tag-blue" style="position: absolute; top: 14px; left: 14px; z-index: 500; font-size: 11px; padding: 4px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none;">
+            <span id="finalMapCoordinateNoticeText">Image-space mode — Real-world area unavailable until imagery is georeferenced.</span>
+          </div>
+
+          <!-- MAP LEGEND (Step 9 Section 9) -->
+          <div id="finalMapLegend" style="position: absolute; top: 14px; right: 14px; z-index: 500; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 11px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 3px;">MAP LEGEND</span>
+            <div style="display: flex; align-items: center; gap: 6px; color: var(--text-primary);">
+              <span style="width: 12px; height: 12px; background: rgba(16, 185, 129, 0.35); border: 1.5px solid #10b981; border-radius: 2px;"></span>
+              <span>Final Verified Parcel</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; color: var(--text-primary);">
+              <span style="width: 12px; height: 4px; background: #f59e0b; border-radius: 1px;"></span>
+              <span>Road</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; color: var(--text-primary);">
+              <span style="width: 12px; height: 12px; background: rgba(6, 182, 212, 0.3); border: 1.5px solid #06b6d4; border-radius: 2px;"></span>
+              <span>Building</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; color: var(--text-primary);">
+              <span style="width: 12px; height: 12px; background: rgba(132, 204, 22, 0.2); border: 1px dashed #84cc16; border-radius: 2px;"></span>
+              <span>Field</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; color: var(--text-primary);">
+              <span style="width: 12px; height: 12px; background: rgba(2, 132, 199, 0.3); border: 1.5px solid #0284c7; border-radius: 2px;"></span>
+              <span>Water</span>
+            </div>
+          </div>
+
+          <!-- FLOATING MAP CONTROLS TOOLBAR (Step 9 Section 7) -->
+          <div class="floating-map-controls" id="finalMapFloatingControls">
+            <div class="map-ctrl-search">
+              <input type="text" id="inputFinalSearchParcel" placeholder="Search parcel (e.g. PM-0001)..." />
+              <button id="btnFinalSearchSubmit" title="Search Parcel">🔍</button>
+            </div>
+            <div class="map-ctrl-divider"></div>
+            <button class="map-ctrl-btn" id="btnFinalZoomIn" title="Zoom In">+</button>
+            <button class="map-ctrl-btn" id="btnFinalZoomOut" title="Zoom Out">−</button>
+            <button class="map-ctrl-btn" id="btnFinalFitAll" title="Fit All Parcels">⛶</button>
+            <button class="map-ctrl-btn" id="btnFinalResetView" title="Reset View">↺</button>
+            <button class="map-ctrl-btn" id="btnFinalFullscreen" title="Toggle Fullscreen">⤢</button>
+            <div class="map-ctrl-divider"></div>
+            <button class="map-ctrl-btn" id="btnFinalMeasureDistance" title="Measure Distance">📏</button>
+            <button class="map-ctrl-btn" id="btnFinalMeasureArea" title="Measure Area">📐</button>
+            <button class="map-ctrl-btn" id="btnFinalClearMeasurements" title="Clear Measurements" style="display: none;">✕</button>
+          </div>
+
+          <!-- Measurement Results Badge -->
+          <div class="measure-result-badge" id="finalMeasureResultBadge" style="display: none;">
+            <span id="finalMeasureResultText">Click map to measure</span>
+            <button id="btnCloseMeasureBadge" style="background: transparent; border: none; color: #fff; cursor: pointer; margin-left: 6px;">✕</button>
+          </div>
+
+          <!-- SELECTED PARCEL DETAILS PANEL / BOTTOM-SHEET (Step 9 Section 5 & 11) -->
+          <div class="final-parcel-details-card" id="finalParcelDetailsPanel" style="display: none; max-width: 320px;">
+            <div class="details-card-header">
+              <div>
+                <span class="details-parcel-id" id="fdParcelId">PM-0001</span>
+                <span class="pm-status-tag tag-emerald" id="fdParcelStatus">Human Verified</span>
+              </div>
+              <button class="details-close-btn" id="btnCloseParcelDetails">✕</button>
+            </div>
+            <div class="details-card-body" style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+              <div class="details-row">
+                <span class="details-label">Verification Status:</span>
+                <strong class="details-val" id="fdParcelVerStatus" style="color: var(--accent-emerald);">Human Verified</strong>
+              </div>
+              <div class="details-row">
+                <span class="details-label">AI Confidence:</span>
+                <strong class="details-val" id="fdParcelConfidence">85%</strong>
+              </div>
+              <div class="details-row">
+                <span class="details-label">Source:</span>
+                <span class="details-val" id="fdParcelSource" style="color: #38bdf8;">Spatial Reasoning</span>
+              </div>
+              <div class="details-row">
+                <span class="details-label">Geometry:</span>
+                <span class="details-val" id="fdParcelGeomStatus" style="color: #10b981;">Valid Polygon</span>
+              </div>
+              <div class="details-row">
+                <span class="details-label">Coordinates:</span>
+                <span class="details-val" id="fdParcelCoords" style="color: var(--text-secondary);">Image-space coordinates</span>
+              </div>
+              <div class="details-row">
+                <span class="details-label">Area:</span>
+                <span class="details-val" id="fdParcelArea" style="color: var(--text-secondary);">Real-world area unavailable until imagery is georeferenced.</span>
+              </div>
+              <div class="details-row">
+                <span class="details-label">Supporting:</span>
+                <span class="details-evidence" id="fdParcelEvidence">Road + Field Edge</span>
+              </div>
+              <div style="margin-top: 8px; border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+                <button class="btn-pm btn-pm-secondary" id="btnGenerateParcelReport" style="width: 100%; justify-content: center; font-size: 11px; padding: 6px 10px;">
+                  📄 Generate Parcel Report (PDF)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Centered Mandatory Legal Disclaimer -->
+          <div class="legal-disclaimer-pill" style="position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); max-width: 90%; z-index: 500; pointer-events: none;">
+            <span>AI-assisted preliminary parcel boundaries require human verification. Parcels are represented in image-space coordinates.</span>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <!-- 9. REPORT VIEW (Step 9: Official Cadastral Report & Dossier) -->
+    <section class="pm-view-stage" id="viewReport">
+      <div class="dashboard-scroll" style="max-width: 960px; padding: 24px 16px; margin: 0 auto;">
+        
+        <!-- Report Action Header Bar -->
+        <div class="report-action-bar" style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="pm-status-tag tag-emerald" id="repGenerationStatus">COMPLETED</span>
+            <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">PROJECT REPORT</span>
+            <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);" id="repDossierNumber">REP-PROJECT</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-pm btn-pm-secondary" id="btnGenerateReport" style="font-size: 12px;">
+              ↻ Generate Project Report
+            </button>
+            <button class="btn-pm btn-pm-primary" id="btnReportDownloadPdf" style="font-size: 12px;">
+              ⬇ Download PDF
+            </button>
+            <button class="btn-pm btn-pm-secondary" id="btnReportDownloadGeoJson" style="font-size: 12px;">
+              🌐 Export GeoJSON
+            </button>
+            <button class="btn-pm btn-pm-secondary" id="btnReportDownloadCsv" style="font-size: 12px;">
+              📊 Export CSV
+            </button>
+            <button class="btn-pm btn-pm-secondary" id="btnReportDownloadZip" style="font-size: 12px;">
+              📦 ZIP Package
+            </button>
+            <button class="btn-pm btn-pm-ghost" id="btnPrintReport" style="font-size: 12px;">
+              🖨 Print
+            </button>
+          </div>
+        </div>
+
+        <!-- Printable Document Sheet -->
+        <div class="report-paper-dossier" style="background: #ffffff; color: #0f172a; border-radius: var(--radius-lg); padding: 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+          
+          <!-- Document Header -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px;">
+            <div>
+              <div style="font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">PARCELMAP</div>
+              <div style="font-size: 12px; color: #059669; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Smart Land Intelligence</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">PROJECT REPORT &amp; CADASTRAL VERIFICATION AUDIT</div>
+            </div>
+            <div style="text-align: right; font-size: 11px; color: #475569;">
+              <div><strong>Project ID:</strong> <span id="repProjectId" style="font-family: var(--font-mono);">-</span></div>
+              <div><strong>Created Date:</strong> <span id="repCreatedDate">-</span></div>
+              <div><strong>Processing Date:</strong> <span id="repProcessingDate">-</span></div>
+            </div>
+          </div>
+
+          <!-- Project Information Card (Step 9 Section 10) -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; margin-bottom: 20px;">
+            <div style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 8px;">PROJECT &amp; IMAGERY INFORMATION</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 11.5px;">
+              <div>
+                <span style="color: #64748b; display: block; font-size: 10.5px;">Project Name</span>
+                <strong id="repProjectName">-</strong>
+              </div>
+              <div>
+                <span style="color: #64748b; display: block; font-size: 10.5px;">Location</span>
+                <strong id="repLocation">-</strong>
+              </div>
+              <div>
+                <span style="color: #64748b; display: block; font-size: 10.5px;">Lead Surveyor</span>
+                <strong id="repLeadSurveyor">Alex Morgan (Lead Surveyor)</strong>
+              </div>
+              <div>
+                <span style="color: #64748b; display: block; font-size: 10.5px;">Imagery Used</span>
+                <span id="repImageFile" style="font-family: var(--font-mono); font-size: 11px;">-</span>
+              </div>
+              <div>
+                <span style="color: #64748b; display: block; font-size: 10.5px;">Imagery Type / Sensor</span>
+                <span id="repResolution">UAV Drone Orthomosaic</span>
+              </div>
+              <div>
+                <span style="color: #64748b; display: block; font-size: 10.5px;">Georeferencing Status</span>
+                <span id="repCoordSystem" style="font-weight: 600; color: #059669;">Image-space</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Processing & Parcel Summary Grids (Step 9 Section 10 & 12) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <!-- Processing Summary -->
+            <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px;">
+              <div style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">AI DETECTION &amp; SPATIAL REASONING SUMMARY</div>
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11.5px;">
+                <div style="display: flex; justify-content: space-between;"><span style="color: #475569;">Images Processed:</span><strong id="repProcImages">1</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #475569;">AI Detections Total:</span><strong id="repProcDetections">0</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #475569;">Roads Detected:</span><strong id="repProcRoads">0</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #475569;">Buildings Detected:</span><strong id="repProcBuildings">0</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #475569;">Fields Detected:</span><strong id="repProcFields">0</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #475569;">Boundaries Detected:</span><strong id="repProcBoundaries">0</strong></div>
+              </div>
+            </div>
+
+            <!-- Parcel Summary -->
+            <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px;">
+              <div style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">PARCEL &amp; VERIFICATION SUMMARY</div>
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11.5px;">
+                <div style="display: flex; justify-content: space-between;"><span style="color: #475569;">Total Preliminary Parcels:</span><strong id="repSumTotalParcels">0</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #059669;">Final Verified Parcels:</span><strong id="repSumVerifiedParcels" style="color: #059669;">0</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #d97706;">Needs Review:</span><strong id="repSumReviewParcels" style="color: #d97706;">0</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #dc2626;">Rejected Parcels:</span><strong id="repSumRejectedParcels" style="color: #dc2626;">0</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #475569;">Verification Progress:</span><strong id="repSumProgressPct">0%</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #475569;">Total Demarcated Area:</span><strong id="repSumTotalArea">Area unavailable — imagery is not georeferenced.</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GIS Quality Summary Box -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
+            <div style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 8px;">GIS QUALITY &amp; TOPOLOGY AUDIT</div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11.5px;">
+              <div><span style="color: #64748b; font-size: 10.5px;">Valid Geometries:</span> <strong id="repGisValid" style="color: #059669;">0</strong></div>
+              <div><span style="color: #64748b; font-size: 10.5px;">Overlaps:</span> <strong id="repGisOverlaps">0</strong></div>
+              <div><span style="color: #64748b; font-size: 10.5px;">Possible Gaps:</span> <strong id="repGisGaps">0</strong></div>
+              <div><span style="color: #64748b; font-size: 10.5px;">Low-Confidence (&lt;60%):</span> <strong id="repGisLowConf">0</strong></div>
+            </div>
+          </div>
+
+          <!-- FINAL MAP SNAPSHOT -->
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 6px;">FINAL MAP SNAPSHOT (VERIFIED DELINEATIONS)</div>
+            <div id="repMapPreviewCard" style="width: 100%; height: 220px; background: #0f172a; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #cbd5e1;">
+              <img id="repMapSnapshotImg" alt="Final Map Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
+              <div id="repMapPlaceholderText" style="color: #94a3b8; font-size: 12px; text-align: center;">
+                <div>🗺 Verified Parcel Boundary Delineation</div>
+                <span style="font-size: 10px; color: #64748b;">Includes accepted parcel boundaries, road network, and scale</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Parcel Register Table (Step 9 Section 10 & 11) -->
+          <div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <div style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase;">PARCEL INVENTORY &amp; VERIFICATION REGISTER</div>
+              <span style="font-size: 10.5px; color: #64748b;">Click [Report] to download individual parcel certificate</span>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+              <thead>
+                <tr style="background: #0f172a; color: #ffffff; text-align: left;">
+                  <th style="padding: 6px 8px;">Parcel ID</th>
+                  <th style="padding: 6px 8px;">Status</th>
+                  <th style="padding: 6px 8px;">Confidence</th>
+                  <th style="padding: 6px 8px;">Area</th>
+                  <th style="padding: 6px 8px;">Supporting Evidence</th>
+                  <th style="padding: 6px 8px;">Verification Date</th>
+                  <th style="padding: 6px 8px; text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="tblReportParcels">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- AUDIT TRAIL / ACTIVITY HISTORY -->
+          <div style="margin-bottom: 24px;">
+            <div style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 6px;">ACTIVITY &amp; AUDIT TRAIL</div>
+            <div id="repAuditTrailList" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- MANDATORY LEGAL DISCLAIMER -->
+          <div style="background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 12px; margin-bottom: 24px; font-size: 11px; color: #92400e; line-height: 1.4;">
+            <strong>DISCLAIMER:</strong> "AI-assisted parcel boundaries are preliminary and require appropriate human and/or official cadastral verification."
+          </div>
+
+          <!-- Sign-off Block -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 11px;">
+            <div>
+              <div style="font-weight: 700; color: #0f172a;">Alex Morgan</div>
+              <div style="color: #64748b;">Lead Cadastral Surveyor &amp; GIS Analyst</div>
+              <div style="margin-top: 28px; border-bottom: 1px solid #cbd5e1; width: 180px;"></div>
+              <span style="font-size: 9.5px; color: #94a3b8;">Surveyor Signature &amp; Date</span>
+            </div>
+            <div>
+              <div style="font-weight: 700; color: #0f172a;">Dr. Sarah Lin</div>
+              <div style="color: #64748b;">Cadastral Survey Directorate &amp; Audit Seal</div>
+              <div style="margin-top: 28px; border-bottom: 1px solid #cbd5e1; width: 180px;"></div>
+              <span style="font-size: 9.5px; color: #94a3b8;">Official Cadastre Seal</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- /pm-view-container -->
+
+  <!-- ==========================================================================
+       MODALS
+       ========================================================================== -->
+  <!-- New Project Modal -->
+  <div class="modal-overlay" id="modalNewProject">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 14px; font-weight: 600;">New Mapping Project</h3>
+        <button id="btnCloseModalNewProject" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <form id="formCreateProject">
+        <div class="form-group">
+          <label class="form-label">Project Name</label>
+          <input type="text" class="input-control" id="npName" placeholder="e.g. Haveli Sector 14 Cadastre" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Area / Location</label>
+          <input type="text" class="input-control" id="npLocation" placeholder="e.g. Pune, Maharashtra" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="input-control" id="npDescription" rows="2" placeholder="Demarcation objective..."></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="form-group">
+            <label class="form-label">Latitude</label>
+            <input type="number" step="0.0001" class="input-control" id="npLat" value="18.5818">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Longitude</label>
+            <input type="number" step="0.0001" class="input-control" id="npLng" value="73.9875">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+          <button type="button" class="btn-pm btn-pm-secondary" id="btnCancelNewProject">Cancel</button>
+          <button type="submit" class="btn-pm btn-pm-primary" id="btnSubmitNewProject">Create Project &rarr;</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Pipeline Execution Modal -->
+  <div class="modal-overlay" id="modalJobPipeline">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="font-size: 13px; font-weight: 600;">Processing Pipeline</h3>
+        <span class="pm-status-tag tag-emerald" id="lblJobStatusPill">PROCESSING</span>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; color: var(--text-secondary);">
+          <span id="lblJobStep">Executing AI feature detection...</span>
+          <strong id="lblJobProgress">40%</strong>
+        </div>
+        <div class="rail-step-bar" style="height: 4px;">
+          <div class="rail-step-bar-fill" id="barJobFill" style="width: 40%;"></div>
+        </div>
+      </div>
+
+      <div style="background: #080c14; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px; font-family: var(--font-mono); font-size: 11px; color: #a7f3d0; height: 140px; overflow-y: auto;" id="consoleJobLogs">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+        <button class="btn-pm btn-pm-primary" id="btnCloseJobModal" style="display: none;">Close &amp; View</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Parcel Version History Modal (Requirement 15) -->
+  <div class="modal-overlay" id="modalParcelHistory">
+    <div class="modal-card" style="max-width: 680px; width: 95%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+        <div>
+          <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary);" id="histModalParcelTitle">Parcel History: PM-0001</h3>
+          <span style="font-size: 11px; color: var(--text-muted);">Immutable audit trail of all geometry modifications, splits, merges, and verifications</span>
+        </div>
+        <button id="btnCloseModalHistory" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px;">✕</button>
+      </div>
+      <div style="max-height: 380px; overflow-y: auto; padding-right: 4px;">
+        <table class="minimal-table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th>Ver</th>
+              <th>Action</th>
+              <th>Timestamp</th>
+              <th>Reviewer</th>
+              <th>Area</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="tblParcelHistoryRows">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 14px; border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+        <button class="btn-pm btn-pm-secondary" id="btnCloseModalHistoryBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Completion Modal (Step 5 Section 7) -->
+  <div class="modal-overlay" id="modalProjectCompletion">
+    <div class="modal-card" style="max-width: 520px; width: 95%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px; color: var(--accent-amber);">⚠</span>
+          <h3 style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Some parcels still require review.</h3>
+        </div>
+        <button id="btnCloseModalCompletion" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px;">✕</button>
+      </div>
+
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4;">
+        Before finalizing this cadastral dataset, our spatial verification engine detected unresolved items that require surveyor attention:
+      </p>
+
+      <div id="completionIssuesContainer" style="background: var(--bg-card); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 12px; max-height: 180px; overflow-y: auto; margin-bottom: 16px;">
+        <ul id="completionIssuesList" style="list-style-type: none; font-size: 11.5px; color: var(--text-primary); display: flex; flex-direction: column; gap: 6px;">
+          <!-- Dynamically populated -->
+        </ul>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+        <button class="btn-pm btn-pm-ghost" id="btnCompletionCancel">Cancel</button>
+        <button class="btn-pm btn-pm-secondary" id="btnCompletionReviewIssues">⚡ Review Issues</button>
+        <button class="btn-pm btn-pm-primary" id="btnCompletionOverride" style="background: var(--accent-rose); border-color: var(--accent-rose);">Complete Anyway</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification Complete Modal (Requirements 10 & 11) -->
+  <div class="modal-overlay" id="modalVerificationComplete">
+    <div class="modal-card" style="max-width: 480px; width: 95%; text-align: center;">
+      <div style="font-size: 36px; margin-bottom: 6px;">✓</div>
+      <h3 style="font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px; letter-spacing: 0.5px;">VERIFICATION COMPLETE</h3>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Human review cycle completed for the preliminary parcels.</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+        <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 6px; padding: 10px;">
+          <div style="font-size: 10px; color: #34d399; font-weight: 600; text-transform: uppercase;">Accepted</div>
+          <div style="font-size: 22px; font-weight: 700; color: #10b981; font-family: var(--font-mono); margin-top: 2px;" id="vcompAccepted">0</div>
+        </div>
+        <div style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.35); border-radius: 6px; padding: 10px;">
+          <div style="font-size: 10px; color: #fb7185; font-weight: 600; text-transform: uppercase;">Rejected</div>
+          <div style="font-size: 22px; font-weight: 700; color: #f43f5e; font-family: var(--font-mono); margin-top: 2px;" id="vcompRejected">0</div>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; padding: 10px;">
+          <div style="font-size: 10px; color: #fbbf24; font-weight: 600; text-transform: uppercase;">Remaining Review</div>
+          <div style="font-size: 22px; font-weight: 700; color: #f59e0b; font-family: var(--font-mono); margin-top: 2px;" id="vcompRemaining">0</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 12px; font-size: 11px; color: var(--text-secondary); text-align: left; margin-bottom: 16px;">
+        ℹ <strong>Final Map Handoff:</strong> Only accepted parcels will appear as final verified parcels on the Final Map. Rejected parcels are excluded.
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+        <button class="btn-pm btn-pm-secondary" id="btnCloseVerificationCompleteModal">Review More</button>
+        <button class="btn-pm btn-pm-primary" id="btnHandoffToFinalMap" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); font-weight: 700;">
+          Proceed to Final Map &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pm-toast-container" id="toastContainer"></div>
+  <script type="module" src="./workspace.js"></script>
+</body>
+</html>

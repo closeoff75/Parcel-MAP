@@ -1,0 +1,32 @@
+{
+  "name": "geoparcel-ai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clean": "node scripts/killPorts.js",
+    "predev": "node scripts/killPorts.js",
+    "dev": "concurrently \"npm run server\" \"vite\"",
+    "dev:frontend": "vite",
+    "server": "node --watch --watch-path=server server/index.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server/index.js",
+    "test": "node test_real_cv_pipeline.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "vite": "^6.2.0"
+  },
+  "dependencies": {
+    "@turf/turf": "^7.2.0",
+    "archiver": "^8.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jpeg-js": "^0.4.4",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.20.2",
+    "pngjs": "^7.0.0",
+    "three": "^0.185.1"
+  }
+}

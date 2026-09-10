@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="amethyst-terra">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Industry Solutions & ROI — GeoParcel.ai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="gis-theme.css">
+  <style>
+    .solution-tabs {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .solution-tab-btn {
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .solution-tab-btn:hover {
+      color: var(--text-primary);
+      background: var(--surface-card);
+    }
+    .solution-tab-btn.active {
+      color: var(--brand-primary);
+      background: var(--brand-primary-light);
+      border-color: var(--brand-primary);
+    }
+
+    .solution-card-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 40px;
+      align-items: center;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: var(--shadow-sm);
+    }
+    @media (max-width: 960px) {
+      .solution-card-grid {
+        grid-template-columns: 1fr;
+        padding: 24px;
+      }
+    }
+
+    /* ROI Calculator Card */
+    .calculator-box {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: var(--shadow-md);
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 48px;
+      margin-top: 40px;
+    }
+    @media (max-width: 960px) {
+      .calculator-box {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+    .slider-group {
+      margin-bottom: 28px;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .slider-header label {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+    .slider-header .slider-val {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--brand-primary);
+    }
+    .slider-group input[type="range"] {
+      width: 100%;
+      accent-color: var(--brand-primary);
+    }
+
+    .roi-output-card {
+      background: var(--surface-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+    .roi-big-number {
+      font-size: 48px;
+      font-weight: 800;
+      font-family: var(--font-display);
+      color: var(--brand-primary);
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       NAVBAR WITH RIGHT UPPER CORNER THEME TOGGLE
+       ========================================================================== -->
+  <nav class="site-header">
+    <div class="nav-wrapper">
+      <div class="nav-left">
+        <a href="index.html" class="brand-logo" style="text-decoration:none;">
+          <div class="logo-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+          </div>
+          <span>GeoParcel<span style="color: var(--brand-primary)">.ai</span></span>
+        </a>
+
+        <div class="nav-links">
+          <a href="intelligence.html" class="nav-link">Parcel</a>
+          <a href="platform.html" class="nav-link">Platform</a>
+          <a href="layers.html" class="nav-link">GIS Layers</a>
+          <a href="enterprise.html" class="nav-link">API</a>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- SINGLE BUTTON: LIGHT / DARK MODE TOGGLE (RIGHT UPPER CORNER) -->
+        <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Light and Dark Mode" title="Switch to Dark Mode">
+          <span class="theme-toggle-indicator">
+            <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+          <span id="themeToggleText">Dark Mode</span>
+        </button>
+
+        <a href="map.html" class="btn btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+          <span>Launch MAP</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==========================================================================
+       HERO
+       ========================================================================== -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="badge-tag">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+        Targeted Industry Workflows
+      </div>
+      <h1 class="hero-title" style="font-size: 42px;">Spatial Intelligence Tailored to Your Field</h1>
+      <p class="hero-sub" style="max-width: 760px; margin: 0 auto;">
+        From survey-grade cadastral boundary recovery to gigawatt-scale clean energy land siting and municipal parcel roll synchronization.
+      </p>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       INDUSTRY WORKFLOW TABS
+       ========================================================================== -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container">
+
+      <!-- Tabs Navigation -->
+      <div class="solution-tabs">
+        <button class="solution-tab-btn active" id="tab-surveyor" onclick="switchIndustry('surveyor')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          Land Surveyors & Civil Engineers
+        </button>
+        <button class="solution-tab-btn" id="tab-broker" onclick="switchIndustry('broker')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-3"></path></svg>
+          Commercial Real Estate Brokers
+        </button>
+        <button class="solution-tab-btn" id="tab-energy" onclick="switchIndustry('energy')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Renewable Energy Developers
+        </button>
+        <button class="solution-tab-btn" id="tab-municipal" onclick="switchIndustry('municipal')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line></svg>
+          Municipal & County GIS
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="solution-card-grid" id="industryCard">
+        <div>
+          <span class="badge-tag" id="indBadge">Professional Land Surveying</span>
+          <h2 style="font-size: 30px; margin: 12px 0 16px;" id="indTitle">Cut Pre-Field Cadastral Research from Days to Minutes</h2>
+          <p style="color: var(--text-secondary); line-height: 1.7; font-size: 15px; margin-bottom: 24px;" id="indDesc">
+            Eliminate endless hours hunting through outdated county courthouse PDFs. GeoParcel automatically stitches metes-and-bounds descriptions, ties in adjacent deeds, and projects sub-0.05m RTK boundary monuments directly into AutoCAD Civil 3D, Carlson, and MicroStation formats.
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px;">
+            <div style="background: var(--surface-bg); border: 1px solid var(--border-subtle); padding: 14px; border-radius: 10px;">
+              <strong style="font-size: 14px; color: var(--text-primary); display: block; margin-bottom: 4px;" id="indFeat1Title">Direct CAD DXF/DWG Export</strong>
+              <span style="font-size: 12px; color: var(--text-muted);" id="indFeat1Desc">Layered boundary vectors with state plane coordinate transformations.</span>
+            </div>
+            <div style="background: var(--surface-bg); border: 1px solid var(--border-subtle); padding: 14px; border-radius: 10px;">
+              <strong style="font-size: 14px; color: var(--text-primary); display: block; margin-bottom: 4px;" id="indFeat2Title">NGS Benchmark Monument Recovery</strong>
+              <span style="font-size: 12px; color: var(--text-muted);" id="indFeat2Desc">Overlay surveyed brass caps with historical monument datasheets.</span>
+            </div>
+          </div>
+          <a href="index.html" class="btn btn-primary" id="indCtaBtn">Launch Surveyor Tools (Free)</a>
+        </div>
+
+        <div style="background: var(--surface-bg); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 28px;">
+          <h4 style="margin: 0 0 16px; font-size: 16px;" id="indMetricsTitle">Field Benchmark Results</h4>
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: var(--brand-primary); font-family: var(--font-display);" id="stat1">84%</div>
+              <div style="font-size: 13px; color: var(--text-muted);" id="stat1Label">Reduction in pre-survey title and courthouse deed research time</div>
+            </div>
+            <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: var(--brand-primary); font-family: var(--font-display);" id="stat2">100%</div>
+              <div style="font-size: 13px; color: var(--text-muted);" id="stat2Label">Nationwide coverage with native State Plane NAD83 coordinates</div>
+            </div>
+            <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: var(--brand-primary); font-family: var(--font-display);" id="stat3">Sub-0.05m</div>
+              <div style="font-size: 13px; color: var(--text-muted);" id="stat3Label">RTK georeferencing precision against NGS benchmark baselines</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       INTERACTIVE ROI / HOURS-SAVED CALCULATOR
+       ========================================================================== -->
+  <section class="section">
+    <div class="container">
+      <div style="text-align: center; max-width: 680px; margin: 0 auto 32px;">
+        <span class="badge-tag">Dynamic ROI Model</span>
+        <h2 style="font-size: 32px; font-weight: 800; margin: 10px 0;">Calculate Your Team's Annual Savings</h2>
+        <p style="color: var(--text-secondary);">See how much time and payroll your engineering or development firm saves by replacing manual title and GIS pulls with GeoParcel.</p>
+      </div>
+
+      <div class="calculator-box">
+        <!-- Sliders -->
+        <div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="sliderParcels">Parcels / Properties Researched Monthly</label>
+              <span class="slider-val" id="valParcels">50 parcels</span>
+            </div>
+            <input type="range" id="sliderParcels" min="5" max="300" step="5" value="50" oninput="calcRoi()">
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="sliderHours">Manual Hours Spent Per Parcel Currently</label>
+              <span class="slider-val" id="valHours">4.5 hours</span>
+            </div>
+            <input type="range" id="sliderHours" min="1" max="10" step="0.5" value="4.5" oninput="calcRoi()">
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="sliderRate">Average Surveyor / Engineer Hourly Rate ($/hr)</label>
+              <span class="slider-val" id="valRate">$110 / hr</span>
+            </div>
+            <input type="range" id="sliderRate" min="50" max="250" step="5" value="110" oninput="calcRoi()">
+          </div>
+
+          <p style="font-size: 12px; color: var(--text-muted); margin: 0;">*Estimates assume an 80% time reduction in cadastral plat compilation, deed tracing, and layer stacking based on audited customer benchmarks.</p>
+        </div>
+
+        <!-- Calculated Output Card -->
+        <div class="roi-output-card">
+          <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700;">Projected Annual Savings</div>
+          <div class="roi-big-number" id="roiAnnualSavings">$237,600</div>
+          <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">
+            Equivalent to <strong id="roiHoursSaved" style="color: var(--brand-primary); font-family: var(--font-mono);">2,160 hours</strong> of recovered billable engineering time per year.
+          </div>
+
+          <div style="background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px; margin-bottom: 20px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span style="color: var(--text-muted);">Monthly Billable Recovery:</span>
+              <strong id="roiMonthly" style="font-family: var(--font-mono); color: var(--text-primary);">$19,800</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px;">
+              <span style="color: var(--text-muted);">Estimated ROI Multiple:</span>
+              <strong style="font-family: var(--font-mono); color: var(--brand-primary);">14.2x Investment</strong>
+            </div>
+          </div>
+
+          <a href="index.html" class="btn btn-primary" style="justify-content: center;">Start Exploring Maps for Free</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col" style="grid-column: span 1.5;">
+          <div class="brand-logo" style="margin-bottom: 12px;">
+            <div class="logo-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon></svg>
+            </div>
+            <span>GeoParcel<span style="color: var(--brand-primary)">.ai</span></span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 280px;">
+            The enterprise spatial intelligence operating system for boundary surveying, cadastral records, and parcel analytics.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h5>Platform</h5>
+          <ul>
+            <li><a href="platform.html">System Architecture</a></li>
+            <li><a href="platform.html#pipeline">Real-Time GIS Pipeline</a></li>
+            <li><a href="platform.html#accuracy">Survey-Grade Benchmarks</a></li>
+            <li><a href="platform.html#security">SOC2 & Geodetic Compliance</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>GIS Data & Layers</h5>
+          <ul>
+            <li><a href="layers.html">15cm Orthoimagery</a></li>
+            <li><a href="layers.html">LiDAR 2ft Elevation Contours</a></li>
+            <li><a href="layers.html">FEMA 100-Year Floodplains</a></li>
+            <li><a href="layers.html">Zoning & Land Use Overlays</a></li>
+            <li><a href="layers.html">Cadastral Boundary Shp/GeoJSON</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Solutions</h5>
+          <ul>
+            <li><a href="solutions.html#surveyors">Land Surveyors</a></li>
+            <li><a href="solutions.html#brokers">CRE Land Brokers</a></li>
+            <li><a href="solutions.html#energy">Renewable Energy Developers</a></li>
+            <li><a href="solutions.html#municipal">Municipal GIS Departments</a></li>
+            <li><a href="solutions.html">ROI Savings Calculator</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Open GIS Resources</h5>
+          <ul>
+            <li><a href="enterprise.html">Spatial API Documentation</a></li>
+            <li><a href="enterprise.html#playground">Interactive API Sandbox</a></li>
+            <li><a href="enterprise.html#webhooks">Real-time Webhooks</a></li>
+            <li><a href="platform.html">Open Spatial Architecture</a></li>
+            <li><a href="layers.html">Public Cadastral Feeds</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom-bar">
+        <div>© 2026 GeoParcel Technologies, Inc. All rights reserved.</div>
+        <div style="display: flex; gap: 20px;">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Theme Management with localStorage persistence
+    function setTheme(themeKey) {
+      document.documentElement.setAttribute('data-theme', themeKey);
+      const isDark = themeKey === 'obsidian-satellite' || themeKey === 'dark';
+      const toggleBtn = document.getElementById('themeToggleBtn');
+      const toggleText = document.getElementById('themeToggleText');
+      const sunIcon = document.querySelector('.theme-icon-sun');
+      const moonIcon = document.querySelector('.theme-icon-moon');
+
+      if (toggleBtn) toggleBtn.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+      if (toggleText) toggleText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+      if (sunIcon && moonIcon) {
+        sunIcon.style.display = isDark ? 'none' : 'block';
+        moonIcon.style.display = isDark ? 'block' : 'none';
+      }
+      try { localStorage.setItem('geoparcel_theme', themeKey); } catch (e) {}
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'amethyst-terra';
+      const isDark = current === 'obsidian-satellite' || current === 'dark';
+      setTheme(isDark ? 'amethyst-terra' : 'obsidian-satellite');
+    }
+
+    try {
+      let savedTheme = localStorage.getItem('geoparcel_theme') || 'amethyst-terra';
+      if (savedTheme === 'emerald-terra') savedTheme = 'amethyst-terra';
+      setTheme(savedTheme);
+    } catch(e) {
+      setTheme('amethyst-terra');
+    }
+
+    // Industry Tab Switcher Data
+    const INDUSTRIES = {
+      surveyor: {
+        badge: 'Professional Land Surveying',
+        title: 'Cut Pre-Field Cadastral Research from Days to Minutes',
+        desc: 'Eliminate endless hours hunting through outdated county courthouse PDFs. GeoParcel automatically stitches metes-and-bounds descriptions, ties in adjacent deeds, and projects sub-0.05m RTK boundary monuments directly into AutoCAD Civil 3D, Carlson, and MicroStation formats.',
+        f1Title: 'Direct CAD DXF/DWG Export',
+        f1Desc: 'Layered boundary vectors with state plane coordinate transformations.',
+        f2Title: 'NGS Benchmark Monument Recovery',
+        f2Desc: 'Overlay surveyed brass caps with historical monument datasheets.',
+        cta: 'Launch Surveyor Tools (Free)',
+        stat1: '84%',
+        stat1Label: 'Reduction in pre-survey title and courthouse deed research time',
+        stat2: '100%',
+        stat2Label: 'Nationwide coverage with native State Plane NAD83 coordinates',
+        stat3: 'Sub-0.05m',
+        stat3Label: 'RTK georeferencing precision against NGS benchmark baselines'
+      },
+      broker: {
+        badge: 'Commercial Real Estate Brokerage',
+        title: 'Uncover Hidden Off-Market Assemblage Opportunities Fast',
+        desc: 'Empower your acquisition team to spot contiguous parcel assemblages before competitors. Instantly identify true beneficial owners behind obscure LLC shell entities, verify zoning FAR envelopes, and calculate buildable land square footage in one click.',
+        f1Title: 'Automated LLC Beneficial Piercing',
+        f1Desc: 'Trace mailing addresses, state corporate filings, and principal contacts.',
+        f2Title: 'Contiguous Assemblage Stacker',
+        f2Desc: 'Multi-parcel selection tool that sums acreage, tax basis, and buildable envelope.',
+        cta: 'Explore CRE Dealmaker Suite',
+        stat1: '5.2x',
+        stat1Label: 'Faster off-market acquisition sourcing and initial underwriting',
+        stat2: '154M+',
+        stat2Label: 'Commercial and residential tax parcels indexed nationwide',
+        stat3: '0%',
+        stat3Label: 'Manual courthouse deed lookups needed during preliminary due diligence'
+      },
+      energy: {
+        badge: 'Renewable Solar & Wind Siting',
+        title: 'Accelerate GW-Scale Land Siting & Interconnection Screening',
+        desc: 'Screen 500+ contiguous acres for utility-scale solar and battery storage in seconds. Filter by terrain slope (<3%), transmission line voltage (69kV - 500kV), substation spare capacity, wetlands, and endangered species critical habitat buffers.',
+        f1Title: 'Substation & Interconnection Proximity',
+        f1Desc: 'Calculate straight-line and terrain-aware distance to ISO/RTO interconnect nodes.',
+        f2Title: 'Slope & Solar Irradiance Filter',
+        f2Desc: '3DEP LiDAR slope gradient models combined with NREL GHI/DNI solar datasets.',
+        cta: 'Launch Energy Siting Sandbox',
+        stat1: '70%',
+        stat1Label: 'Decrease in early-stage site fatal-flaw rejection rate',
+        stat2: '10GW+',
+        stat2Label: 'Clean energy pipeline capacity currently sited using GeoParcel',
+        stat3: '2ft',
+        stat3Label: 'LiDAR vertical contour resolution for exact civil grading cost models'
+      },
+      municipal: {
+        badge: 'Government & County GIS',
+        title: 'Reconcile Cadastral Discrepancies & Publish Public Web Maps',
+        desc: 'Modernize county assessor and GIS infrastructure with automated parcel boundary topology checks. Identify overlaps, slivers, and unrecorded subdivisions before updating the official tax assessment rolls.',
+        f1Title: 'Automated Topology Healing',
+        f1Desc: 'Detect and resolve polygon self-intersections and boundary gaps.',
+        f2Title: 'Public Portal Web GIS SDK',
+        f2Desc: 'Embed lightweight, high-performance vector parcel search maps on county websites.',
+        cta: 'Request Municipal Demo',
+        stat1: '99.9%',
+        stat1Label: 'Cadastral topological consistency across county boundary joins',
+        stat2: '3,144',
+        stat2Label: 'Counties supported with real-time tax roll schema mapping',
+        stat3: 'SOC2',
+        stat3Label: 'Type II certified with government-grade data isolation and FedRAMP alignment'
+      }
+    };
+
+    function switchIndustry(key) {
+      const data = INDUSTRIES[key];
+      if (!data) return;
+
+      document.querySelectorAll('.solution-tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById('tab-' + key);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      document.getElementById('indBadge').textContent = data.badge;
+      document.getElementById('indTitle').textContent = data.title;
+      document.getElementById('indDesc').textContent = data.desc;
+      document.getElementById('indFeat1Title').textContent = data.f1Title;
+      document.getElementById('indFeat1Desc').textContent = data.f1Desc;
+      document.getElementById('indFeat2Title').textContent = data.f2Title;
+      document.getElementById('indFeat2Desc').textContent = data.f2Desc;
+      document.getElementById('indCtaBtn').textContent = data.cta;
+
+      document.getElementById('stat1').textContent = data.stat1;
+      document.getElementById('stat1Label').textContent = data.stat1Label;
+      document.getElementById('stat2').textContent = data.stat2;
+      document.getElementById('stat2Label').textContent = data.stat2Label;
+      document.getElementById('stat3').textContent = data.stat3;
+      document.getElementById('stat3Label').textContent = data.stat3Label;
+    }
+
+    // Dynamic ROI Calculator Logic
+    function calcRoi() {
+      const parcels = parseInt(document.getElementById('sliderParcels').value);
+      const hours = parseFloat(document.getElementById('sliderHours').value);
+      const rate = parseInt(document.getElementById('sliderRate').value);
+
+      document.getElementById('valParcels').textContent = parcels + ' parcels';
+      document.getElementById('valHours').textContent = hours.toFixed(1) + ' hours';
+      document.getElementById('valRate').textContent = '$' + rate + ' / hr';
+
+      // 80% time saved with GeoParcel
+      const monthlyHoursCurrent = parcels * hours;
+      const monthlyHoursSaved = monthlyHoursCurrent * 0.80;
+      const annualHoursSaved = monthlyHoursSaved * 12;
+
+      const monthlySavings = monthlyHoursSaved * rate;
+      const annualSavings = monthlySavings * 12;
+
+      document.getElementById('roiAnnualSavings').textContent = '$' + Math.round(annualSavings).toLocaleString();
+      document.getElementById('roiHoursSaved').textContent = Math.round(annualHoursSaved).toLocaleString() + ' hours';
+      document.getElementById('roiMonthly').textContent = '$' + Math.round(monthlySavings).toLocaleString();
+    }
+  </script>
+</body>
+</html>

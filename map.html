@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explore Cadastral Land &amp; Property Map — GeoParcel.ai</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet GIS CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Application CSS -->
+  <link rel="stylesheet" href="map.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       TOP APPLICATION HEADER
+       ========================================================================== -->
+  <header class="app-header">
+    <div class="header-left">
+      <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Toggle Sidebar Panel">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+
+      <a href="index.html" class="app-brand" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+        <span class="nav-brand-logo" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" fill="rgba(16, 185, 129, 0.25)"></polygon>
+            <line x1="9" y1="3" x2="9" y2="18"></line>
+            <line x1="15" y1="6" x2="15" y2="21"></line>
+            <circle cx="9" cy="10" r="1.5" fill="#38bdf8" stroke="#38bdf8"></circle>
+          </svg>
+        </span>
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">GeoParcel.ai</span>
+          <span style="font-size: 0.65rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase;">Smart Land Intelligence</span>
+        </div>
+      </a>
+
+      <div class="location-breadcrumbs" id="locationBreadcrumb">
+        📍 Maharashtra &gt; Pune &gt; Haveli &gt; <span class="active-village">Wagholi (Sheet #14)</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="quick-search-box">
+        <svg class="quick-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="quickSearchInput" class="quick-search-input" placeholder="Search Plot #, Survey #, or Owner Name (e.g. 101, 104A, Patil)..." autocomplete="off">
+        <div id="quickSearchSuggestions" class="search-suggestions-dropdown"></div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Analytics & Quality Audit Modal Button -->
+      <button id="btnOpenAnalytics" class="btn-header" title="Open Analytics & Data Quality">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <span>Analytics</span>
+      </button>
+
+      <!-- Theme Toggle -->
+      <button id="themeToggleBtn" class="btn-header" title="Toggle Theme">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <span>Theme</span>
+      </button>
+
+      <!-- AI Mapping Workspace -->
+      <a href="workspace.html" class="btn-header" style="background: #10b981; color: #fff; border-color: #10b981; font-weight: 700; text-decoration: none;">
+        <span>🛸 AI Workspace</span>
+      </a>
+
+      <!-- Back to Portal -->
+      <a href="index.html" class="btn-header btn-portal">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        <span>Exit to Home</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN CONTAINER: COLLAPSIBLE SIDEBAR + MAP VIEWPORT
+       ========================================================================== -->
+  <div class="app-container">
+
+    <!-- 1. COLLAPSIBLE SIDEBAR -->
+    <aside class="app-sidebar" id="appSidebar">
+      <div class="sidebar-scroll">
+
+        <!-- SECTION 1: 📍 LOCATION CASCADING FILTERS -->
+        <div class="panel-section expanded" id="secLocation">
+          <div class="section-header">
+            <div class="section-title">
+              <span>📍 Location Hierarchy</span>
+            </div>
+            <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="section-body">
+            <div class="location-grid">
+              <div class="form-group">
+                <label class="form-label">State</label>
+                <select id="selState" class="select-control"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">District</label>
+                <select id="selDistrict" class="select-control"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Taluka / Tehsil</label>
+                <select id="selTaluka" class="select-control"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Village / Cadastral Sheet</label>
+                <select id="selVillage" class="select-control"></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: 🔎 SEARCH PLOT -->
+        <div class="panel-section expanded" id="secSearch">
+          <div class="section-header">
+            <div class="section-title">
+              <span>🔎 Search Plot / Survey</span>
+            </div>
+            <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="section-body">
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="searchPlotNoInput" class="input-control" placeholder="Enter Plot No. (e.g. 101, 104A)">
+              <button id="btnSearchPlot" class="btn-header" style="background: var(--gis-purple); color: #fff; border: none; padding: 0 12px;">Locate</button>
+            </div>
+            <div class="quick-chip-container">
+              <span class="plot-chip" data-plot="101">Plot #101</span>
+              <span class="plot-chip" data-plot="103">Plot #103 (NA)</span>
+              <span class="plot-chip" data-plot="104A">Plot #104A (Comm)</span>
+              <span class="plot-chip" data-plot="108">Plot #108 (Dispute)</span>
+              <span class="plot-chip" data-plot="114">Plot #114 (Temple)</span>
+              <span class="plot-chip" data-plot="117">Plot #117 (Hospital)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: 🗺️ MAP LAYERS (MODULAR SWITCHES) -->
+        <div class="panel-section expanded" id="secLayers">
+          <div class="section-header">
+            <div class="section-title">
+              <span>🗺️ Map Layers</span>
+              <span class="section-badge" id="badgePlotsCount">20 Plots</span>
+            </div>
+            <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="section-body">
+            <div class="layer-list">
+              <!-- Cadastral Boundaries -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerPlotsToggle">
+                  <span class="layer-icon">📐</span>
+                  <span>Cadastral / Plot Boundaries</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerPlotsToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Plot Number Centroid Labels -->
+              <div class="layer-item" style="padding-left: 24px; border-left: 2px solid var(--gis-purple-light);">
+                <label class="layer-info" for="layerPlotLabelsToggle" style="font-size: 12px; color: var(--text-muted);">
+                  <span class="layer-icon">🏷️</span>
+                  <span>Display Plot Numbers</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerPlotLabelsToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Roads -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerRoadsToggle">
+                  <span class="layer-icon">🛣️</span>
+                  <span>Roads &amp; Highways</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerRoadsToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Buildings -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerBuildingsToggle">
+                  <span class="layer-icon">🏢</span>
+                  <span>Buildings &amp; Footprints</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerBuildingsToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Water Bodies -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerWaterToggle">
+                  <span class="layer-icon">💧</span>
+                  <span>Water Bodies &amp; Canals</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerWaterToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Railway -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerRailwayToggle">
+                  <span class="layer-icon">🚆</span>
+                  <span>Railway Track Network</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerRailwayToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Electricity Infrastructure -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerElectricityToggle">
+                  <span class="layer-icon">⚡</span>
+                  <span>220kV Electricity HT Lines</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerElectricityToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Educational / Schools -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerSchoolsToggle">
+                  <span class="layer-icon">🏫</span>
+                  <span>Schools &amp; Education</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerSchoolsToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Hospitals -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerHospitalsToggle">
+                  <span class="layer-icon">🏥</span>
+                  <span>Hospitals &amp; Health Centers</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerHospitalsToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Religious Places -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerReligiousToggle">
+                  <span class="layer-icon">🛕</span>
+                  <span>Religious Places / Temples</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerReligiousToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Government Buildings -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerGovtToggle">
+                  <span class="layer-icon">🏛️</span>
+                  <span>Government / Panchayat Offices</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerGovtToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Parking & Logistics -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerParkingToggle">
+                  <span class="layer-icon">🅿️</span>
+                  <span>Parking &amp; Logistics Hubs</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerParkingToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Landmarks / POIs -->
+              <div class="layer-item">
+                <label class="layer-info" for="layerPoisToggle">
+                  <span class="layer-icon">📍</span>
+                  <span>Important Landmark POIs</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="layerPoisToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: ⚙️ ADVANCED FILTERS -->
+        <div class="panel-section" id="secAdvancedFilters">
+          <div class="section-header">
+            <div class="section-title">
+              <span>⚙️ Advanced Filters</span>
+              <span class="section-badge" id="activeFilterCountBadge" style="display:none; background: rgba(151, 88, 234, 0.15); color: var(--gis-purple);"></span>
+            </div>
+            <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="section-body">
+            <!-- Land Type Multi-Chip Selection -->
+            <div class="filter-row">
+              <label class="form-label">Filter by Land Type</label>
+              <div class="chip-select-group">
+                <span class="filter-chip chip-land-type" data-type="Agricultural">🌾 Agri</span>
+                <span class="filter-chip chip-land-type" data-type="Non-Agricultural (NA)">🏗️ NA</span>
+                <span class="filter-chip chip-land-type" data-type="Commercial">🏢 Commercial</span>
+                <span class="filter-chip chip-land-type" data-type="Residential">🏠 Residential</span>
+                <span class="filter-chip chip-land-type" data-type="Industrial">🏭 Industrial</span>
+                <span class="filter-chip chip-land-type" data-type="Government">🏛️ Govt</span>
+              </div>
+            </div>
+
+            <!-- Plot Area Range -->
+            <div class="filter-row">
+              <label class="form-label">Plot Area Range</label>
+              <div class="chip-select-group">
+                <span class="filter-chip chip-area active" data-range="all">All</span>
+                <span class="filter-chip chip-area" data-range="<1">&lt; 1 Acre</span>
+                <span class="filter-chip chip-area" data-range="1-2">1–2 Acres</span>
+                <span class="filter-chip chip-area" data-range="2-4">2–4 Acres</span>
+                <span class="filter-chip chip-area" data-range=">4">&gt; 4 Acres</span>
+              </div>
+            </div>
+
+            <!-- Property Title Status -->
+            <div class="filter-row">
+              <label class="form-label">Title / Legal Status</label>
+              <select id="filterStatus" class="select-control filter-select">
+                <option value="all">All Statuses</option>
+                <option value="Clear Title">Clear Title Only</option>
+                <option value="In Dispute">In Dispute</option>
+                <option value="Govt Leased">Govt Leased</option>
+                <option value="Mortgaged">Mortgaged</option>
+              </select>
+            </div>
+
+            <!-- Building Presence -->
+            <div class="filter-row">
+              <label class="form-label">Building Presence</label>
+              <select id="filterBuiltUp" class="select-control filter-select">
+                <option value="all">All Parcels</option>
+                <option value="yes">Built-Up Only</option>
+                <option value="no">Vacant Land Only</option>
+              </select>
+            </div>
+
+            <!-- Road Access -->
+            <div class="filter-row">
+              <label class="form-label">Road Access</label>
+              <select id="filterRoadAccess" class="select-control filter-select">
+                <option value="all">All Road Access Types</option>
+                <option value="highway">Highway Frontage Direct</option>
+              </select>
+            </div>
+
+            <button id="btnResetFilters" class="btn-filter-reset">↺ Reset All Filters</button>
+          </div>
+        </div>
+
+        <!-- SECTION 5: 📐 MAP TOOLS -->
+        <div class="panel-section" id="secMapTools">
+          <div class="section-header">
+            <div class="section-title">
+              <span>📐 Map Tools</span>
+            </div>
+            <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="section-body">
+            <div class="tools-grid">
+              <button class="tool-btn" data-tool="measure-dist">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M2 12h20M2 12l5-5M2 12l5 5M22 12l-5-5M22 12l-5 5"/>
+                </svg>
+                <span>Measure Distance</span>
+              </button>
+              <button class="tool-btn" data-tool="measure-area">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 2 22 22 22"></polygon>
+                </svg>
+                <span>Measure Area</span>
+              </button>
+              <button class="tool-btn" data-tool="draw-select">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                  <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                  <path d="M2 2l7.586 7.586"></path>
+                </svg>
+                <span>Draw Query</span>
+              </button>
+              <button class="tool-btn" id="toolMultiSelect">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Multi-Select</span>
+              </button>
+            </div>
+            <button id="toolClearSelection" class="btn-filter-reset" style="margin-top: 8px;">Clear Selection / Measurements</button>
+          </div>
+        </div>
+
+        <!-- SECTION 6: ℹ️ MAP LEGEND -->
+        <div class="panel-section" id="secLegend">
+          <div class="section-header">
+            <div class="section-title">
+              <span>ℹ️ Map Legend</span>
+            </div>
+            <svg class="section-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="section-body" style="font-size: 11px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="layer-color-dot" style="background: #10b981;"></span>
+                <span>Agricultural</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="layer-color-dot" style="background: #0284c7;"></span>
+                <span>Non-Agri (NA)</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="layer-color-dot" style="background: #9758ea;"></span>
+                <span>Commercial</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="layer-color-dot" style="background: #3b82f6;"></span>
+                <span>Residential</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="layer-color-dot" style="background: #f97316;"></span>
+                <span>Industrial</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="layer-color-dot" style="background: #64748b;"></span>
+                <span>Government</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="layer-color-dot" style="background: #f59e0b;"></span>
+                <span>Highway (30m)</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="layer-color-dot" style="background: #38bdf8;"></span>
+                <span>Water Canal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- /sidebar-scroll -->
+    </aside>
+
+    <!-- 2. MAP CANVAS VIEWPORT -->
+    <main class="map-viewport">
+
+      <!-- Floating Button to Re-Open Sidebar when Collapsed -->
+      <button id="floatingSidebarOpen" class="floating-sidebar-open">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+        <span>Show Cadastral Controls</span>
+      </button>
+
+      <!-- Active Measurement Status Banner -->
+      <div id="measurementHudBanner" class="measurement-hud-banner">
+        <span id="measurementHudText">Measuring distance...</span>
+        <button id="btnFinishMeasurement" class="btn-finish-measurement">Done</button>
+      </div>
+
+      <!-- Leaflet Map Container -->
+      <div id="gisMap"></div>
+
+      <!-- Map HUD Floating Controls (Zoom, Reset, Locate, Fullscreen) -->
+      <div class="map-hud-controls">
+        <div class="hud-btn-group">
+          <button id="hudZoomIn" class="hud-btn" title="Zoom In">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <button id="hudZoomOut" class="hud-btn" title="Zoom Out">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+        </div>
+
+        <div class="hud-btn-group">
+          <button id="hudResetView" class="hud-btn" title="Reset Cadastral View">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+          </button>
+          <button id="hudLocate" class="hud-btn" title="Locate My Position">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
+          </button>
+          <button id="hudFullscreen" class="hud-btn" title="Toggle Fullscreen">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Basemap Switcher Bottom Left -->
+      <div class="basemap-switcher-card">
+        <button class="basemap-opt active" data-basemap="light">Clean Light</button>
+        <button class="basemap-opt" data-basemap="satellite">Satellite</button>
+        <button class="basemap-opt" data-basemap="terrain">Terrain</button>
+        <button class="basemap-opt" data-basemap="dark">Dark Canvas</button>
+        <button class="basemap-opt" data-basemap="osm">OpenStreetMap</button>
+      </div>
+
+      <!-- Coordinates HUD Bottom Right -->
+      <div class="map-status-hud">
+        <span>LAT: <strong id="hudLat">18.58180</strong></span>
+        <span>LNG: <strong id="hudLng">73.98750</strong></span>
+        <span>ZOOM: <strong id="hudZoom">16</strong></span>
+      </div>
+
+      <!-- 3. DETAILED PLOT INFORMATION PANEL (RIGHT SLIDING DRAWER / MOBILE BOTTOM SHEET) -->
+      <div id="plotInfoDrawer" class="plot-info-drawer">
+        <div class="sheet-handle-bar"></div>
+        <div class="drawer-header">
+          <div>
+            <div class="drawer-plot-title" id="drawerPlotNo">Plot #101</div>
+            <div style="font-size: 12px; color: var(--text-muted);" id="drawerSurveyNo">Survey No: 42/1</div>
+            <div class="drawer-badges">
+              <span class="badge badge-land" id="drawerLandTypeBadge">Agricultural</span>
+              <span class="badge badge-status" id="drawerStatusBadge">Clear Title</span>
+              <span class="badge" id="drawerMultiBadge" style="display:none; background: rgba(16, 185, 129, 0.15); color: #10b981;"><span id="drawerMultiCount">1 Plot</span></span>
+            </div>
+          </div>
+          <button id="drawerCloseBtn" class="drawer-close-btn" title="Close Panel">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <!-- Drawer Navigation Tabs -->
+        <div class="drawer-tabs">
+          <button class="drawer-tab active" data-drawer-tab="details">📋 Attributes</button>
+          <button class="drawer-tab" data-drawer-tab="satellite">🛰️ Satellite (2021/2026)</button>
+          <button class="drawer-tab" data-drawer-tab="change">🤖 AI Change &amp; History</button>
+        </div>
+
+        <div class="drawer-content">
+          <!-- TAB 1: ATTRIBUTES & 7/12 SPECIFICATIONS -->
+          <div id="tabViewDetails" class="drawer-tab-view active">
+            <!-- Area Summary Card -->
+            <div class="metrics-card">
+              <div class="metric-item">
+                <span class="metric-label">Total Area</span>
+                <span class="metric-val" id="metricAcres">1.45 Ac</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Guntha (गुंठा)</span>
+                <span class="metric-val" id="metricGuntha">58 G</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Hectares</span>
+                <span class="metric-val" id="metricHectares">0.587 Ha</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Metric Sq. M</span>
+                <span class="metric-val" id="metricSqM">5,868 m²</span>
+              </div>
+            </div>
+
+            <!-- Comprehensive Attribute Record -->
+            <div>
+              <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Cadastral &amp; Title Record (7/12)</h5>
+              <table class="attr-table">
+                <tr>
+                  <td class="attr-name">Primary Owner</td>
+                  <td class="attr-val" id="attrOwner">Rameshwar Pandurang Patil</td>
+                </tr>
+                <tr>
+                  <td class="attr-name">Co-holders</td>
+                  <td class="attr-val" id="attrCoOwners">Sunita R. Patil, Anand R. Patil</td>
+                </tr>
+                <tr>
+                  <td class="attr-name">Khata Number</td>
+                  <td class="attr-val" id="attrKhata">KH-8429</td>
+                </tr>
+                <tr>
+                  <td class="attr-name">Mutation Entry</td>
+                  <td class="attr-val" id="attrMutation">ME-19402</td>
+                </tr>
+                <tr>
+                  <td class="attr-name">Road Access</td>
+                  <td class="attr-val" id="attrRoadAccess">State Highway Direct Touch (30m)</td>
+                </tr>
+                <tr>
+                  <td class="attr-name">Soil Grade</td>
+                  <td class="attr-val" id="attrSoil">Medium Black (Grade 1)</td>
+                </tr>
+                <tr>
+                  <td class="attr-name">Water Resource</td>
+                  <td class="attr-val" id="attrWater">Canal + Borewell</td>
+                </tr>
+                <tr>
+                  <td class="attr-name">Govt RR Rate</td>
+                  <td class="attr-val" id="attrRate">₹4,200 / sq.m</td>
+                </tr>
+                <tr>
+                  <td class="attr-name">Est. Valuation</td>
+                  <td class="attr-val" id="attrValuation">₹2.46 Cr</td>
+                </tr>
+                <tr>
+                  <td class="attr-name">Centroid GPS</td>
+                  <td class="attr-val" id="attrCoords" style="font-family: var(--font-mono); font-size: 11px;">18.58180, 73.97950</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 2: SATELLITE COMPARISON SLIDER -->
+          <div id="tabViewSatellite" class="drawer-tab-view">
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Compare multi-epoch aerial imagery to spot boundary adjustments and surface evolutions.</div>
+            <div class="drawer-compare-box" id="drawerCompareContainer">
+              <div class="drawer-compare-img" style="background: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80') center/cover;">
+                <span class="drawer-compare-tag" style="left: 8px;">2021 BASELINE</span>
+              </div>
+              <div class="drawer-compare-img" id="drawerCompareOverlay" style="background: url('https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=800&q=80') center/cover; clip-path: inset(0 50% 0 0);">
+                <span class="drawer-compare-tag" style="right: 8px; background: rgba(16, 185, 129, 0.9);">2026 RECENT</span>
+              </div>
+              <div class="drawer-compare-handle" id="drawerCompareHandle" style="left: 50%;">
+                <div class="drawer-compare-circle">↔</div>
+              </div>
+            </div>
+
+            <div class="ai-change-card">
+              <div class="change-score-header">
+                <span style="font-size: 12px; font-weight: 700;">Surface Evolution Scan</span>
+                <span class="change-score-pill">18% Change</span>
+              </div>
+              <div class="change-chip-list">
+                <div class="change-chip-item"><span style="color: #10b981;">✓</span> <span>Agricultural boundary re-aligned</span></div>
+                <div class="change-chip-item"><span style="color: #f59e0b;">⚠</span> <span>Minor structure footprint expanded</span></div>
+                <div class="change-chip-item"><span style="color: #3b82f6;">ℹ</span> <span>Vegetation index increased by 6.4%</span></div>
+              </div>
+              <p style="font-size: 10px; color: var(--text-muted); margin-top: 10px; line-height: 1.4;">*AI analysis is for informational purposes and does not constitute a legal determination of land boundaries.</p>
+            </div>
+          </div>
+
+          <!-- TAB 3: AI CHANGE DETECTION & PARCEL TIMELINE -->
+          <div id="tabViewChange" class="drawer-tab-view">
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Chronological Cadastral Timeline</div>
+            <div class="parcel-timeline">
+              <div class="timeline-step">
+                <div class="timeline-dot"></div>
+                <div class="timeline-year">2021</div>
+                <div class="timeline-desc"><strong>Parcel Mapped &amp; Georeferenced</strong><br><span style="color: var(--text-muted); font-size: 11px;">Survey boundary digitized with sub-meter RTK coordinates.</span></div>
+              </div>
+              <div class="timeline-step">
+                <div class="timeline-dot"></div>
+                <div class="timeline-year">2023</div>
+                <div class="timeline-desc"><strong>Boundary Records Ratified</strong><br><span style="color: var(--text-muted); font-size: 11px;">Subdivision mutation ME-19402 ratified in official revenue register.</span></div>
+              </div>
+              <div class="timeline-step">
+                <div class="timeline-dot"></div>
+                <div class="timeline-year">2025</div>
+                <div class="timeline-desc"><strong>Land-Use Verified</strong><br><span style="color: var(--text-muted); font-size: 11px;">Agricultural cultivation status certified with canal irrigation.</span></div>
+              </div>
+              <div class="timeline-step">
+                <div class="timeline-dot" style="background: #10b981;"></div>
+                <div class="timeline-year" style="color: #10b981;">2026 (Latest)</div>
+                <div class="timeline-desc"><strong>Latest Satellite Imagery &amp; Change Scan</strong><br><span style="color: var(--text-muted); font-size: 11px;">Active status. Potential 18% surface modification detected.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-footer">
+          <button id="btnExportNaksha" class="btn-drawer-action btn-drawer-primary" title="Generate Complete Cadastral Dossier Report">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            <span>Report</span>
+          </button>
+          <div class="export-btn-group">
+            <button id="btnExportGeoJson" class="btn-drawer-action" title="Download selected parcel boundary as GeoJSON">
+              <span>GeoJSON</span>
+            </button>
+            <button id="btnExportCsv" class="btn-drawer-action" title="Download parcel record as CSV">
+              <span>CSV</span>
+            </button>
+          </div>
+          <button id="btnCopyCoords" class="btn-drawer-action" title="Copy GPS Coordinates">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>Coords</span>
+          </button>
+        </div>
+      </div>
+
+    </main>
+  </div> <!-- /app-container -->
+
+  <!-- ==========================================================================
+       MOBILE BOTTOM NAVIGATION BAR
+       ========================================================================== -->
+  <nav class="mobile-bottom-bar">
+    <button class="mobile-nav-btn" id="mobileNavSearch">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span>Search</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobileNavFilters">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+      <span>Filters</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobileNavLayers">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+      <span>Layers</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobileNavAnalytics">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      <span>Analytics</span>
+    </button>
+  </nav>
+
+  <!-- ==========================================================================
+       ANALYTICS & DATA QUALITY MODAL OVERLAY
+       ========================================================================== -->
+  <div id="analyticsModalOverlay" class="analytics-modal-overlay">
+    <div class="analytics-modal">
+      <button id="analyticsModalCloseBtn" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+        <span style="font-size: 24px; color: #10b981;">📊</span>
+        <h3 style="margin: 0; font-size: 20px; font-weight: 800;">GeoParcel.ai Land Analytics</h3>
+      </div>
+      <div style="display: inline-block; background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-bottom: 18px;">
+        Demo Dataset • Wagholi Cadastre (Sheet #14)
+      </div>
+
+      <!-- Summary KPI Row -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+        <div style="background: var(--bg-panel); border: 1px solid var(--border-app); padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Parcels</div>
+          <div style="font-size: 24px; font-weight: 800; color: #10b981; font-family: var(--font-mono); margin-top: 2px;">20</div>
+        </div>
+        <div style="background: var(--bg-panel); border: 1px solid var(--border-app); padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Acreage</div>
+          <div style="font-size: 24px; font-weight: 800; color: var(--text-main); font-family: var(--font-mono); margin-top: 2px;">38.4 Ac</div>
+        </div>
+        <div style="background: var(--bg-panel); border: 1px solid var(--border-app); padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Flagged / Dispute</div>
+          <div style="font-size: 24px; font-weight: 800; color: #f59e0b; font-family: var(--font-mono); margin-top: 2px;">1</div>
+        </div>
+      </div>
+
+      <!-- Land Use Breakdown -->
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;">Land Use Distribution</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>🌾 Agricultural (8 parcels)</span> <span style="font-family: var(--font-mono); font-weight: 700;">40%</span></div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 40%; background: #10b981;"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>🏗️ Non-Agricultural NA (4 parcels)</span> <span style="font-family: var(--font-mono); font-weight: 700;">20%</span></div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 20%; background: #0284c7;"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>🏢 Commercial (3 parcels)</span> <span style="font-family: var(--font-mono); font-weight: 700;">15%</span></div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 15%; background: #9758ea;"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>🏠 Residential (3 parcels)</span> <span style="font-family: var(--font-mono); font-weight: 700;">15%</span></div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 15%; background: #3b82f6;"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>🏭 Industrial &amp; Govt (2 parcels)</span> <span style="font-family: var(--font-mono); font-weight: 700;">10%</span></div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 10%; background: #64748b;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spatial Data Quality -->
+      <div style="background: var(--bg-panel); border: 1px solid var(--border-app); padding: 14px; border-radius: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Data Quality Verification</span>
+          <span style="font-size: 11px; font-family: var(--font-mono); color: #10b981; font-weight: 700;">1,245 parcels checked</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; color: #10b981;">
+            <span>✓</span> <strong>1,231 valid geometries &amp; closed polygon rings</strong>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; color: #f59e0b;">
+            <span>⚠</span> <strong>10 minor boundary overlaps detected (reconciled)</strong>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; color: #ef4444;">
+            <span>⚠</span> <strong>4 historical vertex slivers flagged for re-survey</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       DOSSIER PRINT / EXPORT MODAL OVERLAY
+       ========================================================================== -->
+  <div id="dossierModalOverlay" class="dossier-modal-overlay">
+    <div class="dossier-modal">
+      <button id="dossierModalCloseBtn" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; font-size: 20px; cursor: pointer;">✕</button>
+      <div id="dossierModalContent"></div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+        <button id="btnPrintDossier" style="background: #10b981; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; cursor: pointer;">🖨️ Download PDF / Print</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Cadastral Application Script -->
+  <script type="module" src="./map-app.js"></script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spatial Platform Architecture — GeoParcel.ai</title>
+  <meta name="description" content="Purpose-built distributed architecture delivering 154M+ parcel geometries, sub-0.05m RTK boundary accuracy, and real-time deed vectorization.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="gis-theme.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       ATMOSPHERIC AMBIENT BACKDROP (GIGABRAIN AURA & DOTTED MATRIX)
+       ========================================================================== -->
+  <div class="ambient-glow-backdrop" aria-hidden="true">
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+    <div class="ambient-orb ambient-orb-3"></div>
+    <div class="bg-dotted-matrix"></div>
+  </div>
+
+  <!-- ==========================================================================
+       1. STICKY NAVBAR (MATCHED WITH INDEX.HTML)
+       ========================================================================== -->
+  <header class="site-header enter-nav">
+    <div class="nav-wrapper">
+      <a href="index.html" class="nav-brand">
+        <span class="nav-brand-logo" aria-label="ParcelMap Map Logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" fill="rgba(16, 185, 129, 0.2)"></polygon>
+            <line x1="9" y1="3" x2="9" y2="18"></line>
+            <line x1="15" y1="6" x2="15" y2="21"></line>
+            <circle cx="9" cy="10" r="1.5" fill="#38bdf8" stroke="#38bdf8"></circle>
+          </svg>
+        </span>
+        <div class="nav-brand-text">
+          <span class="nav-brand-name">GeoParcel.ai</span>
+          <span class="nav-brand-sub">Smart Land Intelligence</span>
+        </div>
+      </a>
+
+      <nav class="nav-links" aria-label="Desktop Navigation">
+        <a href="platform.html" class="nav-link active">Platform</a>
+        <a href="index.html#workflow" class="nav-link">Workflow</a>
+        <a href="index.html#features" class="nav-link">Features</a>
+        <a href="index.html#about" class="nav-link">About</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="login.html" class="nav-login">Login</a>
+        <a href="workspace.html" class="btn-primary btn-sm">Launch Map &rarr;</a>
+        <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Drawer Menu -->
+    <div class="mobile-nav-drawer" id="mobileNavDrawer">
+      <a href="platform.html" class="nav-link active">Platform</a>
+      <a href="index.html#workflow" class="nav-link">Workflow</a>
+      <a href="index.html#features" class="nav-link">Features</a>
+      <a href="index.html#about" class="nav-link">About</a>
+      <a href="login.html" class="nav-link">Login</a>
+      <a href="workspace.html" class="btn-primary" style="margin-top: 10px; width: 100%;">Launch Mapping Workspace &rarr;</a>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       2. PLATFORM HERO SECTION
+       ========================================================================== -->
+  <section class="platform-hero-section">
+    <div class="container">
+      <div class="badge-tag enter-stagger delay-1">
+        <span class="shimmer-text">PLATFORM ARCHITECTURE &bull; DISTRIBUTED CADASTRAL ENGINE</span>
+      </div>
+      <h1 class="platform-hero-title enter-stagger delay-2">
+        The Planetary Spatial Engine
+      </h1>
+      <p class="platform-hero-sub enter-stagger delay-3">
+        Purpose-built distributed architecture delivering 154M+ parcel geometries, sub-0.05m RTK boundary accuracy, and real-time deed vectorization across all 3,144 U.S. counties.
+      </p>
+
+      <!-- 4 Stat Metric Cards with Hover Highlight -->
+      <div class="platform-metrics-grid enter-stagger delay-4">
+        <div class="metric-chip">
+          <div class="metric-value">18ms</div>
+          <div class="metric-label">Median Edge Latency</div>
+          <div class="metric-meta">Global 280+ edge PoPs</div>
+        </div>
+        <div class="metric-chip">
+          <div class="metric-value">154.2M</div>
+          <div class="metric-label">Active Parcels Indexed</div>
+          <div class="metric-meta">Planar RTK boundaries</div>
+        </div>
+        <div class="metric-chip">
+          <div class="metric-value">99.98%</div>
+          <div class="metric-label">Topology Consistency</div>
+          <div class="metric-meta">Zero slivers or overlaps</div>
+        </div>
+        <div class="metric-chip">
+          <div class="metric-value">3,144</div>
+          <div class="metric-label">Counties Synced (100%)</div>
+          <div class="metric-meta">Automated hourly feeds</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       3. CONTINUOUS CADASTRE DATA PIPELINE
+       ========================================================================== -->
+  <section class="platform-pipeline-section scroll-reveal">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge-tag badge-cyan">CONTINUOUS CADASTRAL PIPELINE</div>
+        <h2 class="section-title">Automated Real-Time Ingestion to Sub-Centimeter GIS</h2>
+        <p class="section-sub">How raw municipal recorder deeds and GIS surveyor shapefiles are ingested, geometrically cleansed, and delivered to your application in under 20 milliseconds.</p>
+      </div>
+
+      <div class="platform-pipeline-grid">
+        <!-- Step 1 -->
+        <div class="platform-step-card">
+          <div class="step-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">1</div>
+          <div class="step-body">
+            <h3>Continuous County Ingestion &amp; Optical Metes-and-Bounds Parsing</h3>
+            <p>Our distributed scraping workers continuously monitor County Clerk recorder feeds, pulling recorded warranty deeds, parcel split surveys, and legal metes-and-bounds descriptions.</p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="platform-step-card">
+          <div class="step-icon-wrap" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">2</div>
+          <div class="step-body">
+            <h3>Automated Topological Cleansing &amp; Edge Snapping</h3>
+            <p>Raw municipal polygons frequently feature slivers, overlapping easements, and outdated datum projections. Our spatial engine enforces planar topology, snapping common boundaries with sub-centimeter tolerances.</p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="platform-step-card">
+          <div class="step-icon-wrap" style="background: rgba(139, 92, 246, 0.2); color: #a78bfa;">3</div>
+          <div class="step-body">
+            <h3>Multi-Scale H3 Hexagonal &amp; Dynamic MVT Vector Tiling</h3>
+            <p>Pre-compiled spatial indices (Uber H3 &amp; Quadtree) allow instant bounding-box lookups at zoom levels 0 through 22, pre-baked with tax assessment records and zoning classifications.</p>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="platform-step-card">
+          <div class="step-icon-wrap" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">4</div>
+          <div class="step-body">
+            <h3>Global Edge Delivery &amp; WebSocket Cadastre Stream</h3>
+            <p>Cached across 280+ global edge Points-of-Presence (PoPs). Client map viewers receive lightweight binary protobuf tiles with zero-flash rendering.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       4. BENCHMARK COMPARISON TABLE
+       ========================================================================== -->
+  <section class="platform-benchmark-section scroll-reveal">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge-tag">PERFORMANCE BENCHMARK</div>
+        <h2 class="section-title">Architecture Benchmark Comparison</h2>
+        <p class="section-sub">Tested against a single spatial query bounding box returning 25,000 polygons across Maricopa County, AZ.</p>
+      </div>
+
+      <div class="gis-table-wrap">
+        <table class="gis-table">
+          <thead>
+            <tr>
+              <th>Architecture / Engine</th>
+              <th>Query Response</th>
+              <th>Coordinate Accuracy</th>
+              <th>Memory Overhead</th>
+              <th>Automated Title Sync</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="table-row-highlight">
+              <td>
+                <div class="table-brand-cell">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" fill="rgba(16, 185, 129, 0.25)"></polygon>
+                    <line x1="9" y1="3" x2="9" y2="18"></line>
+                    <line x1="15" y1="6" x2="15" y2="21"></line>
+                    <circle cx="9" cy="10" r="1.5" fill="#38bdf8"></circle>
+                  </svg>
+                  <strong>GeoParcel.ai Distributed Engine</strong>
+                </div>
+              </td>
+              <td><span class="badge-tag" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: 800; border: 1px solid rgba(16, 185, 129, 0.4);">16 ms</span></td>
+              <td>Sub-0.05m RTK Planar</td>
+              <td>4.2 MB (Protobuf MVT)</td>
+              <td>Real-Time (Hourly)</td>
+            </tr>
+            <tr>
+              <td>Standard PostGIS on AWS RDS</td>
+              <td><span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">420 ms</span></td>
+              <td>Variable (EPSG:4326)</td>
+              <td>48.6 MB (GeoJSON)</td>
+              <td>Manual ETL Required</td>
+            </tr>
+            <tr>
+              <td>Legacy Municipal ArcGIS Server</td>
+              <td><span class="badge-tag" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">1,840 ms</span></td>
+              <td>County Specific Datum</td>
+              <td>82.1 MB (ESRI JSON)</td>
+              <td>Quarterly / Annual</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       5. CALL TO ACTION SECTION
+       ========================================================================== -->
+  <section class="platform-cta-section scroll-reveal">
+    <div class="container">
+      <div class="platform-cta-card">
+        <h2 class="cta-title">Ready to Integrate the Spatial Engine?</h2>
+        <p class="cta-desc">
+          Get instant sandbox credentials with 5,000 free spatial queries, explore our live API documentation, or launch the interactive mapping workspace.
+        </p>
+        <div class="cta-actions">
+          <a href="workspace.html" class="btn-primary">Launch Mapping Workspace &rarr;</a>
+          <a href="enterprise.html" class="btn-secondary">Explore API Sandbox</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       6. SITE FOOTER (MATCHED WITH INDEX.HTML)
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-brand">
+            <span class="nav-brand-logo" aria-label="ParcelMap Map Logo">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" fill="rgba(16, 185, 129, 0.2)"></polygon>
+                <line x1="9" y1="3" x2="9" y2="18"></line>
+                <line x1="15" y1="6" x2="15" y2="21"></line>
+                <circle cx="9" cy="10" r="1.5" fill="#38bdf8" stroke="#38bdf8"></circle>
+              </svg>
+            </span>
+            <div class="nav-brand-text">
+              <span class="nav-brand-name">GeoParcel.ai</span>
+              <span class="nav-brand-sub">Smart Land Intelligence</span>
+            </div>
+          </a>
+          <p class="footer-desc">
+            Making land information simple, clear, and accessible through intelligent digital mapping.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Platform</div>
+          <ul class="footer-links">
+            <li><a href="platform.html" class="footer-link">Spatial Architecture</a></li>
+            <li><a href="layers.html" class="footer-link">GIS &amp; Cadastre Layers</a></li>
+            <li><a href="intelligence.html" class="footer-link">Parcel Intelligence &amp; APN</a></li>
+            <li><a href="layers.html#flood" class="footer-link">FEMA Hazard Overlays</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Solutions</div>
+          <ul class="footer-links">
+            <li><a href="solutions.html#surveyors" class="footer-link">Land Surveyors</a></li>
+            <li><a href="solutions.html#brokers" class="footer-link">CRE Land Brokers</a></li>
+            <li><a href="solutions.html#energy" class="footer-link">Renewable Developers</a></li>
+            <li><a href="solutions.html#municipal" class="footer-link">Municipal GIS Teams</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Resources</div>
+          <ul class="footer-links">
+            <li><a href="enterprise.html" class="footer-link">API Documentation</a></li>
+            <li><a href="enterprise.html#playground" class="footer-link">Interactive Sandbox</a></li>
+            <li><a href="workspace.html" class="footer-link">Cadastral Workspace</a></li>
+            <li><a href="map.html" class="footer-link">Explore Real Map</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 GeoParcel Technologies, Inc. All rights reserved.</div>
+        <div style="display: flex; gap: 20px;">
+          <a href="#" class="footer-link">Privacy Policy</a>
+          <a href="#" class="footer-link">Terms of Service</a>
+          <a href="#" class="footer-link">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Nav Toggle & Scroll Reveal Script -->
+  <script>
+    // Mobile Drawer Toggle
+    const mobileNavToggle = document.getElementById('mobileNavToggle');
+    const mobileNavDrawer = document.getElementById('mobileNavDrawer');
+    if (mobileNavToggle && mobileNavDrawer) {
+      mobileNavToggle.addEventListener('click', () => {
+        mobileNavDrawer.classList.toggle('active');
+      });
+    }
+
+    // Scroll Reveal Observer
+    const revealElements = document.querySelectorAll('.scroll-reveal');
+    if ('IntersectionObserver' in window && revealElements.length > 0) {
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      revealElements.forEach((el) => revealObserver.observe(el));
+    } else {
+      revealElements.forEach((el) => el.classList.add('in-view'));
+    }
+  </script>
+</body>
+</html>
