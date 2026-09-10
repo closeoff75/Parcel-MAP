@@ -698,14 +698,27 @@ router.post('/parcels/:id/merge', (req, res) => {
 // POST /parcels/:id/validate (Requirement 21)
 router.post('/parcels/:id/validate', (req, res) => {
   try {
-    const parcel = db.getParcelById(req.params.id);
+    const pId = req.params.id;
+    const projectId = req.query.project_id || req.body.project_id || null;
+    const parcel = db.getParcelById(pId, projectId);
     const geom = req.body.geometry || (parcel ? parcel.geometry : null);
     if (!geom) return res.status(400).json({ success: false, error: 'No geometry provided for validation' });
 
     const result = GISEngine.validateSingleParcel(geom);
+    const targetProjId = projectId || (parcel ? parcel.project_id : null);
+    if (targetProjId) {
+      const features = db.getFeaturesByProjectId(targetProjId);
+      const waterFeatures = features.filter(f => f.feature_type === 'Water' || f.detection_type === 'WATER' || f.name?.toLowerCase().includes('water') || f.name?.toLowerCase().includes('canal'));
+      const waterOverlap = GISEngine.checkWaterOverlap(result.repaired_geometry || geom, waterFeatures);
+      if (waterOverlap.hasOverlap) {
+        result.valid = false;
+        result.errors.push(...waterOverlap.errors);
+      }
+    }
+
     res.json({
       success: true,
-      parcel_id: req.params.id,
+      parcel_id: pId,
       ...result
     });
   } catch (err) {
@@ -715,32 +728,67 @@ router.post('/parcels/:id/validate', (req, res) => {
 
 // PUT /parcels/:id/geometry (Requirement 17 & 21)
 router.put('/parcels/:id/geometry', (req, res) => {
+  const pId = req.params.id;
+  const projectId = req.query.project_id || req.body.project_id || null;
+  console.log(`[Verification] save_started: true, parcel_id: ${pId}`);
+
   try {
-    const { geometry, comments, remarks, reviewer_name } = req.body;
-    const existing = db.getParcelById(req.params.id);
-    if (!existing) return res.status(404).json({ success: false, error: 'Parcel not found' });
-    if (!geometry) return res.status(400).json({ success: false, error: 'Missing geometry' });
+    const { geometry, image_coordinates, comments, remarks, reviewer_name } = req.body;
+    const existing = db.getParcelById(pId, projectId);
+    if (!existing) {
+      console.log(`[Verification] save_failed: true, parcel_id: ${pId}, error: 'Parcel not found'`);
+      return res.status(404).json({ success: false, error: 'Parcel not found' });
+    }
+    if (!geometry) {
+      console.log(`[Verification] save_failed: true, parcel_id: ${pId}, error: 'Missing geometry'`);
+      return res.status(400).json({ success: false, error: 'Missing geometry' });
+    }
 
     const validation = GISEngine.validateSingleParcel(geometry);
+
+    // Check water overlap
+    const targetProjId = existing.project_id || projectId;
+    if (targetProjId) {
+      const features = db.getFeaturesByProjectId(targetProjId);
+      const waterFeatures = features.filter(f => f.feature_type === 'Water' || f.detection_type === 'WATER' || f.name?.toLowerCase().includes('water') || f.name?.toLowerCase().includes('canal'));
+      const waterOverlap = GISEngine.checkWaterOverlap(validation.repaired_geometry || geometry, waterFeatures);
+      if (waterOverlap.hasOverlap) {
+        validation.valid = false;
+        validation.errors.push(...waterOverlap.errors);
+      }
+    }
+
     if (!validation.valid && validation.errors.length > 0) {
+      console.log(`[Verification] save_failed: true, parcel_id: ${pId}, validation_result: false, reason: ${validation.errors.join('; ')}`);
       return res.status(400).json({
         success: false,
-        error: 'Invalid geometry: ' + validation.errors.join('; '),
+        error: 'Cannot save: ' + validation.errors.join('; '),
         details: validation.errors
       });
     }
+
+    console.log(`[Verification] validation_result: true, parcel_id: ${pId}`);
 
     const cleanGeom = validation.repaired_geometry || GISEngine.cleanGeometry(geometry);
     const areas = GISEngine.calculateAreas(cleanGeom);
     const prevGeom = existing.geometry;
     const note = remarks || comments || existing.remarks || existing.comments || 'Boundary vertices adjusted and validated by reviewer.';
 
-    const updated = db.updateParcel(existing.parcel_id || existing.id, {
+    // Synchronize image_coordinates and geo_geometry
+    const imageCoordsToSave = image_coordinates || cleanGeom.coordinates;
+    const updates = {
       geometry: cleanGeom,
+      image_coordinates: imageCoordsToSave,
       ...areas,
       comments: note,
       remarks: note
-    });
+    };
+
+    if (existing.geo_geometry) {
+      updates.geo_geometry = cleanGeom;
+    }
+
+    const updated = db.updateParcel(existing.parcel_id || existing.id, updates, existing.project_id);
 
     const newVer = db.addParcelVersion({
       parcel_id: existing.id || existing.parcel_id,
@@ -755,6 +803,8 @@ router.put('/parcels/:id/geometry', (req, res) => {
       remarks: note
     });
 
+    console.log(`[Verification] save_completed: true, parcel_id: ${pId}, version_created: ${newVer?.version || 2}`);
+
     res.json({
       success: true,
       message: 'Saved successfully',
@@ -763,6 +813,7 @@ router.put('/parcels/:id/geometry', (req, res) => {
       validation
     });
   } catch (err) {
+    console.log(`[Verification] save_failed: true, parcel_id: ${pId}, error: ${err.message}`);
     res.status(500).json({ success: false, error: err.message });
   }
 });

@@ -116,8 +116,16 @@ export class GISEngine {
     }
 
     const ring = geometry.coordinates[0];
-    if (!ring || ring.length < 3) {
+    if (!ring || !Array.isArray(ring) || ring.length < 3) {
       return { valid: false, errors: ['Polygon must contain at least 3 distinct vertices'], warnings: [], repaired_geometry: null };
+    }
+
+    // 0. Coordinate validity check
+    for (let i = 0; i < ring.length; i++) {
+      const pt = ring[i];
+      if (!Array.isArray(pt) || pt.length < 2 || isNaN(pt[0]) || isNaN(pt[1]) || !isFinite(pt[0]) || !isFinite(pt[1])) {
+        return { valid: false, errors: ['Polygon contains invalid or non-numeric coordinates'], warnings: [], repaired_geometry: null };
+      }
     }
 
     // 1. Remove consecutive duplicate vertices
@@ -158,7 +166,7 @@ export class GISEngine {
         const polyFeature = turf.polygon([deduplicated]);
         const kinks = turf.kinks(polyFeature);
         if (kinks && kinks.features && kinks.features.length > 0) {
-          errors.push(`Polygon contains ${kinks.features.length} self-intersection kinks.`);
+          errors.push(`Polygon self-intersects (contains ${kinks.features.length} intersection kinks).`);
         }
       } catch (err) {
         errors.push(`Geometric topology error: ${err.message}`);
@@ -171,22 +179,38 @@ export class GISEngine {
       }
     }
 
-    // 4. Sliver check
-    const pxArea = this.planarArea(deduplicated);
-    const perim = this.planarPerimeter(deduplicated);
-    const compactness = perim > 0 ? (4 * Math.PI * pxArea) / (perim * perim) : 0;
+    // 4. Non-zero area and sliver check
+    let areaVal = 0;
     if (isImageSpace) {
-      if (pxArea < 600) {
+      const pxArea = this.planarArea(deduplicated);
+      const perim = this.planarPerimeter(deduplicated);
+      const compactness = perim > 0 ? (4 * Math.PI * pxArea) / (perim * perim) : 0;
+      areaVal = pxArea;
+
+      if (pxArea <= 0.0001) {
+        errors.push('Polygon area must be greater than zero.');
+      } else if (pxArea < 600) {
         warnings.push(`Polygon is extremely small (${Math.round(pxArea)} px²).`);
       } else if (compactness < 0.05) {
         warnings.push('High perimeter-to-area ratio (elongated sliver).');
       }
     } else {
-      const sqm = turf.area(turf.polygon([deduplicated]));
-      if (sqm < 50) {
-        warnings.push(`Polygon area is very small (${Math.round(sqm)} m²).`);
-      } else if (compactness < 0.05) {
-        warnings.push('High perimeter-to-area ratio (elongated sliver).');
+      try {
+        const polyFeat = turf.polygon([deduplicated]);
+        const sqm = turf.area(polyFeat);
+        const perimMeters = turf.length(turf.polygonToLine(polyFeat), { units: 'meters' });
+        const compactness = perimMeters > 0 ? (4 * Math.PI * sqm) / (perimMeters * perimMeters) : 0;
+        areaVal = sqm;
+
+        if (sqm <= 0.0001) {
+          errors.push('Polygon area must be greater than zero.');
+        } else if (sqm < 50) {
+          warnings.push(`Polygon area is very small (${Math.round(sqm)} m²).`);
+        } else if (compactness < 0.05) {
+          warnings.push('High perimeter-to-area ratio (elongated sliver).');
+        }
+      } catch (e) {
+        errors.push('Invalid polygon geometry for area computation: ' + e.message);
       }
     }
 
@@ -195,8 +219,68 @@ export class GISEngine {
       errors,
       warnings,
       repaired_geometry: repairedGeometry,
-      area_px: Math.round(pxArea),
-      compactness: Number(compactness.toFixed(3))
+      area: Math.round(areaVal),
+      area_px: isImageSpace ? Math.round(areaVal) : undefined,
+      area_sqm: !isImageSpace ? Math.round(areaVal) : undefined
+    };
+  }
+
+  /**
+   * Validates whether a parcel geometry overlaps with prohibited water bodies.
+   */
+  static checkWaterOverlap(geometry, waterFeatures = []) {
+    if (!geometry || !geometry.coordinates || !waterFeatures || waterFeatures.length === 0) {
+      return { hasOverlap: false, errors: [] };
+    }
+
+    const ring = geometry.coordinates[0];
+    if (!ring || ring.length < 4) return { hasOverlap: false, errors: [] };
+
+    const isImageSpace = Math.abs(ring[0][0]) > 180 || Math.abs(ring[0][1]) > 90;
+    const errors = [];
+
+    for (const wf of waterFeatures) {
+      const wGeom = wf.geo_geometry || wf.geometry;
+      if (!wGeom || !wGeom.coordinates) continue;
+
+      if (!isImageSpace) {
+        try {
+          const pFeat = turf.feature(geometry);
+          const wFeat = turf.feature(wGeom);
+          if (turf.booleanIntersects(pFeat, wFeat)) {
+            const inter = turf.intersect(turf.featureCollection([pFeat, wFeat]));
+            const interArea = inter ? turf.area(inter) : 0;
+            if (interArea > 5) { // more than 5 sq meters is prohibited overlap
+              errors.push(`Prohibited water overlap detected with ${wf.name || 'water body'} (${Math.round(interArea)} m²)`);
+            }
+          }
+        } catch {
+          // ignore projection or precision errors
+        }
+      } else {
+        // Image-space bounding box and point-in-polygon check for water features
+        const wCoords = wf.image_coordinates || wGeom.coordinates?.[0] || [];
+        if (wCoords.length >= 3) {
+          let minX1 = Infinity, maxX1 = -Infinity, minY1 = Infinity, maxY1 = -Infinity;
+          let minX2 = Infinity, maxX2 = -Infinity, minY2 = Infinity, maxY2 = -Infinity;
+          ring.forEach(([x, y]) => { if (x < minX1) minX1 = x; if (x > maxX1) maxX1 = x; if (y < minY1) minY1 = y; if (y > maxY1) maxY1 = y; });
+          wCoords.forEach(([x, y]) => { if (x < minX2) minX2 = x; if (x > maxX2) maxX2 = x; if (y < minY2) minY2 = y; if (y > maxY2) maxY2 = y; });
+          const overlapBbox = !(maxX1 < minX2 || minX1 > maxX2 || maxY1 < minY2 || minY1 > maxY2);
+          if (overlapBbox) {
+            const interW = Math.max(0, Math.min(maxX1, maxX2) - Math.max(minX1, minX2));
+            const interH = Math.max(0, Math.min(maxY1, maxY2) - Math.max(minY1, minY2));
+            const interArea = interW * interH;
+            if (interArea > 100) {
+              errors.push(`Prohibited water overlap detected with ${wf.name || 'water body'} (${Math.round(interArea)} px²)`);
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      hasOverlap: errors.length > 0,
+      errors
     };
   }
 

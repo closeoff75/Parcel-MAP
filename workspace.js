@@ -72,6 +72,9 @@ class ParcelMapWorkspace {
     this.vertexMarkers = [];
     this.midpointMarkers = [];
     this.activeEditingLayer = null;
+    this.activeEditPolygon = null;
+    this.initialEditGeometry = null;
+    this.initialEditImageCoords = null;
 
     this.maps = {
       detection: null,
@@ -1688,8 +1691,11 @@ class ParcelMapWorkspace {
   renderVerifyMapLayers() {
     if (!this.maps.verify) return;
 
-    // Clear all layer groups
-    Object.values(this.verifyLayers).forEach(group => group.clearLayers());
+    // Clear all layer groups (preserve editLayer while actively editing)
+    Object.entries(this.verifyLayers).forEach(([key, group]) => {
+      if (key === 'editLayer' && this.editMode) return;
+      group.clearLayers();
+    });
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
     const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
@@ -1826,6 +1832,10 @@ class ParcelMapWorkspace {
 
       // REQUIREMENT 10: When a parcel is clicked: Highlight ONLY that parcel.
       if (isSelected) {
+        if (this.editMode) {
+          // While in edit mode, the selected parcel is actively rendered on editLayer
+          return;
+        }
         strokeColor = '#38bdf8';
         fillColor = '#0284c7';
         fillOpacity = 0.45;
@@ -2020,8 +2030,7 @@ class ParcelMapWorkspace {
     if (!parcel) return;
 
     if (this.editMode) {
-      this.editMode = false;
-      this.clearVertexHandles();
+      this.exitEditMode();
     }
 
     this.renderVerifyParcelList();
@@ -2181,42 +2190,144 @@ class ParcelMapWorkspace {
   }
 
   /* --------------------------------------------------------------------------
-     7. PARCEL EDITING & VERTEX MANIPULATION (Requirement 11, 16, 17)
+     7. PARCEL EDITING & VERTEX MANIPULATION (Requirement 2-10, 16-19, 23-25)
      -------------------------------------------------------------------------- */
   bindEditingTools() {
+    // Select Parcel Mode
     document.getElementById('toolSelectParcel')?.addEventListener('click', () => {
-      this.editMode = false;
-      this.clearVertexHandles();
+      if (this.editMode) this.exitEditMode();
       this.showToast('Select Mode active', 'info');
     });
 
+    // Edit Vertices Mode (Floating Toolbar)
     document.getElementById('toolEditVertices')?.addEventListener('click', () => {
-      const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
-      if (!parcel) return;
-      this.editMode = true;
-      this.saveHistoryState();
-      this.renderVertexHandles();
-      this.showToast(`Vertex Editing Mode: Drag white handles to adjust boundaries of ${parcel.parcel_id || parcel.id}`, 'info');
+      this.toggleEditMode();
     });
 
+    // Split Polygon
     document.getElementById('toolSplitPolygon')?.addEventListener('click', () => {
+      if (this.editMode) this.exitEditMode();
       this.splitSelectedParcel();
     });
 
+    // Merge Polygons
     document.getElementById('toolMergePolygons')?.addEventListener('click', () => {
+      if (this.editMode) this.exitEditMode();
       this.mergeSelectedParcel();
     });
 
+    // Undo / Redo
     document.getElementById('toolUndo')?.addEventListener('click', () => this.undoEdit());
     document.getElementById('toolRedo')?.addEventListener('click', () => this.redoEdit());
 
+    // Save Edits
     document.getElementById('btnSaveParcelEdits')?.addEventListener('click', () => this.saveParcelEdits());
+
+    // Cancel Edits
+    document.getElementById('btnCancelParcelEdits')?.addEventListener('click', () => this.cancelParcelEdits());
+
+    // Keyboard Shortcuts for editing: Esc (Cancel), Ctrl+Z (Undo), Ctrl+Y (Redo)
+    window.addEventListener('keydown', (e) => {
+      if (this.currentView !== 'verify') return;
+      if (e.key === 'Escape' && this.editMode) {
+        e.preventDefault();
+        this.cancelParcelEdits();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          this.redoEdit();
+        } else {
+          e.preventDefault();
+          this.undoEdit();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        this.redoEdit();
+      }
+    });
+  }
+
+  enterEditMode() {
+    const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
+    if (!parcel) {
+      this.showToast('Please select a parcel first to edit its vertices.', 'warning');
+      return;
+    }
+
+    this.editMode = true;
+    const pId = parcel.parcel_id || parcel.id;
+
+    // Preserve initial state for cancel/revert
+    this.initialEditGeometry = JSON.parse(JSON.stringify(parcel.geometry));
+    this.initialEditImageCoords = parcel.image_coordinates ? JSON.parse(JSON.stringify(parcel.image_coordinates)) : null;
+
+    // Initialize edit history for undo/redo
+    this.editHistory = [JSON.parse(JSON.stringify(parcel.geometry))];
+    this.historyIndex = 0;
+
+    // UI Active States
+    document.getElementById('toolEditVertices')?.classList.add('editing-active');
+    document.getElementById('toolSelectParcel')?.classList.remove('active');
+    document.getElementById('btnActionEdit')?.classList.add('editing-active');
+    const btnCancel = document.getElementById('btnCancelParcelEdits');
+    if (btnCancel) btnCancel.style.display = 'inline-flex';
+
+    this.renderVerifyMapLayers();
+    this.renderVertexHandles();
+
+    console.log(`[Verification] parcel_id: ${pId}, edit_started: true`);
+    this.showToast(`Editing ${pId}: Drag vertices to reshape boundary, click + to add, right-click to delete.`, 'info');
+  }
+
+  exitEditMode() {
+    this.editMode = false;
+    this.initialEditGeometry = null;
+    this.initialEditImageCoords = null;
+
+    document.getElementById('toolEditVertices')?.classList.remove('editing-active');
+    document.getElementById('toolSelectParcel')?.classList.add('active');
+    document.getElementById('btnActionEdit')?.classList.remove('editing-active');
+    const btnCancel = document.getElementById('btnCancelParcelEdits');
+    if (btnCancel) btnCancel.style.display = 'none';
+
+    this.clearVertexHandles();
+    this.renderVerifyMapLayers();
+  }
+
+  toggleEditMode() {
+    if (this.editMode) {
+      this.exitEditMode();
+      this.showToast('Exited edit mode', 'info');
+    } else {
+      this.enterEditMode();
+    }
+  }
+
+  cancelParcelEdits() {
+    if (!this.editMode) return;
+    const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
+    if (parcel && this.initialEditGeometry) {
+      parcel.geometry = JSON.parse(JSON.stringify(this.initialEditGeometry));
+      if (this.initialEditImageCoords) {
+        parcel.image_coordinates = JSON.parse(JSON.stringify(this.initialEditImageCoords));
+      }
+      if (parcel.geo_geometry) {
+        parcel.geo_geometry = JSON.parse(JSON.stringify(this.initialEditGeometry));
+      }
+      this.recalculateParcelArea(parcel);
+    }
+    this.exitEditMode();
+    this.showToast('Edit cancelled; reverted to original geometry.', 'info');
   }
 
   renderVertexHandles() {
     this.clearVertexHandles();
     const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
     if (!parcel || !this.maps.verify || !parcel.geometry || !parcel.geometry.coordinates) return;
+
+    if (!this.maps.verify.hasLayer(this.verifyLayers.editLayer)) {
+      this.verifyLayers.editLayer.addTo(this.maps.verify);
+    }
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
     const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
@@ -2226,96 +2337,193 @@ class ParcelMapWorkspace {
     const fromLeaflet = (latlng) => !isGeoreferenced ? [latlng.lng, height - latlng.lat] : [latlng.lng, latlng.lat];
 
     const ring = parcel.geometry.coordinates[0];
+    if (!ring || ring.length < 4) return;
     const n = ring.length - 1;
 
+    // Ensure image_coordinates matches if image-space
+    if (!isGeoreferenced) {
+      parcel.image_coordinates = [ring];
+    }
+
+    // Dedicated active editing polygon rendered directly on editLayer
+    const latlngs = ring.map(toLeaflet);
+    this.activeEditPolygon = L.polygon(latlngs, {
+      color: '#38bdf8',
+      weight: 3.5,
+      dashArray: '6 4',
+      fillColor: '#0284c7',
+      fillOpacity: 0.25,
+      interactive: false
+    }).addTo(this.verifyLayers.editLayer);
+
+    // Render draggable L.marker vertex handles
     for (let i = 0; i < n; i++) {
       const coord = ring[i];
       const latlng = toLeaflet(coord);
 
-      const vMarker = L.circleMarker(latlng, {
-        radius: 6,
-        color: '#ffffff',
-        fillColor: '#10b981',
-        fillOpacity: 1,
-        weight: 2
+      const vIcon = L.divIcon({
+        className: 'pm-vertex-handle-icon',
+        html: `<div class="pm-vertex-handle" data-idx="${i}" title="Vertex #${i + 1}: Drag to move, Right-click to delete"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+
+      const vMarker = L.marker(latlng, {
+        draggable: true,
+        icon: vIcon,
+        riseOnHover: true,
+        zIndexOffset: 1000
       }).addTo(this.verifyLayers.editLayer);
 
-      let isDragging = false;
+      let initialCoord = null;
 
-      vMarker.on('mousedown', () => {
-        isDragging = true;
+      vMarker.on('dragstart', () => {
+        initialCoord = [...ring[i]];
         this.maps.verify.dragging.disable();
+        vMarker.getElement()?.querySelector('.pm-vertex-handle')?.classList.add('dragging');
+        this.midpointMarkers.forEach(m => m.setOpacity(0));
       });
 
-      this.maps.verify.on('mousemove', (e) => {
-        if (!isDragging) return;
-        vMarker.setLatLng(e.latlng);
+      vMarker.on('drag', (e) => {
+        const newLatLng = e.target.getLatLng();
+        const newCoord = fromLeaflet(newLatLng);
 
-        const newCoord = fromLeaflet(e.latlng);
         ring[i] = newCoord;
-        if (i === 0) ring[ring.length - 1] = newCoord; // keep closed ring
+        if (i === 0) ring[ring.length - 1] = newCoord; // keep ring closed
 
-        this.recalculateParcelArea(parcel);
-        this.renderVerifyMapLayers();
-      });
+        // Synchronize all coordinate representations
+        parcel.geometry.coordinates[0] = ring;
+        if (parcel.image_coordinates) parcel.image_coordinates[0] = ring;
+        if (parcel.geo_geometry) parcel.geo_geometry.coordinates[0] = ring;
 
-      this.maps.verify.on('mouseup', () => {
-        if (isDragging) {
-          isDragging = false;
-          this.maps.verify.dragging.enable();
-          this.saveHistoryState();
+        // Live update active editing polygon smoothly
+        if (this.activeEditPolygon) {
+          this.activeEditPolygon.setLatLngs([ring.map(toLeaflet)]);
         }
+
+        // Live update area badge in drawer
+        this.recalculateParcelArea(parcel);
       });
 
-      // Right-click to delete vertex (Requirement 11)
+      vMarker.on('dragend', (e) => {
+        this.maps.verify.dragging.enable();
+        vMarker.getElement()?.querySelector('.pm-vertex-handle')?.classList.remove('dragging');
+
+        const newLatLng = e.target.getLatLng();
+        const finalCoord = fromLeaflet(newLatLng);
+
+        console.log(`[Verification] parcel_id: ${parcel.parcel_id || parcel.id}, vertex_index: ${i}, old_coordinate: [${initialCoord ? initialCoord[0].toFixed(6) : '-'}, ${initialCoord ? initialCoord[1].toFixed(6) : '-'}], new_coordinate: [${finalCoord[0].toFixed(6)}, ${finalCoord[1].toFixed(6)}]`);
+
+        this.saveHistoryState();
+        this.renderMidpointHandles();
+      });
+
+      // Right-click to delete vertex (Requirement 8)
       vMarker.on('contextmenu', (e) => {
         L.DomEvent.stopPropagation(e);
-        if (ring.length > 4) {
-          ring.splice(i, 1);
-          if (i === 0) ring[ring.length - 1] = ring[0];
-          this.recalculateParcelArea(parcel);
-          this.renderVertexHandles();
-          this.renderVerifyMapLayers();
-          this.saveHistoryState();
-          this.showToast(`Deleted vertex #${i + 1}`, 'info');
-        } else {
-          this.showToast('Polygon must have at least 3 vertices', 'warning');
-        }
+        L.DomEvent.preventDefault(e);
+        this.deleteVertex(i);
       });
 
       this.vertexMarkers.push(vMarker);
+    }
 
-      // Midpoint Add-Vertex Handle (Requirement 11)
-      const nextCoord = ring[(i + 1) % n];
-      const midCoord = [(coord[0] + nextCoord[0]) / 2, (coord[1] + nextCoord[1]) / 2];
+    // Render midpoint handles for adding vertices (Requirement 7)
+    this.renderMidpointHandles();
+  }
+
+  renderMidpointHandles() {
+    this.midpointMarkers.forEach(m => m.remove());
+    this.midpointMarkers = [];
+
+    if (!this.editMode) return;
+    const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
+    if (!parcel || !parcel.geometry || !parcel.geometry.coordinates) return;
+
+    const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
+    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const height = Number(currentImg?.height) || 3000;
+
+    const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
+
+    const ring = parcel.geometry.coordinates[0];
+    const n = ring.length - 1;
+
+    for (let i = 0; i < n; i++) {
+      const curr = ring[i];
+      const next = ring[(i + 1) % n];
+      const midCoord = [(curr[0] + next[0]) / 2, (curr[1] + next[1]) / 2];
       const midLatlng = toLeaflet(midCoord);
 
-      const mMarker = L.circleMarker(midLatlng, {
-        radius: 4,
-        color: '#38bdf8',
-        fillColor: '#0369a1',
-        fillOpacity: 0.8,
-        weight: 1
-      }).addTo(this.verifyLayers.editLayer);
+      const mIcon = L.divIcon({
+        className: 'pm-midpoint-handle-icon',
+        html: `<div class="pm-midpoint-handle" title="Click to insert vertex">+</div>`,
+        iconSize: [13, 13],
+        iconAnchor: [6.5, 6.5]
+      });
 
-      mMarker.bindTooltip('+ Add vertex', { direction: 'top' });
+      const mMarker = L.marker(midLatlng, {
+        icon: mIcon,
+        zIndexOffset: 900
+      }).addTo(this.verifyLayers.editLayer);
 
       mMarker.on('click', (e) => {
         L.DomEvent.stopPropagation(e);
-        ring.splice(i + 1, 0, midCoord);
-        this.recalculateParcelArea(parcel);
-        this.renderVertexHandles();
-        this.renderVerifyMapLayers();
-        this.saveHistoryState();
-        this.showToast('Added new boundary vertex', 'success');
+        this.addVertex(i + 1, midCoord);
       });
 
       this.midpointMarkers.push(mMarker);
     }
   }
 
+  addVertex(insertIndex, coord) {
+    const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
+    if (!parcel || !parcel.geometry || !parcel.geometry.coordinates) return;
+
+    const ring = parcel.geometry.coordinates[0];
+    ring.splice(insertIndex, 0, coord);
+    if (insertIndex === 0) ring[ring.length - 1] = ring[0];
+
+    parcel.geometry.coordinates[0] = ring;
+    if (parcel.image_coordinates) parcel.image_coordinates[0] = ring;
+    if (parcel.geo_geometry) parcel.geo_geometry.coordinates[0] = ring;
+
+    this.recalculateParcelArea(parcel);
+    this.saveHistoryState();
+    this.renderVertexHandles();
+    this.showToast('Added new boundary vertex', 'success');
+
+    console.log(`[Verification] parcel_id: ${parcel.parcel_id || parcel.id}, add_vertex: true, index: ${insertIndex}, coordinate: [${coord[0].toFixed(6)}, ${coord[1].toFixed(6)}]`);
+  }
+
+  deleteVertex(index) {
+    const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
+    if (!parcel || !parcel.geometry || !parcel.geometry.coordinates) return;
+
+    const ring = parcel.geometry.coordinates[0];
+    if (ring.length <= 4) {
+      this.showToast('Cannot delete: polygon must have at least 3 vertices', 'warning');
+      return;
+    }
+
+    const deletedPt = ring.splice(index, 1)[0];
+    if (index === 0) ring[ring.length - 1] = ring[0];
+
+    parcel.geometry.coordinates[0] = ring;
+    if (parcel.image_coordinates) parcel.image_coordinates[0] = ring;
+    if (parcel.geo_geometry) parcel.geo_geometry.coordinates[0] = ring;
+
+    this.recalculateParcelArea(parcel);
+    this.saveHistoryState();
+    this.renderVertexHandles();
+    this.showToast(`Deleted vertex #${index + 1}`, 'info');
+
+    console.log(`[Verification] parcel_id: ${parcel.parcel_id || parcel.id}, delete_vertex: true, index: ${index}, coordinate: [${deletedPt[0].toFixed(6)}, ${deletedPt[1].toFixed(6)}]`);
+  }
+
   clearVertexHandles() {
     this.verifyLayers.editLayer.clearLayers();
+    this.activeEditPolygon = null;
     this.vertexMarkers = [];
     this.midpointMarkers = [];
   }
@@ -2336,6 +2544,19 @@ class ParcelMapWorkspace {
         const verifiedSubEl = document.getElementById('drwVerifiedAreaSub');
         if (verifiedEl) verifiedEl.textContent = `${parcel.area_hectares} ha`;
         if (verifiedSubEl) verifiedSubEl.textContent = `${parcel.area_sqm.toLocaleString()} m² (${parcel.area_acres} ac)`;
+      } else {
+        const ring = parcel.geometry.coordinates[0];
+        let sum = 0;
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+          sum += (ring[j][0] + ring[i][0]) * (ring[j][1] - ring[i][1]);
+        }
+        const pxArea = Math.abs(Math.round(sum / 2));
+        parcel.area_px = pxArea;
+
+        const verifiedEl = document.getElementById('drwVerifiedArea');
+        const verifiedSubEl = document.getElementById('drwVerifiedAreaSub');
+        if (verifiedEl) verifiedEl.textContent = `${pxArea.toLocaleString()} px²`;
+        if (verifiedSubEl) verifiedSubEl.textContent = `Image-space units`;
       }
     } catch (e) {
       console.warn('Area calculation error:', e);
@@ -2357,9 +2578,10 @@ class ParcelMapWorkspace {
       const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
       if (parcel) {
         parcel.geometry = JSON.parse(JSON.stringify(this.editHistory[this.historyIndex]));
+        if (parcel.image_coordinates) parcel.image_coordinates[0] = parcel.geometry.coordinates[0];
+        if (parcel.geo_geometry) parcel.geo_geometry.coordinates[0] = parcel.geometry.coordinates[0];
         this.recalculateParcelArea(parcel);
         this.renderVertexHandles();
-        this.renderVerifyMapLayers();
         this.showToast('Undo performed', 'info');
       }
     }
@@ -2371,63 +2593,92 @@ class ParcelMapWorkspace {
       const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
       if (parcel) {
         parcel.geometry = JSON.parse(JSON.stringify(this.editHistory[this.historyIndex]));
+        if (parcel.image_coordinates) parcel.image_coordinates[0] = parcel.geometry.coordinates[0];
+        if (parcel.geo_geometry) parcel.geo_geometry.coordinates[0] = parcel.geometry.coordinates[0];
         this.recalculateParcelArea(parcel);
         this.renderVertexHandles();
-        this.renderVerifyMapLayers();
         this.showToast('Redo performed', 'info');
       }
     }
   }
 
   /**
-   * Requirement 17: Save System
-   * 1. Validate geometry with backend POST /api/parcels/:id/validate.
-   * 2. Calculate updated area.
-   * 3. Create new parcel version.
-   * 4. Update current parcel via PUT /api/parcels/:id/geometry.
-   * 5. Re-run affected GIS checks.
-   * 6. Show "Saved successfully" only after backend confirms success.
+   * Save System (Requirement 9, 10, 11, 24)
+   * 1. Validate geometry locally and with backend POST /api/parcels/:id/validate.
+   * 2. Check self-intersection, closed ring, duplicate vertices, non-zero area, water overlap.
+   * 3. Send PUT /api/parcels/:id/geometry.
+   * 4. Persist updated geometry and create version history.
+   * 5. Exit edit mode and reload project data.
    */
   async saveParcelEdits() {
     const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
-    if (!parcel) return;
+    if (!parcel) {
+      this.showToast('No parcel selected to save', 'warning');
+      return;
+    }
+
+    const pId = parcel.parcel_id || parcel.id;
+    const ring = parcel.geometry?.coordinates?.[0];
+
+    // Client-side quick geometry pre-check
+    if (!ring || ring.length < 4) {
+      this.showToast('Cannot save: Polygon must have at least 3 vertices', 'error');
+      return;
+    }
+
+    const isClosed = Math.abs(ring[0][0] - ring[ring.length - 1][0]) < 1e-6 && Math.abs(ring[0][1] - ring[ring.length - 1][1]) < 1e-6;
+    if (!isClosed) {
+      ring.push([...ring[0]]);
+    }
+
+    console.log(`[Verification] save_started: true, parcel_id: ${pId}`);
 
     try {
-      // 1. Validate geometry
-      const vRes = await fetch(`${this.apiBase}/parcels/${parcel.parcel_id || parcel.id}/validate`, {
+      // 1. Backend validation check
+      const projId = parcel.project_id || this.activeProjectId;
+      const vRes = await fetch(`${this.apiBase}/parcels/${pId}/validate?project_id=${encodeURIComponent(projId || '')}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ geometry: parcel.geometry })
+        body: JSON.stringify({ geometry: parcel.geometry, project_id: projId })
       });
       const vData = await vRes.json();
       if (!vData.valid) {
-        this.showToast(`Validation Failed: ${vData.errors.join('; ')}`, 'error');
+        const errorMsg = vData.errors ? vData.errors.join('; ') : 'Invalid geometry';
+        console.log(`[Verification] validation_result: false, reason: ${errorMsg}`);
+        this.showToast(`Cannot save: ${errorMsg}`, 'error');
         return;
       }
 
-      // 2. Save geometry to backend
-      const comments = document.getElementById('drwReviewComments')?.value || 'Boundary vertices adjusted and validated by reviewer.';
-      const sRes = await fetch(`${this.apiBase}/parcels/${parcel.parcel_id || parcel.id}/geometry`, {
+      console.log(`[Verification] validation_result: true, parcel_id: ${pId}`);
+
+      // 2. Persist geometry to backend
+      const comments = document.getElementById('drwReviewComments')?.value || 'Boundary vertices adjusted and verified by reviewer.';
+      const sRes = await fetch(`${this.apiBase}/parcels/${pId}/geometry?project_id=${encodeURIComponent(projId || '')}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           geometry: parcel.geometry,
+          image_coordinates: parcel.image_coordinates || parcel.geometry.coordinates,
+          project_id: projId,
           comments,
           remarks: comments,
-          edited_by: 'Alex Morgan (Lead Surveyor)'
+          reviewer_name: 'Alex Morgan (Lead Surveyor)'
         })
       });
       const sData = await sRes.json();
 
       if (sData.success) {
-        this.editMode = false;
-        this.clearVertexHandles();
-        this.showToast('Saved successfully', 'success');
+        console.log(`[Verification] save_completed: true, parcel_id: ${pId}, version_created: ${sData.version || 2}`);
+        this.exitEditMode();
+        this.showToast(`Saved successfully (v${sData.version || 2})`, 'success');
         await this.loadProjectData(this.activeProjectId);
+        this.selectParcel(pId);
       } else {
+        console.log(`[Verification] save_failed: true, parcel_id: ${pId}, error: ${sData.error}`);
         this.showToast(sData.error || 'Failed to save parcel boundary changes', 'error');
       }
     } catch (e) {
+      console.log(`[Verification] save_failed: true, parcel_id: ${pId}, error: ${e.message}`);
       this.showToast('Save failed: ' + e.message, 'error');
     }
   }
@@ -2461,16 +2712,12 @@ class ParcelMapWorkspace {
 
     // EDIT VERTICES (Requirement 3 & 8)
     document.getElementById('btnActionEdit')?.addEventListener('click', () => {
-      const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
-      if (!parcel) return;
-      this.editMode = true;
-      this.saveHistoryState();
-      this.renderVertexHandles();
-      this.showToast(`Vertex editing enabled for ${parcel.parcel_id || parcel.id}`, 'info');
+      this.toggleEditMode();
     });
 
     // REJECT (Requirement 4 & 7: status = rejected with confirmation & reason)
     document.getElementById('btnActionReject')?.addEventListener('click', async () => {
+      if (this.editMode) this.exitEditMode();
       const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
       if (!parcel) return;
 
@@ -2498,6 +2745,7 @@ class ParcelMapWorkspace {
 
     // NEEDS REVIEW (Requirement 4 & 6: status = needs_review)
     document.getElementById('btnActionReview')?.addEventListener('click', async () => {
+      if (this.editMode) this.exitEditMode();
       const parcel = this.parcels.find(p => (p.parcel_id || p.id) === this.selectedParcelId);
       if (!parcel) return;
 
@@ -2521,11 +2769,13 @@ class ParcelMapWorkspace {
 
     // SPLIT PARCEL (Requirement 5 & 9)
     document.getElementById('btnActionSplit')?.addEventListener('click', () => {
+      if (this.editMode) this.exitEditMode();
       this.splitSelectedParcel();
     });
 
     // MERGE PARCEL (Requirement 6 & 10)
     document.getElementById('btnActionMerge')?.addEventListener('click', () => {
+      if (this.editMode) this.exitEditMode();
       this.mergeSelectedParcel();
     });
 
