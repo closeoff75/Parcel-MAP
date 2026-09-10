@@ -32,12 +32,12 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ['.jpg', '.jpeg', '.png', '.tif', '.tiff'];
+  const allowed = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.jfif', '.webp'];
   const ext = path.extname(file.originalname).toLowerCase();
   if (allowed.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPG, PNG, and GeoTIFF imagery formats are supported'));
+    cb(new Error(`Unsupported file type (${ext || 'unknown'}). Supported formats: JPG, JPEG, PNG, WEBP, and GeoTIFF (.tif/.tiff).`));
   }
 };
 
@@ -130,14 +130,50 @@ router.patch('/projects/:id', (req, res) => {
 // ==========================================
 // DRONE IMAGERY API
 // ==========================================
-// POST /api/projects/:id/imagery
-router.post('/projects/:id/imagery', upload.single('imagery'), (req, res) => {
+// Reusable Upload Handler
+const handleImageryUpload = (req, res) => {
+  const requestStarted = new Date().toISOString();
+  const requestedId = req.params.id || req.body.project_id || 'proj_wagholi_demo';
   try {
-    const project = db.getProjectById(req.params.id);
-    if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+    let project = db.getProjectById(requestedId);
+
+    // Auto-fallback if the project ID does not exist
+    if (!project) {
+      const allProjects = db.getProjects();
+      if (allProjects && allProjects.length > 0) {
+        project = allProjects.find(p => p.id === 'proj_wagholi_demo') || allProjects[0];
+        console.warn(`[Upload] Project '${requestedId}' not found, automatically recovered to project '${project.id}' (${project.name})`);
+      }
+    }
+
+    if (!project) {
+      const errMsg = `Project '${requestedId}' not found and no default project available.`;
+      console.log(`[Upload]`);
+      console.log(`project_id: ${requestedId}`);
+      console.log(`filename: ${req.file?.originalname || 'none'}`);
+      console.log(`content_type: ${req.file?.mimetype || 'none'}`);
+      console.log(`file_size: ${req.file?.size || 0}`);
+      console.log(`request_started: ${requestStarted}`);
+      console.log(`request_completed: ${new Date().toISOString()}`);
+      console.log(`storage_result: FAILED`);
+      console.log(`imagery_id: null`);
+      console.log(`error: ${errMsg}`);
+      return res.status(404).json({ success: false, error: errMsg });
+    }
 
     if (!req.file) {
-      return res.status(400).json({ success: false, error: 'No imagery file uploaded. Please attach an image.' });
+      const errMsg = 'No imagery file uploaded. Please attach an image.';
+      console.log(`[Upload]`);
+      console.log(`project_id: ${project.id}`);
+      console.log(`filename: none`);
+      console.log(`content_type: none`);
+      console.log(`file_size: 0`);
+      console.log(`request_started: ${requestStarted}`);
+      console.log(`request_completed: ${new Date().toISOString()}`);
+      console.log(`storage_result: FAILED`);
+      console.log(`imagery_id: null`);
+      console.log(`error: ${errMsg}`);
+      return res.status(400).json({ success: false, error: errMsg });
     }
 
     const fileName = req.file.originalname;
@@ -179,11 +215,60 @@ router.post('/projects/:id/imagery', upload.single('imagery'), (req, res) => {
       progress: 25
     });
 
-    res.status(201).json({ success: true, imagery: imageryItem });
+    const requestCompleted = new Date().toISOString();
+
+    // Exact Structured Audit Logging (Section 6 Specification)
+    console.log(`[Upload]`);
+    console.log(`project_id: ${project.id}`);
+    console.log(`filename: ${fileName}`);
+    console.log(`content_type: ${req.file.mimetype || 'image/jpeg'}`);
+    console.log(`file_size: ${fileSize}`);
+    console.log(`request_started: ${requestStarted}`);
+    console.log(`request_completed: ${requestCompleted}`);
+    console.log(`storage_result: SUCCESS (${fileUrl})`);
+    console.log(`imagery_id: ${imageryItem.id}`);
+    console.log(`error: null`);
+
+    res.status(201).json({
+      success: true,
+      imagery: imageryItem,
+      project_id: project.id
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.log(`[Upload]`);
+    console.log(`project_id: ${requestedId}`);
+    console.log(`filename: ${req.file?.originalname || 'unknown'}`);
+    console.log(`content_type: ${req.file?.mimetype || 'unknown'}`);
+    console.log(`file_size: ${req.file?.size || 'unknown'}`);
+    console.log(`request_started: ${requestStarted}`);
+    console.log(`request_completed: ${new Date().toISOString()}`);
+    console.log(`storage_result: FAILED`);
+    console.log(`imagery_id: null`);
+    console.log(`error: ${err.message}`);
+
+    console.error('[Upload API Error]:', err);
+    res.status(500).json({ success: false, error: err.message || 'Internal Server Error during upload' });
   }
-});
+};
+
+const uploadMiddleware = (req, res, next) => {
+  upload.single('imagery')(req, res, (err) => {
+    if (err) {
+      console.error('[Upload Multer Error]:', err.message);
+      return res.status(400).json({
+        success: false,
+        error: err.message || 'File upload failed. Please ensure file is a valid image under 500 MB.'
+      });
+    }
+    next();
+  });
+};
+
+// POST /api/projects/:id/imagery
+router.post('/projects/:id/imagery', uploadMiddleware, handleImageryUpload);
+
+// POST /api/upload (Universal Upload Route Alias)
+router.post('/upload', uploadMiddleware, handleImageryUpload);
 
 // GET /api/projects/:id/imagery
 router.get('/projects/:id/imagery', (req, res) => {
@@ -330,6 +415,35 @@ router.get('/projects/:id/parcels', (req, res) => {
   }
 });
 
+// POST /api/projects/:id/parcels
+router.post('/projects/:id/parcels', (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const parcelData = req.body || {};
+    const areas = GISEngine.calculateAreas(parcelData.geometry);
+    const parcelId = parcelData.parcel_id || parcelData.id || `PARCEL-${Date.now().toString().slice(-6)}`;
+    const newParcel = {
+      id: parcelId,
+      parcel_id: parcelId,
+      project_id: projectId,
+      imagery_id: parcelData.imagery_id || null,
+      geometry: parcelData.geometry,
+      confidence: parcelData.confidence || 0.85,
+      status: parcelData.status || 'needs_review',
+      supporting_features: parcelData.supporting_features || [],
+      source: parcelData.source || 'Manual / Imported',
+      ...areas,
+      created_at: new Date().toISOString()
+    };
+    const parcels = db.getParcelsByProjectId(projectId, parcelData.imagery_id);
+    parcels.push(newParcel);
+    db.setParcels(projectId, parcels, parcelData.imagery_id);
+    res.json({ success: true, parcel: newParcel });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // GET /api/parcels/:id
 router.get('/parcels/:id', (req, res) => {
   try {
@@ -349,8 +463,8 @@ router.get('/parcels/:id', (req, res) => {
   }
 });
 
-// PATCH /api/parcels/:id (Parcel Editing)
-router.patch('/parcels/:id', (req, res) => {
+// PATCH & PUT /api/parcels/:id (Parcel Editing)
+const handleEditParcel = (req, res) => {
   try {
     const { geometry, comments, reviewer_name } = req.body;
     const existing = db.getParcelById(req.params.id);
@@ -366,9 +480,11 @@ router.patch('/parcels/:id', (req, res) => {
       };
     }
 
+    const pid = existing.parcel_id || existing.id;
+
     // Add verification audit entry
     db.addVerification({
-      parcel_id: existing.parcel_id,
+      parcel_id: pid,
       reviewer_id: 'usr_2',
       reviewer_name: reviewer_name || 'Alex Morgan (Lead Surveyor)',
       action: 'Edited',
@@ -380,7 +496,7 @@ router.patch('/parcels/:id', (req, res) => {
       area_acres: areaUpdates.area_acres
     });
 
-    const updated = db.updateParcel(existing.parcel_id, {
+    const updated = db.updateParcel(pid, {
       ...areaUpdates,
       status: 'Human Verified'
     });
@@ -395,7 +511,9 @@ router.patch('/parcels/:id', (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
-});
+};
+router.patch('/parcels/:id', handleEditParcel);
+router.put('/parcels/:id', handleEditParcel);
 
 // Alias routes for verification
 router.post('/parcels/:id/verify', (req, res, next) => {
@@ -543,30 +661,34 @@ router.post('/parcels/:id/merge', (req, res) => {
     }
 
     const areas = GISEngine.calculateAreas(mergedGeom);
-    db.updateParcel(parcel1.parcel_id, {
+    const p1Id = parcel1.parcel_id || parcel1.id;
+    const p2Id = parcel2.parcel_id || parcel2.id;
+    db.updateParcel(p1Id, {
       geometry: mergedGeom,
       ...areas,
-      status: 'Human Verified',
-      supporting_features: [...(parcel1.supporting_features || []), `Merged with ${parcel2.parcel_id}`]
+      status: 'accepted',
+      supporting_features: [...(parcel1.supporting_features || []), `Merged with ${p2Id}`]
     });
 
     // Delete parcel2
-    db.deleteParcel(parcel2.parcel_id, reviewer_name || 'Alex Morgan');
+    db.deleteParcel(p2Id, reviewer_name || 'Alex Morgan');
 
     // Record versions
     db.addParcelVersion({
-      parcel_id: parcel1.parcel_id,
+      parcel_id: p1Id,
       project_id: parcel1.project_id,
       imagery_id: parcel1.imagery_id,
       geometry: mergedGeom,
+      previous_geometry: parcel1.geometry,
       edited_by: reviewer_name || 'Alex Morgan',
+      action: 'Merged',
       change_type: 'merge'
     });
 
     res.json({
       success: true,
-      message: `Parcels ${parcel1.parcel_id} and ${parcel2.parcel_id} successfully merged`,
-      parcel: db.getParcelById(parcel1.parcel_id)
+      message: `Parcels ${p1Id} and ${p2Id} successfully merged`,
+      parcel: db.getParcelById(p1Id)
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -1286,6 +1408,8 @@ const handlePdfExport = async (req, res) => {
 
 router.get('/projects/:id/export/pdf', handlePdfExport);
 router.post('/projects/:id/export/pdf', handlePdfExport);
+router.get('/projects/:id/report/pdf', handlePdfExport);
+router.post('/projects/:id/report/pdf', handlePdfExport);
 
 // GET & POST /api/projects/:id/export/all (Step 9 Section 13 - ZIP package)
 const handleZipExport = async (req, res) => {

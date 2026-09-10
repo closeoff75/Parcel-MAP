@@ -56,17 +56,18 @@ MODEL_METADATA = {
     "inference_engine": "Ultralytics PyTorch CPU/Local"
 }
 
-# Step 6B/6C Class-Specific Confidence Thresholds
+# Step 6B/6C/Iteration 24 Class-Specific Confidence Thresholds
 CLASS_CONFIDENCE_THRESHOLDS = {
     "building": 0.40,
     "road": 0.65,
-    "field": 0.60,
-    "wall": 0.70,
-    "fence": 0.75,
-    "vegetation": 0.60,
+    "field": 0.55,
+    "wall": 0.65,
+    "fence": 0.65,
+    "vegetation": 0.55,
     "water_body": 0.60,
-    "water_canal": 0.75
+    "water_canal": 0.70
 }
+
 
 
 def parse_args():
@@ -244,18 +245,18 @@ def validate_geometry(feature, img_w, img_h, water_exclusion_mask=None, water_cl
         elif feat_type == "field":
             if area_px > (total_image_area * 0.95):
                 return False, "Excessive size", f"field_area_exceeds_threshold_{area_px:.0f}px"
-            if area_px < (total_image_area * 0.015):
+            if area_px < (total_image_area * 0.006):
                 return False, "Weak evidence", f"field_area_too_small_{area_px:.0f}px"
             pts_np = np.array(ring, dtype=np.float32)
             hull = cv2.convexHull(pts_np)
             hull_area = cv2.contourArea(hull)
             solidity = area_px / max(1.0, hull_area)
-            if solidity < 0.60:
+            if solidity < 0.42:
                 return False, "Invalid geometry", f"field_solidity_too_low_{solidity:.2f}"
             rect = cv2.minAreaRect(pts_np)
             rw, rh = rect[1]
             aspect = max(rw, rh) / max(1.0, min(rw, rh))
-            if aspect > 2.8:
+            if aspect > 4.5:
                 return False, "Invalid geometry", f"field_aspect_ratio_too_high_{aspect:.1f}"
 
         elif feat_type == "vegetation":
@@ -315,17 +316,14 @@ def validate_geometry(feature, img_w, img_h, water_exclusion_mask=None, water_cl
 
         length = calculate_line_length(coords)
 
-        # Image edge check for linear features (outer 20px margin)
         p_start, p_end = coords[0], coords[-1]
-        at_edge_start = (p_start[0] < 20 or p_start[0] > img_w - 20 or p_start[1] < 20 or p_start[1] > img_h - 20)
-        at_edge_end = (p_end[0] < 20 or p_end[0] > img_w - 20 or p_end[1] < 20 or p_end[1] > img_h - 20)
+        at_edge_start = (p_start[0] < 12 or p_start[0] > img_w - 12 or p_start[1] < 12 or p_start[1] > img_h - 12)
+        at_edge_end = (p_end[0] < 12 or p_end[0] > img_w - 12 or p_end[1] < 12 or p_end[1] > img_h - 12)
 
         if feat_type in ("wall", "fence"):
-            if at_edge_start or at_edge_end:
-                return False, "Image-edge artifact", "Boundary terminates at outer canvas border without land termination"
             if length < 30.0:
                 return False, "Insufficient continuity", f"boundary_too_short_{length:.1f}px"
-            if length > 220.0:
+            if length > 280.0:
                 return False, "Unsupported line", f"boundary_too_long_artifact_{length:.1f}px"
 
             if water_exclusion_mask is not None:
@@ -346,8 +344,8 @@ def validate_geometry(feature, img_w, img_h, water_exclusion_mask=None, water_cl
                     return False, "Water crossing", f"{feat_type.capitalize()} crosses water exclusion mask / ocean"
 
         elif feat_type == "road":
-            if at_edge_start and at_edge_end and length > (max_dim * 0.85):
-                is_wide = feature.get("estimated_width_pixels", 0) >= 12 or feature.get("width", 0) >= 12
+            if at_edge_start and at_edge_end and length > (max_dim * 0.92):
+                is_wide = feature.get("estimated_width_pixels", 0) >= 10 or feature.get("width", 0) >= 10
                 if not is_wide:
                     return False, "Image-edge artifact", "Road spans canvas border-to-border without physical ground termination"
             if length < 30.0:
@@ -619,8 +617,8 @@ def detect_water_cv(image, ignore_mask, rejections, building_mask=None):
     g = image[:, :, 1].astype(np.float32)
     r = image[:, :, 2].astype(np.float32)
 
-    # True water signature (deep blue sea, lake, reservoir, and clear coastal water)
-    is_water = (hsv[:, :, 0] >= 85) & (hsv[:, :, 0] <= 135) & (hsv[:, :, 1] >= 75) & (b > r + 20) & (b >= g - 10)
+    # True water signature (deep blue sea, lake, reservoir, and clear coastal water with low red)
+    is_water = (hsv[:, :, 0] >= 85) & (hsv[:, :, 0] <= 135) & (hsv[:, :, 1] >= 70) & (b > r * 1.5 + 20) & (b >= g - 10) & (r < 28)
     water_mask_raw = is_water.astype(np.uint8) * 255
     if building_mask is not None:
         water_mask_raw[building_mask > 0] = 0
@@ -629,7 +627,8 @@ def detect_water_cv(image, ignore_mask, rejections, building_mask=None):
     water_clean = cv2.morphologyEx(water_mask_raw, cv2.MORPH_OPEN, kernel_w)
     water_clean = cv2.morphologyEx(water_clean, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15)))
 
-    # Filter out tiny noise (must be significant water body >= 800px / >= 0.8% area, or narrow canal)
+    # Filter out rough terrain and false shadow noise via surface texture smoothness
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     contours_raw, _ = cv2.findContours(water_clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     water_clean_filtered = np.zeros((h, w), dtype=np.uint8)
     for c in contours_raw:
@@ -637,14 +636,19 @@ def detect_water_cv(image, ignore_mask, rejections, building_mask=None):
         rect = cv2.minAreaRect(c)
         rw, rh = rect[1]
         aspect = max(rw, rh) / max(1.0, min(rw, rh))
-        if area >= max(800.0, total_area * 0.008) or (aspect >= 4.5 and area >= 300.0):
-            cv2.drawContours(water_clean_filtered, [c], -1, 255, -1)
+        if area >= max(600.0, total_area * 0.005) or (aspect >= 4.5 and area >= 300.0):
+            m_c = np.zeros((h, w), dtype=np.uint8)
+            cv2.drawContours(m_c, [c], -1, 255, -1)
+            std_val = float(np.std(gray[m_c > 0])) if np.count_nonzero(m_c) > 0 else 99.0
+            mean_r_val = float(np.mean(r[m_c > 0])) if np.count_nonzero(m_c) > 0 else 99.0
+            if std_val < 26.0 and mean_r_val < 22.0:
+                cv2.drawContours(water_clean_filtered, [c], -1, 255, -1)
     water_clean = water_clean_filtered
 
-    # Hard exclusion masks (18px buffer)
-    water_exclusion_mask = cv2.dilate(water_clean, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (18, 18)))
+    # Exclusion masks (conservative 10px buffer to protect shoreline coastal roads)
+    water_exclusion_mask = cv2.dilate(water_clean, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10)))
     coast_edge = cv2.morphologyEx(water_clean, cv2.MORPH_GRADIENT, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
-    coastline_exclusion_mask = cv2.dilate(coast_edge, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20)))
+    coastline_exclusion_mask = cv2.dilate(coast_edge, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (12, 12)))
 
     contours_w, _ = cv2.findContours(water_clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     water_features = []
@@ -773,7 +777,6 @@ def detect_roads_cv(image, building_mask, water_exclusion_mask, edge_margin_mask
     road_surface[building_mask > 0] = 0
     if target_water is not None:
         road_surface[target_water > 0] = 0
-    road_surface[edge_margin_mask > 0] = 0
     road_surface[ignore_mask > 0] = 0
 
     kernel_r = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
@@ -795,43 +798,43 @@ def detect_roads_cv(image, building_mask, water_exclusion_mask, edge_margin_mask
         dist = cv2.distanceTransform(comp_mask, cv2.DIST_L2, 5)
         max_half_w = float(np.max(dist)) if np.max(dist) > 0 else 0.0
 
-        # Width constraint: Road must be an elongated corridor (max half-width <= 28px, approx_w <= 52px)
-        if approx_w > 52.0 or max_half_w > 28.0:
+        # Width constraint: Road must be an elongated corridor (max half-width <= 32px, approx_w <= 56px)
+        if approx_w > 56.0 or max_half_w > 32.0:
             rejections.append({
                 "category": "Unsupported line",
                 "class": "road",
-                "reason": f"Region width exceeds road corridor limits ({approx_w:.1f}px > 52px, max_half={max_half_w:.1f}px) - agricultural plot or open ground",
+                "reason": f"Region width exceeds road corridor limits ({approx_w:.1f}px > 56px, max_half={max_half_w:.1f}px) - agricultural plot or open ground",
                 "score": 0.35,
                 "threshold": CLASS_CONFIDENCE_THRESHOLDS["road"],
                 "coordinates": [[int(bx), int(by)], [int(bx + bw), int(by + bh)]]
             })
             continue
 
-        if area >= 380 and diag >= 50 and true_elongation >= 2.0:
+        if area >= 320 and diag >= 45 and true_elongation >= 1.8:
             pts = []
             if bw >= bh:
-                step = max(8, bw // 32)
-                for x in range(bx + 10, bx + bw - 10, step):
+                step = max(6, bw // 32)
+                for x in range(bx + 4, bx + bw - 4, step):
                     col_y = np.where(comp_mask[:, x] > 0)[0]
                     if len(col_y) > 0:
                         best_y = int(col_y[np.argmax(dist[col_y, x])])
                         if target_water is None or target_water[best_y, x] == 0:
                             pts.append([int(x), best_y])
             else:
-                step = max(8, bh // 32)
-                for y in range(by + 10, by + bh - 10, step):
+                step = max(6, bh // 32)
+                for y in range(by + 4, by + bh - 4, step):
                     row_x = np.where(comp_mask[y, :] > 0)[0]
                     if len(row_x) > 0:
                         best_x = int(row_x[np.argmax(dist[y, row_x])])
                         if target_water is None or target_water[y, best_x] == 0:
                             pts.append([best_x, int(y)])
 
-            if len(pts) >= 4:
+            if len(pts) >= 3:
                 pts_np = np.array(pts, dtype=np.int32).reshape((-1, 1, 2))
-                epsilon = max(3.0, 0.015 * cv2.arcLength(pts_np, False))
+                epsilon = max(2.5, 0.015 * cv2.arcLength(pts_np, False))
                 simplified = cv2.approxPolyDP(pts_np, epsilon, False).reshape(-1, 2).tolist()
 
-                # Check tortuosity / sharp zig-zag turning angles (relax from 72 to 95 deg for road bends)
+                # Check tortuosity / sharp zig-zag turning angles (allow bends up to 125 deg)
                 has_sharp_zigzag = False
                 for i in range(len(simplified) - 2):
                     p0, p1, p2 = simplified[i], simplified[i + 1], simplified[i + 2]
@@ -841,7 +844,8 @@ def detect_roads_cv(image, building_mask, water_exclusion_mask, edge_margin_mask
                     len2 = math.hypot(*v2)
                     if len1 > 2 and len2 > 2:
                         cos_a = max(-1.0, min(1.0, (v1[0] * v2[0] + v1[1] * v2[1]) / (len1 * len2)))
-                        if math.degrees(math.acos(cos_a)) > 95.0:
+                        deg = math.degrees(math.acos(cos_a))
+                        if deg > 155.0 or (deg > 135.0 and min(len1, len2) < 7.0):
                             has_sharp_zigzag = True
                             break
 
@@ -856,11 +860,11 @@ def detect_roads_cv(image, building_mask, water_exclusion_mask, edge_margin_mask
                     })
                     continue
 
-                # 1. HARD WATER CROSSING VALIDATION (against true water body, requiring >25% submerged)
+                # 1. HARD WATER CROSSING VALIDATION (against true water body, requiring >35% submerged)
                 crosses_water = False
                 if target_water is not None:
                     w_pts = sum(1 for p in simplified if 0 <= p[0] < w and 0 <= p[1] < h and target_water[p[1], p[0]] > 0)
-                    if w_pts > (len(simplified) * 0.25):
+                    if w_pts > (len(simplified) * 0.35):
                         crosses_water = True
 
                 if crosses_water:
@@ -876,12 +880,12 @@ def detect_roads_cv(image, building_mask, water_exclusion_mask, edge_margin_mask
 
                 # 2. IMAGE EDGE ARTIFACT VALIDATION
                 p_start, p_end = simplified[0], simplified[-1]
-                at_edge_start = (p_start[0] < 20 or p_start[0] > w - 20 or p_start[1] < 20 or p_start[1] > h - 20)
-                at_edge_end = (p_end[0] < 20 or p_end[0] > w - 20 or p_end[1] < 20 or p_end[1] > h - 20)
+                at_edge_start = (p_start[0] < 12 or p_start[0] > w - 12 or p_start[1] < 12 or p_start[1] > h - 12)
+                at_edge_end = (p_end[0] < 12 or p_end[0] > w - 12 or p_end[1] < 12 or p_end[1] > h - 12)
                 length = calculate_line_length(simplified)
 
-                if at_edge_start and at_edge_end and length > (max_dim * 0.75):
-                    if approx_w < 14.0:
+                if at_edge_start and at_edge_end and length > (max_dim * 0.92):
+                    if approx_w < 10.0:
                         rejections.append({
                             "category": "Image-edge artifact",
                             "class": "road",
@@ -892,11 +896,11 @@ def detect_roads_cv(image, building_mask, water_exclusion_mask, edge_margin_mask
                         })
                         continue
 
-                if length < 35.0:
+                if length < 28.0:
                     rejections.append({
                         "category": "Insufficient continuity",
                         "class": "road",
-                        "reason": f"Road segment too short ({length:.1f}px < 35px)",
+                        "reason": f"Road segment too short ({length:.1f}px < 28px)",
                         "score": 0.45,
                         "threshold": CLASS_CONFIDENCE_THRESHOLDS["road"],
                         "coordinates": simplified
@@ -997,7 +1001,7 @@ def detect_vegetation_cv(image, building_mask, road_corridor_mask, water_exclusi
     vegetation = []
     veg_mask = np.zeros((h, w), dtype=np.uint8)
 
-    for idx, c in enumerate(sorted(cnts_v, key=cv2.contourArea, reverse=True)[:6]):
+    for idx, c in enumerate(sorted(cnts_v, key=cv2.contourArea, reverse=True)[:18]):
         area = cv2.contourArea(c)
         if area > (total_area * 0.15):
             rejections.append({
@@ -1093,127 +1097,182 @@ def detect_vegetation_cv(image, building_mask, road_corridor_mask, water_exclusi
 
 def detect_fields_cv(image, building_mask, road_corridor_mask, water_exclusion_mask, coastline_exclusion_mask, veg_mask, building_features, edge_margin_mask, ignore_mask, rejections):
     """
-    Step 6B Final Quality Pass: Agricultural Field Precision.
-    - Rejects residential settlements containing buildings ("Invalid geometry").
-    - Rejects oversized canvas-spanning polygons ("Excessive size").
-    - Rejects regions touching outer image margins or water ("Image-edge artifact" / "Water crossing").
-    - Enforces convexity / solidity >= 0.60 and aspect ratio <= 2.8.
+    Agricultural Field Detection (Spectral Clustering & Boundary Partition).
+    - Multi-spectral crop and soil clustering: cultivated soil, green crops, and fallow/grain plots.
+    - Road corridor and boundary line partitioning.
+    - Density-based residential settlement rejection (allows 1-2 rural outbuildings).
+    - Aspect ratio <= 4.2 and solidity >= 0.45.
     """
     h, w = image.shape[:2]
     total_area = float(w * h)
 
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    b = image[:, :, 0].astype(np.float32)
-    g = image[:, :, 1].astype(np.float32)
-    r = image[:, :, 2].astype(np.float32)
+    smoothed = cv2.bilateralFilter(image, 9, 60, 60)
+    hsv = cv2.cvtColor(smoothed, cv2.COLOR_BGR2HSV)
+    b = smoothed[:, :, 0].astype(np.float32)
+    g = smoothed[:, :, 1].astype(np.float32)
+    r = smoothed[:, :, 2].astype(np.float32)
     exg = 2.0 * g - r - b
 
-    mask_soil = cv2.inRange(hsv, (10, 30, 40), (42, 220, 220))
-    is_crop = (hsv[:, :, 0] >= 30) & (hsv[:, :, 0] <= 85) & (hsv[:, :, 1] >= 40) & (exg > 15)
-    field_raw = (mask_soil | (is_crop.astype(np.uint8) * 255))
+    # 1. Cultivated soil plots
+    is_soil = (hsv[:, :, 0] >= 10) & (hsv[:, :, 0] <= 42) & (hsv[:, :, 1] >= 28) & (hsv[:, :, 1] <= 210) & (hsv[:, :, 2] >= 35) & (exg <= 8.0)
+    # 2. Green crop plots
+    is_green_crop = (hsv[:, :, 0] >= 32) & (hsv[:, :, 0] <= 88) & (hsv[:, :, 1] >= 35) & (exg > 12.0)
+    # 3. Fallow / grain / golden plots
+    is_yellow_crop = (hsv[:, :, 0] >= 20) & (hsv[:, :, 0] <= 32) & (hsv[:, :, 1] >= 40) & (hsv[:, :, 2] >= 75) & (exg > -5.0)
 
-    field_raw[building_mask > 0] = 0
-    field_raw[road_corridor_mask > 0] = 0
-    field_raw[water_exclusion_mask > 0] = 0
-    field_raw[coastline_exclusion_mask > 0] = 0
-    field_raw[veg_mask > 0] = 0
-    field_raw[edge_margin_mask > 0] = 0
-    field_raw[ignore_mask > 0] = 0
+    field_categories = [
+        ("Soil Plot", is_soil, "Cultivated Soil Plot"),
+        ("Green Crop Plot", is_green_crop, "Cultivated Vegetative Crop"),
+        ("Fallow / Grain Plot", is_yellow_crop, "Fallow / Harvested Grain Field")
+    ]
 
-    field_clean = cv2.morphologyEx(field_raw, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11)))
-    field_clean = cv2.morphologyEx(field_clean, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15)))
-    cnts_f, _ = cv2.findContours(field_clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+    road_corridor_dil = cv2.dilate(road_corridor_mask, cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))) if road_corridor_mask is not None else np.zeros((h, w), dtype=np.uint8)
     fields = []
+    total_raw_candidates = 0
 
-    for c in cnts_f:
-        area = cv2.contourArea(c)
-        if area > (total_area * 0.95):
-            rejections.append({
-                "category": "Excessive size",
+    for cat_name, cat_mask, cat_sub in field_categories:
+        field_raw = cat_mask.astype(np.uint8) * 255
+        field_raw[building_mask > 0] = 0
+        field_raw[road_corridor_dil > 0] = 0
+        field_raw[water_exclusion_mask > 0] = 0
+        field_raw[coastline_exclusion_mask > 0] = 0
+        field_raw[ignore_mask > 0] = 0
+
+        clean = cv2.morphologyEx(field_raw, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9)))
+        clean = cv2.morphologyEx(clean, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (13, 13)))
+        cnts_f, _ = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        total_raw_candidates += len(cnts_f)
+
+        for c in cnts_f:
+            area = cv2.contourArea(c)
+            if area > (total_area * 0.50):
+                rejections.append({
+                    "category": "Excessive size",
+                    "class": "field",
+                    "reason": f"Field candidate exceeds maximum region threshold ({area/total_area*100:.1f}%)",
+                    "score": 0.40,
+                    "threshold": CLASS_CONFIDENCE_THRESHOLDS["field"],
+                    "coordinates": c.reshape(-1, 2).tolist()[:4]
+                })
+                continue
+
+            if area < max(1800.0, total_area * 0.007):
+                continue
+
+            # Density-based residential settlement check:
+            # Allows 1-2 small farm outbuildings, rejects dense residential blocks
+            bldgs_inside = 0
+            for b_feat in building_features:
+                b_pts = b_feat.get("geometry", {}).get("coordinates", [[]])[0]
+                if b_pts:
+                    bx, by = b_pts[0]
+                    if cv2.pointPolygonTest(c, (float(bx), float(by)), False) >= 0:
+                        bldgs_inside += 1
+
+            building_density = bldgs_inside / (area / 10000.0)
+            if bldgs_inside >= 3 or building_density > 1.5:
+                rejections.append({
+                    "category": "Invalid geometry",
+                    "class": "field",
+                    "reason": f"Encloses {bldgs_inside} building footprints (residential settlement, not agricultural plot)",
+                    "score": 0.30,
+                    "threshold": CLASS_CONFIDENCE_THRESHOLDS["field"],
+                    "coordinates": c.reshape(-1, 2).tolist()[:4]
+                })
+                continue
+
+            # In dense urban settings (20+ buildings), filter out courtyards/lawns bordering multiple buildings
+            if len(building_features) >= 20:
+                c_pts = c.reshape(-1, 2)[::3]
+                close_bldgs = 0
+                for b_feat in building_features:
+                    b_pts = b_feat.get("geometry", {}).get("coordinates", [[]])[0]
+                    if b_pts:
+                        min_d = min(math.hypot(bx - px, by - py) for bx, by in b_pts for px, py in c_pts)
+                        if min_d < 25.0:
+                            close_bldgs += 1
+                if close_bldgs >= 2:
+                    rejections.append({
+                        "category": "Invalid geometry",
+                        "class": "field",
+                        "reason": f"Urban residential yard/courtyard adjacent to {close_bldgs} buildings (not agricultural land)",
+                        "score": 0.35,
+                        "threshold": CLASS_CONFIDENCE_THRESHOLDS["field"],
+                        "coordinates": c.reshape(-1, 2).tolist()[:4]
+                    })
+                    continue
+
+            hull = cv2.convexHull(c)
+            hull_area = cv2.contourArea(hull)
+            solidity = area / max(1.0, hull_area)
+            rect = cv2.minAreaRect(c)
+            rw, rh = rect[1]
+            aspect = max(rw, rh) / max(1.0, min(rw, rh))
+
+            if solidity < 0.45 or aspect > 4.2:
+                rejections.append({
+                    "category": "Invalid geometry",
+                    "class": "field",
+                    "reason": f"Non-convex agricultural geometry (solidity={solidity:.2f} < 0.45, aspect={aspect:.1f})",
+                    "score": 0.45,
+                    "threshold": CLASS_CONFIDENCE_THRESHOLDS["field"],
+                    "coordinates": c.reshape(-1, 2).tolist()[:4]
+                })
+                continue
+
+            simplified = simplify_contour(c, epsilon_factor=0.012)
+            if not simplified or len(simplified) < 4:
+                continue
+
+            # Check overlap with existing accepted fields
+            is_dup = False
+            poly_mask = np.zeros((h, w), dtype=np.uint8)
+            cv2.fillPoly(poly_mask, [np.array(simplified, dtype=np.int32)], 255)
+            for ef in fields:
+                e_coords = ef.get("geometry", {}).get("coordinates", [[]])[0]
+                if e_coords:
+                    e_mask = np.zeros((h, w), dtype=np.uint8)
+                    cv2.fillPoly(e_mask, [np.array(e_coords, dtype=np.int32)], 255)
+                    intersection = cv2.bitwise_and(poly_mask, e_mask)
+                    inter_area = np.count_nonzero(intersection)
+                    if inter_area > (area * 0.40):
+                        is_dup = True
+                        break
+            if is_dup:
+                continue
+
+            score = round(min(0.92, max(0.65, 0.70 + (area / total_area) * 0.25)), 4)
+            fields.append({
+                "index": len(fields) + 1,
                 "class": "field",
-                "reason": f"Field candidate exceeds maximum region threshold ({area/total_area*100:.1f}%)",
-                "score": 0.40,
-                "threshold": CLASS_CONFIDENCE_THRESHOLDS["field"],
-                "coordinates": c.reshape(-1, 2).tolist()[:4]
+                "type": "field",
+                "detection_type": "FIELD",
+                "feature_type": "Field",
+                "name": f"Agricultural Field Parcel {len(fields) + 1}",
+                "sub_type": cat_sub,
+                "confidence": score,
+                "confidence_type": "evidence_score",
+                "provider": "cv_derived",
+                "raw_model_class": None,
+                "mapped_feature_type": "field",
+                "model_name": "Aerial CV Field Partition Engine v2.6",
+                "method": "Agricultural spectral clustering & boundary partition",
+                "source": "cv_derived",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [simplified]
+                },
+                "coordinate_mode": "image",
+                "area_pixels": round(area, 1),
+                "area_image_pixels": round(area, 1),
+                "evidence": [
+                    f"{cat_name.lower().replace(' ', '_')}_signature",
+                    "non_residential_open_plot",
+                    f"solidity_ratio_{solidity:.2f}"
+                ]
             })
-            continue
 
-        if area < (total_area * 0.025):
-            continue
-
-        # Reject if field encloses detected building footprints (it's a residential settlement)
-        bldgs_inside = 0
-        for b_feat in building_features:
-            b_pts = b_feat["geometry"]["coordinates"][0]
-            bx, by = b_pts[0]
-            if cv2.pointPolygonTest(c, (float(bx), float(by)), False) >= 0:
-                bldgs_inside += 1
-        if bldgs_inside > 0:
-            rejections.append({
-                "category": "Invalid geometry",
-                "class": "field",
-                "reason": f"Encloses {bldgs_inside} building footprints (residential settlement, not agricultural plot)",
-                "score": 0.30,
-                "threshold": CLASS_CONFIDENCE_THRESHOLDS["field"],
-                "coordinates": c.reshape(-1, 2).tolist()[:4]
-            })
-            continue
-
-        hull = cv2.convexHull(c)
-        hull_area = cv2.contourArea(hull)
-        solidity = area / max(1.0, hull_area)
-        rect = cv2.minAreaRect(c)
-        rw, rh = rect[1]
-        aspect = max(rw, rh) / max(1.0, min(rw, rh))
-
-        if solidity < 0.60 or aspect > 2.8:
-            rejections.append({
-                "category": "Invalid geometry",
-                "class": "field",
-                "reason": f"Non-convex agricultural geometry (solidity={solidity:.2f} < 0.60, aspect={aspect:.1f})",
-                "score": 0.45,
-                "threshold": CLASS_CONFIDENCE_THRESHOLDS["field"],
-                "coordinates": c.reshape(-1, 2).tolist()[:4]
-            })
-            continue
-
-        simplified = simplify_contour(c, epsilon_factor=0.018)
-        if not simplified or len(simplified) < 4:
-            continue
-
-        score = round(min(0.90, max(0.68, 0.72 + (area / total_area) * 0.30)), 4)
-        fields.append({
-            "index": len(fields) + 1,
-            "class": "field",
-            "type": "field",
-            "detection_type": "FIELD",
-            "feature_type": "Field",
-            "name": f"Agricultural Field Parcel {len(fields) + 1}",
-            "sub_type": "Cultivated Agricultural Land",
-            "confidence": score,
-            "confidence_type": "evidence_score",
-            "provider": "cv_derived",
-            "raw_model_class": None,
-            "mapped_feature_type": "field",
-            "model_name": "Aerial CV Field Partition Engine v2.5",
-            "method": "Agricultural soil spectral clustering & building exclusion",
-            "source": "cv_derived",
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [simplified]
-            },
-            "coordinate_mode": "image",
-            "area_pixels": round(area, 1),
-            "area_image_pixels": round(area, 1),
-            "evidence": [
-                "cultivated_soil_signature",
-                "non_residential_open_plot",
-                f"solidity_ratio_{solidity:.2f}"
-            ]
-        })
-
-    return fields, len(cnts_f)
+    return fields, total_raw_candidates
 
 
 # ==============================================================================
@@ -1406,8 +1465,8 @@ def detect_walls_and_fences_cv(image, building_mask, road_corridor_mask, water_e
 
             coords = [[int(s[0]), int(s[1])], [int(s[2]), int(s[3])]]
 
-            if avg_grad >= 85.0 and std_dev >= 25.0 and len(walls) < 6:
-                score = round(min(0.88, max(0.70, 0.70 + (avg_grad / 220.0) * 0.18)), 4)
+            if avg_grad >= 78.0 and std_dev >= 18.0 and len(walls) < 22:
+                score = round(min(0.88, max(0.68, 0.70 + (avg_grad / 220.0) * 0.18)), 4)
                 walls.append({
                     "index": len(walls) + 1,
                     "class": "wall",
@@ -1421,7 +1480,7 @@ def detect_walls_and_fences_cv(image, building_mask, road_corridor_mask, water_e
                     "provider": "cv_derived",
                     "raw_model_class": None,
                     "mapped_feature_type": "wall",
-                    "model_name": "Aerial CV Boundary Analyzer v2.5",
+                    "model_name": "Aerial CV Boundary Analyzer v2.6",
                     "method": "Bilateral contrast & masonry texture analysis",
                     "source": "cv_derived",
                     "geometry": { "type": "LineString", "coordinates": coords },
@@ -1434,8 +1493,8 @@ def detect_walls_and_fences_cv(image, building_mask, road_corridor_mask, water_e
                     ]
                 })
 
-            elif avg_grad >= 65.0 and avg_grad < 85.0 and std_dev <= 24.0 and len(fences) < 4:
-                score = round(min(0.82, max(0.75, 0.75 + (avg_grad / 200.0) * 0.08)), 4)
+            elif avg_grad >= 55.0 and avg_grad < 85.0 and len(fences) < 16:
+                score = round(min(0.82, max(0.70, 0.72 + (avg_grad / 200.0) * 0.10)), 4)
                 fences.append({
                     "index": len(fences) + 1,
                     "class": "fence",
@@ -1449,7 +1508,7 @@ def detect_walls_and_fences_cv(image, building_mask, road_corridor_mask, water_e
                     "provider": "cv_derived",
                     "raw_model_class": None,
                     "mapped_feature_type": "fence",
-                    "model_name": "Aerial CV Boundary Analyzer v2.5",
+                    "model_name": "Aerial CV Boundary Analyzer v2.6",
                     "method": "Thin boundary line continuity & post profile",
                     "source": "cv_derived",
                     "geometry": { "type": "LineString", "coordinates": coords },
@@ -1466,7 +1525,7 @@ def detect_walls_and_fences_cv(image, building_mask, road_corridor_mask, water_e
                 rejections.append({
                     "category": "Weak evidence",
                     "class": "boundary",
-                    "reason": f"Insufficient physical contrast (grad={avg_grad:.1f} < 85, std={std_dev:.1f})",
+                    "reason": f"Insufficient physical contrast (grad={avg_grad:.1f} < 78, std={std_dev:.1f})",
                     "score": round(min(0.68, avg_grad / 160.0), 2),
                     "threshold": CLASS_CONFIDENCE_THRESHOLDS["wall"],
                     "coordinates": coords

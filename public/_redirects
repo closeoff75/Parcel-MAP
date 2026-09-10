@@ -1,0 +1,10 @@
+# Netlify Clean URL Rewrites for Multi-Page App
+/workspace         /workspace.html         200
+/map               /map.html               200
+/layers            /layers.html            200
+/intelligence      /intelligence.html      200
+/enterprise        /enterprise.html        200
+/solutions         /solutions.html         200
+/login             /login.html             200
+/platform          /platform.html          200
+/                  /index.html             200

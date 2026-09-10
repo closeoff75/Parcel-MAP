@@ -27,16 +27,19 @@
        ========================================================================== -->
   <header class="pm-header">
     <div class="pm-header-left">
-      <a href="index.html" class="pm-brand">
-        <div class="pm-brand-mark" aria-label="ParcelMap Map Logo">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" fill="rgba(16, 185, 129, 0.25)"></polygon>
+      <a href="index.html" class="nav-brand">
+        <span class="nav-brand-logo" aria-label="GeoParcel Map Logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" fill="rgba(16, 185, 129, 0.2)"></polygon>
             <line x1="9" y1="3" x2="9" y2="18"></line>
             <line x1="15" y1="6" x2="15" y2="21"></line>
             <circle cx="9" cy="10" r="1.5" fill="#38bdf8" stroke="#38bdf8"></circle>
           </svg>
+        </span>
+        <div class="nav-brand-text">
+          <span class="nav-brand-name">GeoParcel.ai</span>
+          <span class="nav-brand-sub">Smart Land Intelligence</span>
         </div>
-        <span class="pm-brand-title">ParcelMap</span>
       </a>
 
       <!-- Active Project Selector Pill -->
@@ -257,7 +260,7 @@
           <div style="font-size: 32px; margin-bottom: 8px;">🛰️</div>
           <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Upload Orthomosaic Dataset</div>
           <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Drag and drop file or select from computer (max 500 MB)</div>
-          <input type="file" id="fileUavUpload" accept=".jpg,.jpeg,.png,.tif,.tiff" style="display: none;">
+          <input type="file" id="fileUavUpload" accept=".jpg,.jpeg,.png,.tif,.tiff,.jfif,.webp,image/*" style="display: none;">
           <div style="display: flex; justify-content: center; gap: 8px;">
             <button class="btn-pm btn-pm-primary" onclick="document.getElementById('fileUavUpload').click()">
               Select File

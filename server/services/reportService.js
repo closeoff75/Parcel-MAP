@@ -53,7 +53,8 @@ export class ReportService {
 
     const imageryList = db.getImageryByProjectId(projectId);
     const imagery = (imageryId ? imageryList.find(img => img.id === imageryId) : null) ||
-      (imageryList.length > 0 ? imageryList[imageryList.length - 1] : null) || {
+      (imageryList.find(img => db.getParcelsByProjectId(projectId, img.id).length > 0)) ||
+      (imageryList.length > 0 ? imageryList[0] : null) || {
       id: 'img_none',
       file_name: 'No imagery uploaded',
       resolution: 'N/A',
@@ -61,7 +62,7 @@ export class ReportService {
       capture_date: new Date().toISOString().split('T')[0]
     };
 
-    const targetImageryId = imagery.id !== 'img_none' ? imagery.id : null;
+    const targetImageryId = imageryId || null;
     const features = db.getFeaturesByProjectId(projectId, targetImageryId);
     const parcels = db.getParcelsByProjectId(projectId, targetImageryId).filter(p => p.status !== 'Deleted' && p.status !== 'split');
     const allVerifications = db.getVerificationsByProjectId(projectId);
@@ -146,12 +147,31 @@ export class ReportService {
         total_preliminary_parcels: totalPreliminary,
         final_verified_parcels: verifiedCount,
         verified_parcels: verifiedCount,
+        verified_count: verifiedCount,
         needs_review: reviewCount,
         rejected_parcels: rejectedCount,
         verification_percentage: verificationPct,
         total_area_sqm: totalAreaSqm,
         total_area_hectares: totalAreaHa,
         area_unit: isGeo ? 'm²' : areaUnavailableMsg
+      },
+      parcels_summary: {
+        total_preliminary_parcels: totalPreliminary,
+        final_verified_parcels: verifiedCount,
+        verified_parcels: verifiedCount,
+        verified_count: verifiedCount,
+        needs_review: reviewCount,
+        rejected_parcels: rejectedCount,
+        verification_percentage: verificationPct,
+        total_area_sqm: totalAreaSqm,
+        total_area_hectares: totalAreaHa,
+        area_unit: isGeo ? 'm²' : areaUnavailableMsg
+      },
+      cadastral_metrics: {
+        total_parcels: totalPreliminary,
+        verified_parcels: verifiedCount,
+        needs_review: reviewCount,
+        rejected: rejectedCount
       },
       summary: {
         total_preliminary_parcels: totalPreliminary,
@@ -272,8 +292,9 @@ export class ReportService {
 
     const imageryList = db.getImageryByProjectId(projectId);
     const imagery = (imageryId ? imageryList.find(img => img.id === imageryId) : null) ||
-      (imageryList.length > 0 ? imageryList[imageryList.length - 1] : null);
-    const targetImageryId = imagery ? imagery.id : null;
+      (imageryList.find(img => db.getParcelsByProjectId(projectId, img.id).length > 0)) ||
+      (imageryList.length > 0 ? imageryList[0] : null);
+    const targetImageryId = imageryId || null;
 
     let parcels = db.getParcelsByProjectId(projectId, targetImageryId).filter(p => p.status !== 'Deleted' && p.status !== 'split');
 
@@ -354,9 +375,10 @@ export class ReportService {
 
     const imageryList = db.getImageryByProjectId(projectId);
     const imagery = (imageryId ? imageryList.find(img => img.id === imageryId) : null) ||
-      (imageryList.length > 0 ? imageryList[imageryList.length - 1] : null);
+      (imageryList.find(img => db.getParcelsByProjectId(projectId, img.id).length > 0)) ||
+      (imageryList.length > 0 ? imageryList[0] : null);
     const defaultImageryId = imagery ? imagery.id : 'N/A';
-    const targetImageryId = imagery ? imagery.id : null;
+    const targetImageryId = imageryId || null;
 
     let parcels = db.getParcelsByProjectId(projectId, targetImageryId).filter(p => p.status !== 'Deleted' && p.status !== 'split');
     const verifications = db.getVerificationsByProjectId(projectId);

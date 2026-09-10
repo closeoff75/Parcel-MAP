@@ -1,0 +1,53 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With"
+
+[[redirects]]
+  from = "/workspace"
+  to = "/workspace.html"
+  status = 200
+
+[[redirects]]
+  from = "/map"
+  to = "/map.html"
+  status = 200
+
+[[redirects]]
+  from = "/layers"
+  to = "/layers.html"
+  status = 200
+
+[[redirects]]
+  from = "/intelligence"
+  to = "/intelligence.html"
+  status = 200
+
+[[redirects]]
+  from = "/enterprise"
+  to = "/enterprise.html"
+  status = 200
+
+[[redirects]]
+  from = "/solutions"
+  to = "/solutions.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/platform"
+  to = "/platform.html"
+  status = 200

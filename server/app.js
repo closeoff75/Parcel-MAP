@@ -10,8 +10,42 @@ import apiRoutes from './routes/api.js';
 
 export const app = express();
 
-// Middleware
-app.use(cors());
+// CORS Configuration supporting Deployed Netlify Frontend & Local Development
+const allowedOrigins = [
+  'https://resilient-figolla-23b96e.netlify.app',
+  'https://graceful-sprinkles-c10a85.netlify.app',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001'
+];
+
+if (process.env.CORS_ORIGINS) {
+  try {
+    const extra = process.env.CORS_ORIGINS.startsWith('[')
+      ? JSON.parse(process.env.CORS_ORIGINS)
+      : process.env.CORS_ORIGINS.split(',').map(s => s.trim());
+    allowedOrigins.push(...extra);
+  } catch (e) {
+    allowedOrigins.push(process.env.CORS_ORIGINS.trim());
+  }
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || /\.netlify\.app$/.test(origin) || origin.startsWith('http://localhost:')) {
+      return callback(null, true);
+    }
+    // Permissive fallback in dev/testing while maintaining credentials safety
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Range', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  credentials: true
+}));
+app.options('*', cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 

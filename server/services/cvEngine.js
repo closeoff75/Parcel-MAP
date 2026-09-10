@@ -38,7 +38,7 @@ export class CVEngine {
     const ext = path.extname(filePath).toLowerCase();
     const buffer = fs.readFileSync(filePath);
 
-    if (ext === '.jpg' || ext === '.jpeg') {
+    if (ext === '.jpg' || ext === '.jpeg' || ext === '.jfif') {
       const decoded = jpeg.decode(buffer, { useTArray: true });
       return {
         width: decoded.width,

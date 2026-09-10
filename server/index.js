@@ -6,9 +6,11 @@ import { app } from './app.js';
 
 const PORT = process.env.PORT || 3001;
 
-const server = app.listen(PORT, () => {
+const HOST = process.env.HOST || '0.0.0.0';
+
+const server = app.listen(PORT, HOST, () => {
   console.log(`====================================================`);
-  console.log(`🚀 ParcelMap GeoTech API Server running on port ${PORT}`);
+  console.log(`🚀 ParcelMap GeoTech API Server running on port ${PORT} (${HOST})`);
   console.log(`📡 Health Check: http://localhost:${PORT}/api/health`);
   console.log(`🗺️ Demo Project: http://localhost:${PORT}/api/projects/proj_wagholi_demo`);
   console.log(`📐 Quality Audit: http://localhost:${PORT}/api/projects/proj_wagholi_demo/quality-control`);

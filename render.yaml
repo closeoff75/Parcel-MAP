@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: parcelmap-backend
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm run start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGINS
+        value: '["https://resilient-figolla-23b96e.netlify.app","https://graceful-sprinkles-c10a85.netlify.app","http://localhost:3000"]'

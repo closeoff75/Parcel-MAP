@@ -111,32 +111,63 @@ body {
   gap: 14px;
 }
 
-.pm-brand {
+/* Home Page Brand Logo Styling */
+.nav-brand, .pm-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   text-decoration: none;
-  color: var(--text-primary);
   cursor: pointer;
 }
-.pm-brand-mark {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: rgba(16, 185, 129, 0.16);
-  border: 1px solid rgba(16, 185, 129, 0.32);
-  display: flex;
+
+.nav-brand-logo, .pm-brand-mark {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #10b981;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  color: var(--accent-emerald, #10b981);
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
-.pm-brand-mark svg {
-  width: 15px;
-  height: 15px;
+
+.nav-brand:hover .nav-brand-logo,
+.pm-brand:hover .pm-brand-mark {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.42);
+  transform: translateY(-1px);
+}
+
+.nav-brand-logo svg, .pm-brand-mark svg {
+  width: 20px;
+  height: 20px;
   display: block;
 }
+
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-brand-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+  line-height: 1.1;
+}
+
+.nav-brand-sub {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
 .pm-brand-title {
   font-size: 14px;
   font-weight: 600;
@@ -1473,8 +1504,104 @@ input:checked + .slider:before {
   max-width: 140px;
 }
 
-/* Mobile Bottom Sheet Layout for Parcel Details (Step 5 Section 22) */
+/* ==========================================================================
+   COMPREHENSIVE RESPONSIVE STYLES (Audit Section 17: 360px, 390px, 430px, 768px, 1024px)
+   ========================================================================== */
+
+/* Tablet & Smaller Laptops (<= 1024px) */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 260px;
+    --drawer-width: 300px;
+  }
+  .pm-brand-title, .nav-brand-sub {
+    display: none;
+  }
+  .user-pill span {
+    display: none;
+  }
+  .dash-sub-desc {
+    max-width: 100%;
+  }
+  .rail-steps-track {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Tablets & Large Phones (<= 768px) */
 @media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+  .pm-header {
+    height: auto;
+    min-height: 48px;
+    padding: 6px 12px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .pm-header-left {
+    flex: 1;
+    min-width: 0;
+  }
+  .pm-project-select {
+    max-width: 140px;
+  }
+  .pm-header-center {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .pm-header-center::-webkit-scrollbar {
+    display: none;
+  }
+  .pm-nav-tabs {
+    white-space: nowrap;
+    display: inline-flex;
+    width: max-content;
+  }
+  .pm-nav-tab {
+    padding: 6px 10px;
+    font-size: 11.5px;
+    min-height: 34px;
+  }
+  .pm-header-right {
+    order: 2;
+    gap: 4px;
+  }
+  .btn-pm {
+    padding: 6px 10px;
+    min-height: 34px;
+  }
+  .user-pill {
+    display: none;
+  }
+
+  /* Workspace Layout on Tablet */
+  .ws-view-split, .ws-panel-layout {
+    flex-direction: column !important;
+  }
+  .ws-sidebar {
+    width: 100% !important;
+    max-height: 35vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .ws-drawer {
+    width: 100% !important;
+    max-height: 45vh;
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+  }
+
   .floating-map-controls {
     top: auto;
     bottom: 60px;
@@ -1495,6 +1622,90 @@ input:checked + .slider:before {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     z-index: 1100;
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6);
+  }
+
+  .dashboard-scroll {
+    padding: 14px 16px;
+  }
+  .dash-header-card {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .dash-progress-box {
+    align-items: flex-start;
+  }
+  .rail-steps-track {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .report-actions-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* Mobile Phones (<= 430px, 390px, 360px) */
+@media (max-width: 480px) {
+  .pm-header {
+    padding: 6px 8px;
+  }
+  .nav-brand-logo {
+    width: 28px;
+    height: 28px;
+  }
+  .nav-brand-logo svg {
+    width: 16px;
+    height: 16px;
+  }
+  .nav-brand-name {
+    font-size: 0.95rem;
+  }
+  .nav-brand-sub {
+    display: none;
+  }
+  .pm-project-pill {
+    padding: 2px 6px;
+    gap: 4px;
+  }
+  .pm-project-select {
+    max-width: 110px;
+    font-size: 11px;
+  }
+  .badgeProjectStatus, #badgeProjectStatus {
+    display: none;
+  }
+  .btn-pm {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  #btnLaunchDemo {
+    display: none;
+  }
+  .map-floating-toolbar {
+    left: 6px;
+    top: 6px;
+    flex-wrap: wrap;
+    max-width: calc(100vw - 12px);
+  }
+  .legal-disclaimer-pill {
+    left: 6px;
+    bottom: 6px;
+    font-size: 9.5px;
+    max-width: calc(100vw - 12px);
+  }
+  .btn-action {
+    padding: 7px 6px;
+    font-size: 11px;
+  }
+  .ws-action-bar {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+  }
+  .final-parcel-details-card {
+    padding: 10px 12px;
+  }
+  .dashboard-scroll {
+    padding: 10px 12px;
   }
 }
 

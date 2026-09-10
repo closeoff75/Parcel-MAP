@@ -6,7 +6,43 @@
 
 class ParcelMapWorkspace {
   constructor() {
-    this.apiBase = '/api';
+    // Dynamic Production & Local Backend URL Resolution
+    // Supports:
+    // 1. URL Query parameter ?api=https://... (great for live testing against any backend)
+    // 2. window.__PARCELMAP_API_URL__ (injected global configuration)
+    // 3. localStorage.getItem('pm_backend_api_url') (persistent override)
+    // 4. import.meta.env.VITE_API_URL (Vite environment variable)
+    // 5. file:// protocol fallback to http://localhost:3001
+    // 6. Default relative '' with /api (works seamlessly with same-origin and Netlify reverse-proxy)
+    let configuredBackend = null;
+
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('api')) {
+        configuredBackend = urlParams.get('api');
+        try { localStorage.setItem('pm_backend_api_url', configuredBackend); } catch (e) {}
+      } else if (window.__PARCELMAP_API_URL__) {
+        configuredBackend = window.__PARCELMAP_API_URL__;
+      } else {
+        try { configuredBackend = localStorage.getItem('pm_backend_api_url'); } catch (e) {}
+      }
+    }
+
+    if (!configuredBackend && typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
+      configuredBackend = import.meta.env.VITE_API_URL;
+    }
+
+    if (configuredBackend) {
+      this.backendBase = configuredBackend.replace(/\/api\/?$/, '').replace(/\/$/, '');
+      this.apiBase = `${this.backendBase}/api`;
+    } else if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
+      this.backendBase = 'http://localhost:3001';
+      this.apiBase = 'http://localhost:3001/api';
+    } else {
+      this.backendBase = '';
+      this.apiBase = '/api';
+    }
+
     this.currentView = 'dashboard';
     this.activeProjectId = localStorage.getItem('pm_active_project_id') || 'proj_wagholi_demo';
     this.selectedImageryId = localStorage.getItem('pm_selected_imagery_id') || null;
@@ -109,6 +145,15 @@ class ParcelMapWorkspace {
     this.switchView(this.currentView);
   }
 
+  getImageUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (this.backendBase) {
+      return `${this.backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+    return url;
+  }
+
   /* --------------------------------------------------------------------------
      1. API COMMUNICATION & DATA LOADING
      -------------------------------------------------------------------------- */
@@ -117,10 +162,23 @@ class ParcelMapWorkspace {
       this.activeProjectId = projectId;
       localStorage.setItem('pm_active_project_id', this.activeProjectId);
 
-      // 1. Project details
+      // 1. Project details with auto-recovery if project ID doesn't exist
       const pRes = await fetch(`${this.apiBase}/projects/${projectId}`);
       const pData = await pRes.json();
-      if (pData.success) this.project = pData.project;
+      if (pData.success && pData.project) {
+        this.project = pData.project;
+      } else {
+        console.warn(`[Workspace] Project '${projectId}' not found. Recovering fallback project...`);
+        const allRes = await fetch(`${this.apiBase}/projects`);
+        const allData = await allRes.json();
+        if (allData.success && allData.projects && allData.projects.length > 0) {
+          const fallback = allData.projects.find(p => p.id === 'proj_wagholi_demo') || allData.projects[0];
+          this.activeProjectId = fallback.id;
+          localStorage.setItem('pm_active_project_id', this.activeProjectId);
+          this.project = fallback;
+          return this.loadProjectData(fallback.id);
+        }
+      }
 
       // 2. Imagery
       const imgRes = await fetch(`${this.apiBase}/projects/${projectId}/imagery`);
@@ -469,7 +527,7 @@ class ParcelMapWorkspace {
           attributionControl: false,
           zoomControl: true
         });
-        L.imageOverlay(currentImg.file_url, bounds).addTo(this.maps.verify);
+        L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds).addTo(this.maps.verify);
         this.maps.verify.fitBounds(bounds);
       } else {
         this.maps.verify = L.map('wsGisMap', { attributionControl: false, zoomControl: true }).setView(center, 16);
@@ -477,7 +535,7 @@ class ParcelMapWorkspace {
         if (currentImg && currentImg.file_url) {
           const delta = 0.003;
           const bounds = [[center[0] - delta, center[1] - delta * 1.5], [center[0] + delta, center[1] + delta * 1.5]];
-          L.imageOverlay(currentImg.file_url, bounds, { opacity: 0.85 }).addTo(this.maps.verify);
+          L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds, { opacity: 0.85 }).addTo(this.maps.verify);
         }
       }
 
@@ -507,7 +565,7 @@ class ParcelMapWorkspace {
           attributionControl: false,
           zoomControl: false // Using custom floating controls
         });
-        this.finalImageOverlay = L.imageOverlay(currentImg.file_url, bounds);
+        this.finalImageOverlay = L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds);
         if (showSourceImagery) this.finalImageOverlay.addTo(this.maps.final);
         this.maps.final.fitBounds(bounds);
       } else {
@@ -519,7 +577,7 @@ class ParcelMapWorkspace {
         if (currentImg && currentImg.file_url) {
           const delta = 0.003;
           const bounds = [[center[0] - delta, center[1] - delta * 1.5], [center[0] + delta, center[1] + delta * 1.5]];
-          this.finalImageOverlay = L.imageOverlay(currentImg.file_url, bounds, { opacity: 0.85 });
+          this.finalImageOverlay = L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds, { opacity: 0.85 });
           if (showSourceImagery) this.finalImageOverlay.addTo(this.maps.final);
         }
       }
@@ -585,7 +643,11 @@ class ParcelMapWorkspace {
       }
 
       if (preview) {
-        preview.src = currentImg.file_url;
+        preview.onerror = () => {
+          preview.onerror = null;
+          preview.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="260" viewBox="0 0 600 260"><rect fill="%230b0f17" width="600" height="260"/><text fill="%2310b981" font-family="sans-serif" font-weight="bold" font-size="15" x="50%" y="45%" text-anchor="middle" dominant-baseline="middle">🛰️ Drone Orthomosaic Dataset Active</text><text fill="%2394a3b8" font-family="sans-serif" font-size="13" x="50%" y="58%" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(currentImg.file_name)} (${currentImg.file_size})</text></svg>`;
+        };
+        preview.src = this.getImageUrl(currentImg.file_url);
         preview.alt = currentImg.file_name;
       }
       if (badge) {
@@ -790,7 +852,7 @@ class ParcelMapWorkspace {
         zoomControl: true
       });
 
-      L.imageOverlay(currentImg.file_url, bounds).addTo(this.maps.detection);
+      L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds).addTo(this.maps.detection);
       this.maps.detection.fitBounds(bounds);
       this.renderDetectionLayersOnImage(width, height);
     } else {
@@ -801,7 +863,7 @@ class ParcelMapWorkspace {
       
       const delta = 0.003;
       const bounds = [[center[0] - delta, center[1] - delta * 1.5], [center[0] + delta, center[1] + delta * 1.5]];
-      L.imageOverlay(currentImg.file_url, bounds, { opacity: 0.9 }).addTo(this.maps.detection);
+      L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds, { opacity: 0.9 }).addTo(this.maps.detection);
       this.renderDetectionLayersGeoreferenced();
     }
   }
@@ -1655,7 +1717,7 @@ class ParcelMapWorkspace {
         const center = this.project?.coordinates || [18.5818, 73.9875];
         const delta = 0.0035;
         const droneBounds = [[center[0] - delta, center[1] - delta * 1.5], [center[0] + delta, center[1] + delta * 1.5]];
-        L.imageOverlay(currentImg.file_url, droneBounds, { opacity: 0.85 }).addTo(this.verifyLayers.droneImagery);
+        L.imageOverlay(this.getImageUrl(currentImg.file_url), droneBounds, { opacity: 0.85 }).addTo(this.verifyLayers.droneImagery);
         L.rectangle(droneBounds, {
           color: '#10b981',
           weight: 2,
@@ -2930,7 +2992,7 @@ class ParcelMapWorkspace {
         attributionControl: false,
         zoomControl: true
       });
-      L.imageOverlay(currentImg.file_url, bounds).addTo(this.maps.quality);
+      L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds).addTo(this.maps.quality);
       this.maps.quality.fitBounds(bounds);
     } else {
       this.maps.quality = L.map('qcMap', { attributionControl: false, zoomControl: true }).setView(center, 16);
@@ -2938,7 +3000,7 @@ class ParcelMapWorkspace {
       if (currentImg.file_url) {
         const delta = 0.003;
         const bounds = [[center[0] - delta, center[1] - delta * 1.5], [center[0] + delta, center[1] + delta * 1.5]];
-        L.imageOverlay(currentImg.file_url, bounds, { opacity: 0.85 }).addTo(this.maps.quality);
+        L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds, { opacity: 0.85 }).addTo(this.maps.quality);
       }
     }
 
@@ -3381,7 +3443,7 @@ class ParcelMapWorkspace {
         attributionControl: false,
         zoomControl: true
       });
-      L.imageOverlay(currentImg.file_url, bounds).addTo(this.maps.reasoning);
+      L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds).addTo(this.maps.reasoning);
       this.maps.reasoning.fitBounds(bounds);
     } else {
       const center = this.project?.coordinates || [18.5818, 73.9875];
@@ -3389,7 +3451,7 @@ class ParcelMapWorkspace {
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(this.maps.reasoning);
       const delta = 0.003;
       const bounds = [[center[0] - delta, center[1] - delta * 1.5], [center[0] + delta, center[1] + delta * 1.5]];
-      L.imageOverlay(currentImg.file_url, bounds, { opacity: 0.85 }).addTo(this.maps.reasoning);
+      L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds, { opacity: 0.85 }).addTo(this.maps.reasoning);
     }
 
     this.renderReasoningLayers(isGeoreferenced, height, width);
@@ -3650,7 +3712,7 @@ class ParcelMapWorkspace {
         attributionControl: false,
         zoomControl: true
       });
-      L.imageOverlay(currentImg.file_url, bounds).addTo(this.maps.parcels);
+      L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds).addTo(this.maps.parcels);
       this.maps.parcels.fitBounds(bounds);
     } else {
       const center = this.project?.coordinates || [18.5818, 73.9875];
@@ -3658,7 +3720,7 @@ class ParcelMapWorkspace {
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(this.maps.parcels);
       const delta = 0.003;
       const bounds = [[center[0] - delta, center[1] - delta * 1.5], [center[0] + delta, center[1] + delta * 1.5]];
-      L.imageOverlay(currentImg.file_url, bounds, { opacity: 0.85 }).addTo(this.maps.parcels);
+      L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds, { opacity: 0.85 }).addTo(this.maps.parcels);
     }
 
     const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
@@ -4823,14 +4885,26 @@ class ParcelMapWorkspace {
       }
     });
 
-    // File Upload handling in Imagery view (with natural image dimension extraction)
+    // Unified File Upload & Drag-and-Drop Handling in Imagery view
     const fileInput = document.getElementById('fileUavUpload');
-    fileInput?.addEventListener('change', async (e) => {
-      if (!e.target.files.length) return;
-      const file = e.target.files[0];
+    const dropzone = document.getElementById('uavDropzone');
 
-      const objectUrl = URL.createObjectURL(file);
-      const tempImg = new Image();
+    const handleFileUpload = async (file) => {
+      if (!file) return;
+
+      const validExts = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.jfif', '.webp'];
+      const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+      if (!validExts.includes(fileExt) && !file.type.startsWith('image/')) {
+        this.showToast(`Unsupported format: ${file.name}. Please upload JPG, PNG, WEBP, or GeoTIFF (.tif/.tiff).`, 'error');
+        if (fileInput) fileInput.value = '';
+        return;
+      }
+
+      // Ensure a valid active project exists
+      if (!this.activeProjectId) {
+        this.activeProjectId = localStorage.getItem('pm_active_project_id') || 'proj_wagholi_demo';
+      }
+
       const processUpload = async (w, h) => {
         const formData = new FormData();
         formData.append('imagery', file);
@@ -4838,38 +4912,128 @@ class ParcelMapWorkspace {
         formData.append('height', h || 3000);
 
         this.showToast(`Uploading ${file.name}...`, 'info');
+        if (dropzone) {
+          dropzone.style.opacity = '0.65';
+          dropzone.style.pointerEvents = 'none';
+        }
+
         try {
           const res = await fetch(`${this.apiBase}/projects/${this.activeProjectId}/imagery`, {
             method: 'POST',
             body: formData
           });
-          const data = await res.json();
-          if (data.success) {
+
+          let data;
+          const text = await res.text();
+          try {
+            data = JSON.parse(text);
+          } catch (parseErr) {
+            throw new Error(text || `Server returned HTTP ${res.status}`);
+          }
+
+          if (res.ok && data.success && data.imagery) {
             this.showToast('Drone imagery uploaded successfully!', 'success');
             this.selectedImageryId = data.imagery.id;
             localStorage.setItem('pm_selected_imagery_id', this.selectedImageryId);
+            if (data.project_id && data.project_id !== this.activeProjectId) {
+              this.activeProjectId = data.project_id;
+              localStorage.setItem('pm_active_project_id', this.activeProjectId);
+            }
             await this.loadProjectData(this.activeProjectId);
             this.updateImageryViewUI();
+            this.updateDetectionViewUI();
+            await this.populateProjectSelector();
           } else {
-            this.showToast(`Upload failed: ${data.error || 'Server error'}`, 'error');
+            const errDetail = data?.error || (res.status === 404 ? `API endpoint not found (HTTP 404 on ${this.apiBase})` : `Server returned HTTP ${res.status}`);
+            console.error('[Upload Rejected]:', data);
+            this.showToast(`Image upload failed: ${errDetail}`, 'error');
           }
         } catch (err) {
-          this.showToast('Upload failed', 'error');
+          console.error('[Upload Exception]:', err);
+          this.showToast(`Image upload failed: ${err.message || 'Cannot reach API server'}`, 'error');
+        } finally {
+          if (dropzone) {
+            dropzone.style.opacity = '1';
+            dropzone.style.pointerEvents = 'auto';
+          }
+          if (fileInput) fileInput.value = '';
         }
       };
 
-      tempImg.onload = () => {
-        const width = tempImg.naturalWidth || 4000;
-        const height = tempImg.naturalHeight || 3000;
-        URL.revokeObjectURL(objectUrl);
-        processUpload(width, height);
-      };
-      tempImg.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
+      // Skip browser Image() decoding for GeoTIFFs (browsers cannot decode TIFF natively)
+      if (fileExt === '.tif' || fileExt === '.tiff') {
         processUpload(4000, 3000);
+        return;
+      }
+
+      // Safe dimension extraction with fallback timeout
+      let finished = false;
+      const objectUrl = URL.createObjectURL(file);
+      const tempImg = new Image();
+
+      const timer = setTimeout(() => {
+        if (!finished) {
+          finished = true;
+          URL.revokeObjectURL(objectUrl);
+          processUpload(4000, 3000);
+        }
+      }, 1500);
+
+      tempImg.onload = () => {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          const width = tempImg.naturalWidth || 4000;
+          const height = tempImg.naturalHeight || 3000;
+          URL.revokeObjectURL(objectUrl);
+          processUpload(width, height);
+        }
       };
+
+      tempImg.onerror = () => {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          URL.revokeObjectURL(objectUrl);
+          processUpload(4000, 3000);
+        }
+      };
+
       tempImg.src = objectUrl;
+    };
+
+    fileInput?.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleFileUpload(e.target.files[0]);
+      }
     });
+
+    if (dropzone) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.style.borderColor = 'var(--accent-emerald)';
+          dropzone.style.background = 'rgba(16, 185, 129, 0.08)';
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.style.borderColor = 'var(--border-medium)';
+          dropzone.style.background = 'var(--bg-panel)';
+        }, false);
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+          handleFileUpload(dt.files[0]);
+        }
+      }, false);
+    }
 
     document.getElementById('btnLoadDemoImagery')?.addEventListener('click', async () => {
       this.showToast('Loading demo high-resolution Wagholi orthomosaic...', 'info');
