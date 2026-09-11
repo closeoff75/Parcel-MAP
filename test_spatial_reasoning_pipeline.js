@@ -286,6 +286,20 @@ async function runAcceptanceTests() {
   if (!revData.success) throw new Error('Mark review failed: ' + JSON.stringify(revData));
   console.log(`   ✅ Parcel ${testParcelId} flagged as Needs Review.`);
 
+  // 11.3b Vertex Edit
+  const vEditRes = await fetch(`${API_BASE}/parcels/${testParcelId}/versions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      geometry: testParcel.geometry,
+      reviewer_name: 'Alex Morgan (Lead Surveyor)',
+      notes: 'Adjusted corner vertex to align with fence.'
+    })
+  });
+  const vEditData = await vEditRes.json();
+  if (!vEditData.success) throw new Error('Vertex edit failed: ' + JSON.stringify(vEditData));
+  console.log(`   ✅ Parcel ${testParcelId} vertex edit recorded.`);
+
   // 11.4 Split Parcel
   const ring = testParcel.geometry.coordinates[0];
   const midX = (ring[0][0] + ring[1][0]) / 2;

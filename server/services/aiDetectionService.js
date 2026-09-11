@@ -80,18 +80,24 @@ export class DetectionService {
       }
     }
 
-    const isDemoProject = projectId === 'proj_wagholi_demo';
     const hasDiskFile = filePath && fs.existsSync(filePath);
 
     let imageWidth = Number(imagery.width) || 4000;
     let imageHeight = Number(imagery.height) || 3000;
-    let detectorLabel = isDemoProject 
-      ? 'Demo AI / Computer Vision (Real Pixel Analysis)' 
-      : 'Edge & Pixel Computer Vision AI Engine';
+    let detectorLabel = 'Edge & Pixel Computer Vision AI Engine';
 
-    const isGeoreferenced = imagery.file_name.toLowerCase().endsWith('.tif') || 
-                            imagery.file_name.toLowerCase().endsWith('.tiff') || 
-                            Boolean(imagery.metadata?.crs);
+    const isTif = imagery.file_name.toLowerCase().endsWith('.tif') || imagery.file_name.toLowerCase().endsWith('.tiff');
+    let isGeoreferenced = false;
+    if (imagery.is_georeferenced !== undefined && imagery.is_georeferenced !== null) {
+      isGeoreferenced = Boolean(imagery.is_georeferenced);
+    } else if (isTif) {
+      isGeoreferenced = true;
+    } else {
+      const crs = (typeof imagery.metadata?.crs === 'string') ? imagery.metadata.crs.toLowerCase() : '';
+      if (crs && !crs.includes('image-space') && !crs.includes('pixel') && !crs.includes('local') && !crs.includes('none') && (crs.includes('epsg') || crs.includes('wgs') || crs.includes('utm'))) {
+        isGeoreferenced = true;
+      }
+    }
 
     let detectionResult = null;
 
@@ -115,9 +121,8 @@ export class DetectionService {
         // Update database with true dimensions from decoded file
         db.updateImagery(imagery.id, { width: imageWidth, height: imageHeight });
 
-        const providerName = isDemoProject && options.mode === 'demo'
-          ? 'demo'
-          : (options.provider || (options.mode === 'cv' ? 'cv' : (process.env.DETECTION_PROVIDER || 'ml')));
+        // Always use configured ML or CV provider for actual detection
+        const providerName = options.provider || (options.mode === 'cv' ? 'cv' : (process.env.DETECTION_PROVIDER || 'ml'));
 
         const provider = DetectionProvider.getProvider(providerName);
         detectionResult = await provider.detect({
@@ -136,23 +141,9 @@ export class DetectionService {
         db.updateImagery(imagery.id, { processing_status: 'DETECTION FAILED' });
         throw new Error(`Detection processing failed on uploaded image: ${cvErr.message}`);
       }
-    } else if (isDemoProject) {
-      // Strictly isolated Demo Project fallback if demo file was not placed on disk
-      console.log(`[Detection] Using isolated demo presentation dataset for ${projectId}`);
-      const demoProvider = DetectionProvider.getProvider('demo');
-      detectionResult = await demoProvider.detect({
-        filePath: null,
-        width: imageWidth,
-        height: imageHeight,
-        project_id: projectId,
-        imagery_id: imagery.id,
-        detection_run_id: detectionRunId,
-        is_georeferenced: isGeoreferenced,
-        project_coordinates: project.coordinates || [18.5818, 73.9875]
-      }, options);
     } else {
       db.updateImagery(imagery.id, { processing_status: 'DETECTION FAILED' });
-      throw new Error(`Imagery file not found on disk at: ${filePath || imagery.file_url}`);
+      throw new Error(`Imagery file not found on disk at: ${filePath || imagery.file_url}. Please upload drone imagery first.`);
     }
 
     // Save features in database scoped to imagery.id
@@ -172,7 +163,7 @@ export class DetectionService {
     const finalModel = detectionResult.model_name || (
       finalProvider === 'ml' 
         ? 'YOLOv8n-seg (Keremberke Aerial Building Model)' 
-        : (finalProvider === 'opencv_fallback' ? 'OpenCV Fallback Engine v1.0' : 'Demo Cadastral Presentation Dataset')
+        : (finalProvider === 'opencv_fallback' ? 'OpenCV Fallback Engine v1.0' : 'Aerial Computer Vision Engine v3.2')
     );
 
     // Structured logging (Step 6B Requirement 19)
@@ -207,7 +198,7 @@ export class DetectionService {
       detector: finalModel,
       model: finalModel,
       model_name: finalModel,
-      mode: isDemoProject && options.mode === 'demo' ? 'Demo Mode' : 'Production AI / ML Pipeline',
+      mode: 'Production AI / ML Pipeline',
       provider: finalProvider,
       coordinate_mode: isGeoreferenced ? 'geographic' : 'image',
       summary,
@@ -249,29 +240,6 @@ export class DetectionService {
     return CVEngine.detectBoundaries(ctx);
   }
 
-  /**
-   * Isolated Demo presentation dataset strictly for demo presentations.
-   */
-  static getIsolatedDemoDetections(w, h) {
-    return [
-      {
-        detection_type: 'ROAD',
-        sub_type: 'Primary Highway',
-        name: 'Demo Arterial Highway',
-        confidence: 0.94,
-        image_coordinates: [[Math.round(w * 0.1), Math.round(h * 0.5)], [Math.round(w * 0.5), Math.round(h * 0.48)], [Math.round(w * 0.9), Math.round(h * 0.45)]],
-        geometry: { type: 'LineString', coordinates: [[Math.round(w * 0.1), Math.round(h * 0.5)], [Math.round(w * 0.5), Math.round(h * 0.48)], [Math.round(w * 0.9), Math.round(h * 0.45)]] }
-      },
-      {
-        detection_type: 'BUILDING',
-        sub_type: 'Commercial Shed',
-        name: 'Demo Structure A',
-        confidence: 0.91,
-        image_coordinates: [[Math.round(w * 0.2), Math.round(h * 0.2)], [Math.round(w * 0.3), Math.round(h * 0.2)], [Math.round(w * 0.3), Math.round(h * 0.3)], [Math.round(w * 0.2), Math.round(h * 0.3)], [Math.round(w * 0.2), Math.round(h * 0.2)]],
-        geometry: { type: 'Polygon', coordinates: [[[Math.round(w * 0.2), Math.round(h * 0.2)], [Math.round(w * 0.3), Math.round(h * 0.2)], [Math.round(w * 0.3), Math.round(h * 0.3)], [Math.round(w * 0.2), Math.round(h * 0.3)], [Math.round(w * 0.2), Math.round(h * 0.2)]]] }
-      }
-    ];
-  }
 }
 
 // Export both names for backwards compatibility

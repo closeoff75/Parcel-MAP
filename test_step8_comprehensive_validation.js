@@ -31,7 +31,7 @@ async function runComprehensiveVerification() {
   // Phase 1: Verify API Health & Active Project
   const projRes = await request({ hostname: '127.0.0.1', port: 3001, path: '/api/projects', method: 'GET' });
   const projects = projRes.data?.projects || [];
-  const project = projects.find(p => p.id === 'proj_1788971633885') || projects[0];
+  const project = projects.find(p => p.id === 'proj_1789117650907') || projects.find(p => p.id === 'proj_1788971633885') || projects.find(p => (p.parcels_count || 0) > 0) || projects[0];
   console.log(`[PASS] 1. Active Target Project: ${project.id} ("${project.name}")`);
 
   // Phase 2: Verify Exact Preliminary Parcels Consumed

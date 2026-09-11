@@ -332,12 +332,14 @@ async function runAudit() {
   console.log('\n--- 7. DEMO DATA ISOLATION TEST ---');
   // Confirm user project A never received demo parcels (PM-0001 from demo)
   const aParcelsList = reloadedParcels.data.parcels;
-  const hasDemoLeak = aParcelsList.some(p => p.project_id === 'proj_wagholi_demo');
+  const hasDemoLeak = aParcelsList.some(p => p.project_id === 'proj_demo_coastal' || p.project_id === 'proj_wagholi_demo');
   assert(!hasDemoLeak, 'Project A contains 0 demo project records');
 
   // Verify demo project still works when requested
-  const demoReport = await request(`${API_BASE}/projects/proj_wagholi_demo/report?imagery_id=img_wagholi_ortho`);
-  assert(demoReport.ok && demoReport.data?.report?.project?.id === 'proj_wagholi_demo', 'Explicit demo project remains functional');
+  const demoProjectId = 'proj_demo_coastal';
+  const demoImageryId = 'img_demo_coastal';
+  const demoReport = await request(`${API_BASE}/projects/${demoProjectId}/report?imagery_id=${demoImageryId}`);
+  assert(demoReport.ok && demoReport.data?.report?.project?.id === demoProjectId, 'Explicit demo project remains functional');
 
   console.log('\n================================================================================');
   console.log(`AUDIT COMPLETE: ${passed} PASSED, ${failed} FAILED`);

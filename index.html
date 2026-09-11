@@ -13,6 +13,10 @@
 
   <!-- Theme Stylesheet -->
   <link rel="stylesheet" href="gis-theme.css">
+
+  <!-- Leaflet 2D GIS Map Engine (Step 4 High-Definition Parcel Map) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
 
@@ -215,60 +219,34 @@
   </div>
 
   <!-- ==========================================================================
-       3. QUICK PARCEL SEARCH (FIND A PARCEL)
+       3. QUICK PARCEL SEARCH (FIND YOUR PARCEL)
        ========================================================================== -->
   <section class="search-section enter-scale delay-4" id="search">
     <div class="container">
       <div class="section-header-centered">
-        <div class="badge-tag">LOOKUP &bull; PROTOTYPE DATA</div>
-        <h2 class="section-title">Find a Parcel</h2>
+        <div class="badge-tag">CADASTRAL SEARCH &bull; REAL DATASET</div>
+        <h2 class="section-title">Find Your Parcel</h2>
         <p class="section-sub">Search by parcel number, survey number, village, district, or location.</p>
       </div>
 
       <div class="search-box-card">
-        <div class="search-input-wrapper">
-          <input type="text" id="mainParcelSearchInput" class="search-input-field" placeholder="🔍 Search parcel, survey number or location (e.g. 101, 104A, Patil)..." autocomplete="off">
-          <button id="btnSearchGo" class="btn-primary btn-sm">Search &rarr;</button>
-        </div>
+        <form id="parcelSearchForm" class="search-input-wrapper" onsubmit="return false;" role="search" aria-label="Find Your Parcel">
+          <label for="mainParcelSearchInput" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;">Search parcel, survey number or location</label>
+          <input type="text" id="mainParcelSearchInput" class="search-input-field" placeholder="🔎 Search parcel, survey number or location..." autocomplete="off" aria-label="Search parcel, survey number or location">
+          <button type="submit" id="btnSearchGo" class="btn-search-go" aria-label="Search parcels">Search &rarr;</button>
+        </form>
 
         <div class="search-options-row">
-          <button class="btn-use-location" id="btnUseLocation">
+          <button type="button" class="btn-use-location" id="btnUseLocation" aria-label="Use current location">
             <span>📍 Use my location</span>
           </button>
-          <span style="color: var(--text-muted); font-size: 0.78rem;">Demo Dataset Active &bull; Wagholi Cadastre (Sheet #14)</span>
+          <span id="searchStatusIndicator" class="search-status-indicator">
+            <span class="search-status-dot"></span> Ready to search real parcel dataset
+          </span>
         </div>
 
-        <!-- Autocomplete Suggestions -->
-        <div class="search-results-dropdown" id="searchResultsDropdown">
-          <div class="search-result-item" onclick="window.location.href='map.html'">
-            <div>
-              <div class="result-id">Parcel #101</div>
-              <div class="result-details">Wagholi Sheet #14 &bull; Agricultural &bull; 1.45 acres</div>
-            </div>
-            <span class="badge-tag" style="padding: 2px 6px;">Survey 42/1</span>
-          </div>
-          <div class="search-result-item" onclick="window.location.href='map.html'">
-            <div>
-              <div class="result-id">Parcel #103</div>
-              <div class="result-details">Wagholi Sheet #14 &bull; Non-Agricultural (NA) &bull; 0.95 acres</div>
-            </div>
-            <span class="badge-tag" style="padding: 2px 6px;">Survey 42/3</span>
-          </div>
-          <div class="search-result-item" onclick="window.location.href='map.html'">
-            <div>
-              <div class="result-id">Parcel #104A</div>
-              <div class="result-details">Wagholi Sheet #14 &bull; Commercial &bull; 2.20 acres</div>
-            </div>
-            <span class="badge-tag" style="padding: 2px 6px;">Survey 43/1</span>
-          </div>
-          <div class="search-result-item" onclick="window.location.href='map.html'">
-            <div>
-              <div class="result-id">Parcel #108</div>
-              <div class="result-details">Wagholi Sheet #14 &bull; In Dispute &bull; 3.40 acres</div>
-            </div>
-            <span class="badge-tag" style="padding: 2px 6px; background: rgba(239, 68, 68, 0.15); color: #ef4444;">Dispute Flag</span>
-          </div>
-        </div>
+        <!-- Search Results (Normal document flow - naturally pushes subsequent content down) -->
+        <div class="search-results-flow" id="searchResultsContainer" aria-live="polite"></div>
       </div>
     </div>
   </section>
@@ -276,7 +254,7 @@
   <!-- ==========================================================================
        3. GLOBAL CADASTRAL INTELLIGENCE (REAL SATELLITE EARTH & OCEANS)
        ========================================================================== -->
-  <section class="globe-section enter-scale delay-5" id="explore">
+  <section class="globe-section enter-scale delay-5" id="parcel-globe" data-section="explore">
     <div class="container">
       <div class="section-header-centered">
         <div class="badge-tag badge-cyan">REAL SATELLITE EARTH &bull; 3D DIGITAL TWIN</div>
@@ -299,16 +277,12 @@
             <span class="type-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></span>
             <span class="type-name">Cadastral Plots</span>
           </button>
-          <button class="globe-type-btn active" data-type="radar">
-            <span class="type-icon">📡</span>
-            <span class="type-name">Radar Sensor Swath</span>
-          </button>
         </div>
 
         <!-- Quick Fly-To Hub Navigation Bar -->
         <div class="globe-quick-jumps" id="globeQuickJumps">
           <span class="quick-jump-label">REGISTRY NODES:</span>
-          <button class="quick-jump-chip active" data-hub="pune">📍 Wagholi Sheet #14</button>
+          <button class="quick-jump-chip active" data-hub="coastal">📍 Coastal Settlement</button>
           <button class="quick-jump-chip" data-hub="mumbai">🏙️ Mumbai MMR</button>
           <button class="quick-jump-chip" data-hub="delhi">🏛️ Delhi NCR</button>
           <button class="quick-jump-chip" data-hub="bengaluru">💻 Bengaluru IT</button>
@@ -319,25 +293,20 @@
 
         <!-- 3D WebGL / Canvas Container -->
         <div class="globe-canvas-container" id="globeCanvasContainer">
-          
-          <!-- Top Left Telemetry HUD -->
-          <div class="globe-hud-telemetry">
-            <div class="globe-hud-pill">
-              <span class="hud-indicator-dot"></span>
-              <span id="globeModeLabel">SATELLITE DIGITAL TWIN &bull; ACTIVE</span>
+
+          <!-- Subtle Loading & Diagnostics Overlay (Part P) -->
+          <div class="globe-loading-overlay" id="globeLoadingOverlay" style="display: none;">
+            <div class="globe-loading-inner" id="globeLoadingInner">
+              <span class="search-spinner-sm"></span>
+              <span class="globe-loading-text" id="globeLoadingText">Loading Global View...</span>
             </div>
-            <div class="globe-hud-coord" id="globeCoordHud">DATUM: WGS 84 &bull; LAT 18.58°N, LNG 73.98°E</div>
-            <div class="globe-hud-coord">SENSORS: SENTINEL-2 &bull; CARTOSAT-3</div>
-            <div class="globe-hud-coord" id="globeZoomHud">ZOOM: 1.0x &bull; Digital Twin WGS84</div>
+            <div class="globe-error-inner" id="globeErrorInner" style="display: none;">
+              <span class="globe-error-icon">⚠️</span>
+              <span class="globe-error-text" id="globeErrorText">Unable to load Global View</span>
+              <button type="button" class="btn-retry-map" id="btnRetryGlobe">↺ Retry</button>
+            </div>
           </div>
-
-          <!-- Top Right Active Node HUD -->
-          <div class="globe-hud-node" id="globeHudNode">
-            <div class="globe-node-title" id="globeNodeTitle">📍 Primary Focus Hub</div>
-            <div class="globe-node-sub" id="globeNodeSub">Pune Haveli &bull; Wagholi Sheet #14</div>
-            <div class="globe-node-stat" id="globeNodeStat">20 Cadastral Parcels &bull; Sub-Meter RTK Verified</div>
-          </div>
-
+          
           <!-- Zoom In / Out Floating Controls -->
           <div class="globe-zoom-controls">
             <button id="globeBtnZoomIn" class="btn-globe-zoom" title="Zoom In">+</button>
@@ -345,18 +314,18 @@
           </div>
 
           <!-- Dynamic Hover / Click Tooltip Overlay -->
-          <div class="globe-tooltip" id="globeTooltip"></div>
+          <div class="globe-tooltip" id="globeTooltip" style="display: none;"></div>
 
-          <!-- Bottom Left Sensor Legend -->
-          <div class="globe-hud-legend">
-            <div class="legend-header">
-              <span class="legend-dot"></span>
-              <span>ORBITAL RADAR SENSOR SWATH</span>
+          <!-- Professional Minimal Screen-Space Map Marker -->
+          <div class="globe-screen-marker" id="globeScreenParcelMarker" style="display: none;">
+            <div class="marker-pin-head">
+              <span class="marker-pin-glyph">📍</span>
             </div>
-            <div class="legend-gradient-bar"></div>
-            <div class="legend-minmax">
-              <span>Cartosat-3 (High-Res)</span>
-              <span>Sentinel-2 (MSI)</span>
+            <div class="marker-label-badge">
+              <div class="marker-label-title" id="screenMarkerTitle">PARCEL #101</div>
+              <div class="marker-label-rule"></div>
+              <div class="marker-label-sub" id="screenMarkerSub">Coastal Settlement • Demo</div>
+              <div class="marker-label-survey" id="screenMarkerSurvey">Survey 42/1</div>
             </div>
           </div>
 
@@ -365,14 +334,56 @@
             <div class="globe-control-buttons">
               <button id="globeBtnToggleRotate" class="btn-globe-ctrl" title="Toggle Auto-Rotation">⏸ Pause</button>
               <button id="globeBtnResetView" class="btn-globe-ctrl" title="Reset View Angle">↺ Reset</button>
+              <button id="globeBtnToggleSatellite" class="btn-globe-ctrl active" title="Toggle Roaming Satellite" aria-pressed="true">🛰️ Satellite: ON</button>
             </div>
-            <div class="globe-hint-text">🖱️ Drag to rotate &bull; Scroll to zoom &bull; Click pin to inspect</div>
+            <div class="globe-hint-text">Drag to rotate &bull; Scroll to zoom</div>
             <a href="map.html" class="btn-primary btn-sm btn-globe-cta">
               <span>Open Cadastral Map Engine &rarr;</span>
             </a>
           </div>
 
         </div>
+
+        <!-- High-Definition 2D Parcel Map Container (State B: PARCEL_MAP / viewMode === 'map') -->
+        <div class="parcel-2d-map-container" id="parcel2dMapContainer" aria-label="High-Definition Parcel Map" style="display: none; height: 540px; min-height: 540px;">
+          <div id="parcelHdLeafletMap" class="parcel-hd-leaflet-map"></div>
+
+          <!-- Subtle Map Tile Loading Indicator (State E: Loading map...) -->
+          <div class="map-tile-loading-indicator" id="mapTileLoadingIndicator" style="display: none;">
+            <span class="search-spinner-sm"></span>
+            <span class="tile-loading-text" id="tileLoadingText">Loading map…</span>
+          </div>
+
+          <!-- Diagnostic Tile Error Card (Requirement 12) -->
+          <div class="map-tile-error-card" id="mapTileErrorCard" style="display: none;">
+            <div class="tile-error-icon">⚠️</div>
+            <div class="tile-error-title" id="tileErrorTitle">Map imagery could not be loaded.</div>
+            <div class="tile-error-desc" id="tileErrorDesc">Please check your network connection or switch basemaps.</div>
+            <button type="button" class="btn-retry-map" id="btnRetryMap">↺ Retry Map</button>
+          </div>
+
+          <!-- Floating Map HUD Control Bar -->
+          <div class="parcel-map-hud-bar" id="parcelMapHudBar">
+            <button type="button" class="btn-map-hud btn-back-to-globe" id="btnBackToGlobe" title="Return to 3D Global View">
+              <span>🌍 Back to Global View</span>
+            </button>
+            <div class="map-hud-mode-pill" id="mapHudModePill">
+              <span class="hud-indicator-dot"></span>
+              <span id="mapHudModeText">HD PARCEL ANALYSIS • SATELLITE</span>
+            </div>
+            <div class="map-hud-actions">
+              <button type="button" class="btn-map-hud" id="btnToggleBasemap" title="Toggle Satellite / Street Map">
+                <span id="basemapToggleIcon">🛰️</span> <span id="basemapToggleLabel">Satellite</span>
+              </button>
+              <button type="button" class="btn-map-hud" id="btnRecenterParcel" title="Recenter on Parcel">
+                <span>⌖ Center</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Parcel Explorer Panel (Accessible over both 3D Globe and 2D Map) -->
+        <div class="globe-parcel-explorer" id="globeParcelExplorer" role="dialog" aria-label="Detailed Parcel Intelligence"></div>
       </div>
     </div>
   </section>
@@ -908,47 +919,795 @@
       }, { passive: true });
     }
 
-    // 3. Quick Search Autocomplete Interaction
+    // Step 3: Centralized Controlled Viewport Auto-Scroll for 3D Globe
+    window.scrollToParcelGlobe = function() {
+      if (typeof window.lenis?.isScrolling === 'boolean' && window.lenis.isScrolling) {
+        // let existing scroll complete or continue
+      }
+
+      return new Promise((resolve) => {
+        // 1. Wait until globe container exists and its dimensions are rendered in the DOM
+        const checkGlobeReady = (retryCount = 0) => {
+          const globeCanvas = document.getElementById('globeCanvasContainer');
+          const globeSection = document.getElementById('parcel-globe') || document.querySelector('.globe-section');
+          const targetElement = globeCanvas || globeSection;
+
+          if (!targetElement) {
+            resolve();
+            return;
+          }
+
+          const rect = targetElement.getBoundingClientRect();
+          if ((rect.height === 0 || rect.width === 0) && retryCount < 30) {
+            requestAnimationFrame(() => checkGlobeReady(retryCount + 1));
+            return;
+          }
+
+          try {
+            const header = document.querySelector('header.site-header') || document.querySelector('header');
+            const headerHeight = header ? header.getBoundingClientRect().height : 64;
+            const viewportHeight = window.innerHeight;
+
+            // Center of the 3D globe in absolute document coordinates
+            const globeCenter = rect.top + window.scrollY + (rect.height / 2);
+
+            // Visible viewport area strictly below the fixed/sticky navbar
+            const visibleHeight = Math.max(200, viewportHeight - headerHeight);
+
+            // Desired visual center in the visible viewport
+            const visibleCenterY = headerHeight + (visibleHeight / 2);
+
+            // Calculate scroll target so globeCenter matches visibleCenterY
+            let targetScroll = globeCenter - visibleCenterY;
+
+            // Check top clearance: ensure the top of the globe card is not obscured by navbar
+            const globeCard = document.querySelector('.globe-card') || targetElement;
+            const cardRect = globeCard.getBoundingClientRect();
+            const cardPageTop = cardRect.top + window.scrollY;
+            
+            // If globe canvas or card is taller than visible viewport, ensure top clearance below header
+            if (rect.height > visibleHeight) {
+              targetScroll = Math.max(targetScroll, cardPageTop - headerHeight - 12);
+            }
+
+            // Clamp to document scroll boundaries
+            const maxScroll = Math.max(0, document.documentElement.scrollHeight - viewportHeight);
+            targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
+
+            const currentScroll = window.scrollY || window.pageYOffset || 0;
+            const onComplete = () => {
+              resolve();
+            };
+
+            // If already centered (within 4px), resolve immediately
+            if (Math.abs(currentScroll - targetScroll) < 4) {
+              onComplete();
+              return;
+            }
+
+            if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+              window.lenis.scrollTo(targetScroll, {
+                duration: 1.25,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                onComplete: onComplete
+              });
+              setTimeout(onComplete, 1350);
+            } else {
+              window.scrollTo({
+                top: Math.round(targetScroll),
+                behavior: 'smooth'
+              });
+              setTimeout(onComplete, 750);
+            }
+          } catch (err) {
+            console.warn('scrollToParcelGlobe error:', err);
+            resolve();
+          }
+        };
+
+        requestAnimationFrame(() => checkGlobeReady(0));
+      });
+    };
+
+    // Central Selected Parcel State Management (Single Source of Truth: activeParcel)
+    window.parcelMapState = {
+      activeParcel: null,
+      get selectedParcel() {
+        return this.activeParcel;
+      },
+      set selectedParcel(val) {
+        this.activeParcel = val;
+      },
+      mode: 'demo', // 'search' | 'demo'
+      activeMapStage: 'GLOBAL_GLOBE', // Step 4 Section 2: GLOBAL_GLOBE | PARCEL_MAP
+      viewMode: 'globe', // Step 3B Section 2: 'globe' | 'transitioning' | 'map'
+      searchState: 'idle', // Step 4 Section 14: idle | searching | globeNavigating | mapTransitioning | parcelLocated | notFound | error
+
+      setViewMode: function(mode, parcel) {
+        this.viewMode = mode;
+        const targetParcel = parcel || this.activeParcel || this.selectedParcel;
+        const globeContainer = document.getElementById('globeCanvasContainer');
+        const mapContainer = document.getElementById('parcel2dMapContainer');
+        const typeSwitcher = document.getElementById('globeTypeSwitcher');
+        const quickJumps = document.getElementById('globeQuickJumps');
+        const anchoredMarker = document.getElementById('globeAnchoredParcelMarker');
+        const screenMarker = document.getElementById('globeScreenParcelMarker');
+        const globeCard = document.getElementById('globeParcelCard');
+        const globeTooltip = document.getElementById('globeTooltip');
+
+        if (mode === 'globe' || mode === 'global') {
+          this.activeMapStage = 'GLOBAL_GLOBE';
+          this.viewMode = 'globe';
+          console.log('[GLOBAL_VIEW_ENTER] Entering Global View (setViewMode)');
+          if (mapContainer) {
+            mapContainer.style.display = 'none';
+            mapContainer.style.opacity = '0';
+          }
+          if (globeContainer) {
+            globeContainer.style.display = 'block';
+            globeContainer.style.opacity = '1';
+          }
+          const globeCanvas = document.querySelector('#globeCanvasContainer canvas');
+          if (globeCanvas) {
+            globeCanvas.style.display = 'block';
+            globeCanvas.style.opacity = '1';
+          }
+          if (typeSwitcher) typeSwitcher.style.display = 'flex';
+          if (quickJumps) quickJumps.style.display = 'flex';
+          if (screenMarker) screenMarker.style.display = 'none';
+
+          if (window.realSatelliteGlobeInstance) {
+            window.realSatelliteGlobeInstance.handleResize();
+          }
+        } else if (mode === 'transitioning') {
+          this.activeMapStage = 'TRANSITIONING';
+          this.setSearchState('mapTransitioning', targetParcel);
+          // Keep 3D globe visible while initializing the 2D map engine underneath
+          if (globeContainer) {
+            globeContainer.style.display = 'block';
+          }
+          // Make 2D map present in layout so Leaflet has non-zero client dimensions
+          if (mapContainer) {
+            mapContainer.style.display = 'block';
+            mapContainer.style.opacity = '0.01';
+            mapContainer.style.pointerEvents = 'none';
+          }
+          if (window.parcelHdMapManager && targetParcel && typeof window.parcelHdMapManager.prepareParcelMap === 'function') {
+            window.parcelHdMapManager.prepareParcelMap(targetParcel);
+          }
+        } else if (mode === 'map') {
+          this.activeMapStage = 'PARCEL_MAP';
+          // Step 3B Section 3: Do NOT keep globe on top of map.
+          // Globe canvas and decorative elements are completely removed from viewport.
+          if (globeContainer) {
+            globeContainer.style.display = 'none';
+          }
+          if (typeSwitcher) typeSwitcher.style.display = 'none';
+          if (quickJumps) quickJumps.style.display = 'none';
+          if (anchoredMarker) anchoredMarker.style.display = 'none';
+          if (screenMarker) screenMarker.style.display = 'none';
+          if (globeCard) {
+            globeCard.style.display = 'none';
+            globeCard.classList.remove('active');
+          }
+          if (globeTooltip) globeTooltip.style.display = 'none';
+
+          if (mapContainer) {
+            mapContainer.style.display = 'block';
+            mapContainer.style.opacity = '1';
+            mapContainer.style.pointerEvents = 'auto';
+          }
+          if (window.parcelHdMapManager && targetParcel) {
+            window.parcelHdMapManager.showParcel(targetParcel);
+          }
+        }
+
+        window.dispatchEvent(new CustomEvent('parcelmap:view-mode', {
+          detail: { mode: mode, parcel: targetParcel }
+        }));
+      },
+
+      setSearchState: function(state, details) {
+        this.searchState = state;
+        const pNum = details?.parcelNumber || (details?.parcel_id ? String(details.parcel_id).replace(/^Plot\s*#/i, '') : details?.id) || '';
+
+        const statusTextEl = document.querySelector('.confirm-status-text');
+        const searchStatusIndicator = document.getElementById('searchStatusIndicator');
+
+        if (state === 'searching') {
+          if (searchStatusIndicator) {
+            searchStatusIndicator.innerHTML = '<span class="search-spinner-sm" style="width:12px;height:12px;display:inline-block;margin:0;vertical-align:middle;border-width:2px;"></span> Finding parcel...';
+          }
+        } else if (state === 'found') {
+          if (searchStatusIndicator && pNum) {
+            searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#10b981;"></span> Parcel #${escapeHtml(pNum)} found`;
+          }
+        } else if (state === 'cameraTransitioning' || state === 'globeNavigating') {
+          const msg = pNum ? `Locating Parcel #${escapeHtml(pNum)}...` : 'Locating parcel...';
+          if (statusTextEl) {
+            statusTextEl.innerHTML = `<span class="search-spinner-sm" style="width:12px;height:12px;display:inline-block;margin:0;vertical-align:middle;border-width:2px;"></span> ${msg}`;
+          }
+          if (searchStatusIndicator) {
+            searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#38bdf8;"></span> ${msg}`;
+          }
+        } else if (state === 'mapTransitioning') {
+          // Loading high-definition parcel map... (Step 4 & Step 3B requirement)
+          const msg = 'Loading parcel map…';
+          if (statusTextEl) {
+            statusTextEl.innerHTML = `<span class="search-spinner-sm" style="width:12px;height:12px;display:inline-block;margin:0;vertical-align:middle;border-width:2px;"></span> ${msg}`;
+          }
+          if (searchStatusIndicator) {
+            searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#38bdf8;"></span> ${msg}`;
+          }
+        } else if (state === 'located' || state === 'parcelLocated') {
+          if (statusTextEl) {
+            statusTextEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ Parcel located</span>`;
+          }
+          if (searchStatusIndicator) {
+            searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#10b981;"></span> Parcel located`;
+          }
+        } else if (state === 'notFound') {
+          if (searchStatusIndicator) {
+            searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#f59e0b;"></span> Parcel not found`;
+          }
+        } else if (state === 'error') {
+          if (searchStatusIndicator) {
+            searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#ef4444;"></span> Location coordinates unavailable`;
+          }
+        } else if (state === 'idle') {
+          if (searchStatusIndicator) {
+            searchStatusIndicator.innerHTML = '<span class="search-status-dot"></span> Ready to search real parcel dataset';
+          }
+        }
+
+        window.dispatchEvent(new CustomEvent('parcelmap:search-state', {
+          detail: { state: state, details: details, stage: this.activeMapStage, viewMode: this.viewMode }
+        }));
+      },
+
+      switchToParcelMap: function(parcel) {
+        this.setViewMode('map', parcel);
+      },
+
+      switchToGlobalGlobe: function() {
+        console.log('[GLOBAL_VIEW_ENTER] Switching to Clean Global Globe');
+        this.activeParcel = null;
+        this.selectedParcel = null;
+        this.mode = 'demo';
+        this.activeMapStage = 'GLOBAL_GLOBE';
+        this.setViewMode('globe');
+        if (typeof this.setSearchState === 'function') {
+          this.setSearchState('idle');
+        }
+        if (window.parcelHdMapManager && typeof window.parcelHdMapManager.hideMap === 'function') {
+          window.parcelHdMapManager.hideMap();
+        }
+        if (window.realSatelliteGlobeInstance) {
+          if (typeof window.realSatelliteGlobeInstance.closeParcelExplorer === 'function') {
+            window.realSatelliteGlobeInstance.closeParcelExplorer();
+          }
+          if (typeof window.realSatelliteGlobeInstance.resetView === 'function') {
+            window.realSatelliteGlobeInstance.resetView();
+          }
+        }
+        const sInput = document.getElementById('mainParcelSearchInput');
+        const sResults = document.getElementById('searchResultsContainer');
+        const sStatus = document.getElementById('searchStatusIndicator');
+        if (sInput && sInput.value) sInput.value = '';
+        if (sResults) sResults.innerHTML = '';
+        if (sStatus) {
+          sStatus.innerHTML = '<span class="search-status-dot"></span> Ready to search real parcel dataset';
+        }
+        window.dispatchEvent(new CustomEvent('parcelmap:cleared'));
+      },
+
+      setSelectedParcel: function(parcel, options = { scroll: true }) {
+        this.activeParcel = parcel;
+        this.selectedParcel = parcel;
+        if (parcel && parcel.mode) {
+          this.mode = parcel.mode;
+        }
+
+        // If already in 2D HD parcel map mode, perform seamless in-place transition
+        if (this.activeMapStage === 'PARCEL_MAP' && window.parcelHdMapManager) {
+          this.setViewMode('map', parcel);
+          return;
+        }
+
+        // Requirement 2: Explicitly set viewMode to globe when starting discovery
+        this.setViewMode('globe', parcel);
+        if (parcel) {
+          this.setSearchState('cameraTransitioning', parcel);
+        }
+
+        const triggerGlobeFlight = () => {
+          // Always use latest selectedParcel to guarantee race condition immunity (Section 13)
+          const target = this.selectedParcel || parcel;
+          if (!target) return;
+          // Dispatch to existing 3D Globe
+          if (typeof window.flyToParcel === 'function') {
+            window.flyToParcel(target);
+          } else if (window.realSatelliteGlobeInstance && typeof window.realSatelliteGlobeInstance.selectParcel === 'function') {
+            window.realSatelliteGlobeInstance.selectParcel(target);
+          } else {
+            window.dispatchEvent(new CustomEvent('parcelmap:selected', { detail: target }));
+          }
+        };
+
+        // Automatic Smooth Scroll to 3D Globe (Step 3 Centered Sequence: Scroll -> Center -> Fly)
+        if (options.scroll) {
+          if (typeof window.scrollToParcelGlobe === 'function') {
+            const scrollP = window.scrollToParcelGlobe();
+            if (scrollP && typeof scrollP.then === 'function') {
+              scrollP.then(() => {
+                triggerGlobeFlight();
+              });
+            } else {
+              setTimeout(triggerGlobeFlight, 700);
+            }
+          } else if (typeof window.smoothScrollToGlobe === 'function') {
+            const scrollP = window.smoothScrollToGlobe();
+            if (scrollP && typeof scrollP.then === 'function') {
+              scrollP.then(triggerGlobeFlight);
+            } else {
+              setTimeout(triggerGlobeFlight, 700);
+            }
+          } else {
+            const globeSection = document.getElementById('parcel-globe') || document.querySelector('.globe-section');
+            if (globeSection) {
+              globeSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+              });
+              setTimeout(triggerGlobeFlight, 700);
+            } else {
+              triggerGlobeFlight();
+            }
+          }
+        } else {
+          // No scroll requested (already in focus): trigger immediately
+          triggerGlobeFlight();
+        }
+      },
+
+      openExplorer: function(parcel) {
+        const target = parcel || this.activeParcel || this.selectedParcel;
+        if (!target) return;
+        if (window.realSatelliteGlobeInstance && typeof window.realSatelliteGlobeInstance.openParcelExplorer === 'function') {
+          window.realSatelliteGlobeInstance.openParcelExplorer(target);
+        } else if (typeof window.openParcelExplorer === 'function') {
+          window.openParcelExplorer(target);
+        }
+      },
+
+      closeExplorer: function() {
+        if (window.realSatelliteGlobeInstance && typeof window.realSatelliteGlobeInstance.closeParcelExplorer === 'function') {
+          window.realSatelliteGlobeInstance.closeParcelExplorer();
+        } else if (typeof window.closeParcelExplorer === 'function') {
+          window.closeParcelExplorer();
+        }
+      },
+
+      clear: function() {
+        if (this._isClearing) return;
+        this._isClearing = true;
+        try {
+          this.switchToGlobalGlobe();
+        } finally {
+          this._isClearing = false;
+        }
+      }
+    };
+
+    // Central alias for single source of truth: window.activeParcel
+    Object.defineProperty(window, 'activeParcel', {
+      get: () => window.parcelMapState?.activeParcel || null,
+      set: (val) => {
+        if (window.parcelMapState) window.parcelMapState.activeParcel = val;
+      },
+      configurable: true
+    });
+
+    window.openParcelExplorer = function(parcel) {
+      const target = parcel || window.parcelMapState?.selectedParcel;
+      if (window.realSatelliteGlobeInstance && typeof window.realSatelliteGlobeInstance.openParcelExplorer === 'function') {
+        window.realSatelliteGlobeInstance.openParcelExplorer(target);
+      }
+    };
+
+    window.closeParcelExplorer = function() {
+      if (window.realSatelliteGlobeInstance && typeof window.realSatelliteGlobeInstance.closeParcelExplorer === 'function') {
+        window.realSatelliteGlobeInstance.closeParcelExplorer();
+      }
+    };
+
+    // Globe Retry Listener (Part P)
+    const btnRetryGlobe = document.getElementById('btnRetryGlobe');
+    if (btnRetryGlobe) {
+      btnRetryGlobe.addEventListener('click', () => {
+        const overlay = document.getElementById('globeLoadingOverlay');
+        if (overlay) overlay.style.display = 'none';
+        if (window.realSatelliteGlobeInstance && typeof window.realSatelliteGlobeInstance.resetView === 'function') {
+          window.realSatelliteGlobeInstance.resetView();
+        } else if (typeof initRealSatelliteGlobe === 'function') {
+          initRealSatelliteGlobe();
+        }
+      });
+    }
+
+    // 3. Cadastral Parcel Search Controller (Step 1 & 2 -> 3D Globe Integration)
     const searchInput = document.getElementById('mainParcelSearchInput');
-    const searchDropdown = document.getElementById('searchResultsDropdown');
+    const searchForm = document.getElementById('parcelSearchForm');
+    const searchResultsContainer = document.getElementById('searchResultsContainer');
     const btnSearchGo = document.getElementById('btnSearchGo');
     const btnUseLocation = document.getElementById('btnUseLocation');
+    const searchStatusIndicator = document.getElementById('searchStatusIndicator');
 
-    if (searchInput && searchDropdown) {
-      searchInput.addEventListener('focus', () => {
-        searchDropdown.style.display = 'block';
-      });
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
+    let searchDebounceTimer = null;
+    let currentSearchAbort = null;
+
+    function resetSearchUI() {
+      if (searchInput) searchInput.value = '';
+      if (searchResultsContainer) searchResultsContainer.innerHTML = '';
+      window.parcelMapState.clear();
+    }
+
+    // Step 2 Camera State Machine Listener (Synchronizes Live Search & HUD Status - Section 17)
+    window.addEventListener('parcelmap:camera-state', (e) => {
+      const { state, parcel } = e.detail || {};
+      const pNum = parcel?.parcelNumber || parcel?.id || '';
+      const village = parcel?.village || parcel?.location || 'Cadastral Block';
+      const statusTextEl = document.querySelector('.confirm-status-text');
+      if (statusTextEl && pNum) {
+        if (state === 'LOCATING') {
+          statusTextEl.innerHTML = `<span class="search-spinner-sm" style="width:12px;height:12px;display:inline-block;margin:0;vertical-align:middle;border-width:2px;"></span> Locating Parcel #${escapeHtml(pNum)}...`;
+        } else if (state === 'ARRIVING') {
+          statusTextEl.innerHTML = `<span class="search-spinner-sm" style="width:12px;height:12px;display:inline-block;margin:0;vertical-align:middle;border-width:2px;"></span> Flying to ${escapeHtml(village)}...`;
+        } else if (state === 'LOCATED') {
+          statusTextEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ Parcel located</span>`;
+        }
+      }
+      if (searchStatusIndicator && pNum) {
+        if (state === 'LOCATING') {
+          searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#38bdf8;"></span> Locating Parcel #${escapeHtml(pNum)}...`;
+        } else if (state === 'ARRIVING') {
+          searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#38bdf8;"></span> Flying to ${escapeHtml(village)}...`;
+        } else if (state === 'LOCATED') {
+          searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#10b981;"></span> Parcel #${escapeHtml(pNum)} located`;
+        }
+      }
+    });
+
+    async function executeParcelSearch(rawQuery) {
+      const query = (rawQuery || '').trim();
+
+      if (!query) {
+        resetSearchUI();
+        return;
+      }
+
+      // Abort any ongoing search request
+      if (currentSearchAbort) {
+        currentSearchAbort.abort();
+      }
+      currentSearchAbort = new AbortController();
+
+      // Clear previous active parcel when new search is initiated (Requirement 12)
+      if (window.parcelMapState) {
+        window.parcelMapState.activeParcel = null;
+        window.parcelMapState.selectedParcel = null;
+      }
+
+      // UI: Loading State (Requirement 12: "Searching...")
+      if (btnSearchGo) btnSearchGo.disabled = true;
+      if (window.parcelMapState && typeof window.parcelMapState.setSearchState === 'function') {
+        window.parcelMapState.setSearchState('searching');
+      }
+      if (searchStatusIndicator) {
+        searchStatusIndicator.innerHTML = '<span class="search-spinner-sm" style="width:12px;height:12px;display:inline-block;margin:0;vertical-align:middle;border-width:2px;"></span> Searching...';
+      }
+      if (searchResultsContainer) {
+        searchResultsContainer.innerHTML = `
+          <div class="search-loading-state">
+            <div class="search-spinner-sm"></div>
+            <div>Searching...</div>
+          </div>
+        `;
+      }
+
+      try {
+        let results = [];
+        let total = 0;
+
+        if (window.parcelService && typeof window.parcelService.search === 'function') {
+          results = await window.parcelService.search(query, { signal: currentSearchAbort.signal });
+          total = results.length;
+        } else {
+          const response = await fetch(`/api/parcels/search?q=${encodeURIComponent(query)}&limit=12`, {
+            signal: currentSearchAbort.signal
+          });
+          if (!response.ok) {
+            throw new Error(`Server returned HTTP ${response.status}`);
+          }
+          const data = await response.json();
+          results = data.results || data.parcels || [];
+          total = data.total || 0;
+        }
+
+        if (results.length === 0) {
+          // INVALID SEARCH (Requirement 11 & 15: Do NOT scroll, show not found card, globe unchanged)
+          if (window.parcelMapState) {
+            window.parcelMapState.activeParcel = null;
+            window.parcelMapState.selectedParcel = null;
+          }
+          if (window.realSatelliteGlobeInstance) {
+            window.realSatelliteGlobeInstance.isFlying = false;
+            window.realSatelliteGlobeInstance.selectedParcel = null;
+          }
+          if (window.parcelMapState && typeof window.parcelMapState.setSearchState === 'function') {
+            window.parcelMapState.setSearchState('notFound', { query });
+          }
+          if (searchResultsContainer) {
+            searchResultsContainer.innerHTML = `
+              <div class="parcel-not-found-card">
+                <div class="not-found-title">Parcel not found</div>
+                <div class="not-found-sub">We couldn't find a parcel matching: &ldquo;<strong>${escapeHtml(query)}</strong>&rdquo;</div>
+                <div class="not-found-tips">
+                  <div class="not-found-tips-title">Try searching by:</div>
+                  <ul>
+                    <li>Parcel number (e.g. 101, 104A)</li>
+                    <li>Survey number (e.g. 42/1, 42/2)</li>
+                    <li>Village or Location (e.g. Coastal Settlement)</li>
+                    <li>District (e.g. Pune)</li>
+                    <li>Location</li>
+                  </ul>
+                </div>
+              </div>
+            `;
+          }
+          if (searchStatusIndicator) {
+            searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#f59e0b;"></span> Parcel not found for "${escapeHtml(query)}"`;
+          }
+        } else {
+          // Check if single exact match or multiple parcel matches (Step 4 Section 11)
+          const cleanQ = query.toLowerCase().replace(/^(parcel|plot|survey)\s*#?/i, '').trim();
+          const exactMatch = results.find(p => {
+            const pNum = String(p.parcelNumber || p.parcel_id || '').toLowerCase().replace(/^(plot|parcel)\s*#?/i, '');
+            const sNum = String(p.surveyNumber || p.survey_no || '').toLowerCase().replace(/^survey\s*/i, '');
+            return pNum === cleanQ || sNum === cleanQ;
+          });
+
+          const formatParcelObject = (match) => {
+            const pNum = match.parcelNumber || (match.parcel_id ? match.parcel_id.replace(/^Plot\s*#/i, '').replace(/^Parcel\s*#/i, '') : match.id);
+            const sNum = match.surveyNumber || (match.survey_no ? match.survey_no.replace(/^Survey\s*/i, '') : 'Not available');
+            const villageName = match.village || match.location || 'Coastal Settlement';
+            const districtName = match.district || 'Pune';
+            const stateName = match.state || 'Maharashtra';
+            const areaText = match.area || (match.area_acres ? `${match.area_acres} acres` : '1.45 acres');
+            const landTypeText = match.landType || match.land_type || match.landUse || 'Agricultural';
+            const latVal = match.latitude != null ? match.latitude : (match.coordinates ? match.coordinates[0] : null);
+            const lngVal = match.longitude != null ? match.longitude : (match.coordinates ? match.coordinates[1] : null);
+
+            return {
+              id: match.id || `parcel-${pNum}`,
+              parcelNumber: pNum,
+              surveyNumber: sNum,
+              village: villageName,
+              district: districtName,
+              state: stateName,
+              latitude: latVal,
+              longitude: lngVal,
+              geometry: match.geometry || null,
+              boundary: match.boundary || null,
+              area: areaText,
+              landType: landTypeText,
+              landUse: landTypeText,
+              status: match.status || 'Clear Title',
+              confidence: match.confidence || '98%',
+              source: 'Parcel Search Result',
+              isDemo: false,
+              mode: 'search',
+              datasetType: 'Parcel Search Result',
+              map_url: match.map_url
+            };
+          };
+
+          const selectAndFocusParcel = (match) => {
+            const selected = formatParcelObject(match);
+            if (searchResultsContainer) {
+              searchResultsContainer.innerHTML = `
+                <div class="parcel-found-confirmation">
+                  <div class="confirm-top">
+                    <div class="confirm-title-row">
+                      <span class="confirm-icon-check">✓</span>
+                      <strong class="confirm-heading">Parcel #${escapeHtml(selected.parcelNumber)} found</strong>
+                      <span class="confirm-badge-chip chip-search">PARCEL SEARCH RESULT</span>
+                    </div>
+                    <button type="button" class="btn-clear-search" id="btnClearSearch" title="Clear Search">✕ Clear Search</button>
+                  </div>
+                  <div class="confirm-sub">
+                    Survey ${escapeHtml(selected.surveyNumber)} &bull; ${escapeHtml(selected.village)} &bull; ${escapeHtml(selected.district)}
+                  </div>
+                  <div class="confirm-status-text">
+                    <span class="search-spinner-sm" style="width:12px;height:12px;display:inline-block;margin:0;vertical-align:middle;border-width:2px;"></span> Locating on 3D globe...
+                  </div>
+                </div>
+              `;
+              const btnClear = document.getElementById('btnClearSearch');
+              if (btnClear) btnClear.addEventListener('click', resetSearchUI);
+            }
+
+            if (searchStatusIndicator) {
+              searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#10b981;"></span> Parcel #${escapeHtml(selected.parcelNumber)} found • Located on 3D globe`;
+            }
+
+            window.parcelMapState.setSelectedParcel(selected, { scroll: true });
+          };
+
+          if (exactMatch || results.length === 1) {
+            // Direct single parcel focus (Requirements 1, 2, 4, 6)
+            selectAndFocusParcel(exactMatch || results[0]);
+          } else {
+            // Multiple parcel results selection list (Section 11)
+            const locName = results[0].village || results[0].district || query.trim();
+            if (searchResultsContainer) {
+              searchResultsContainer.innerHTML = `
+                <div class="parcel-multi-results-card">
+                  <div class="confirm-top">
+                    <div class="confirm-title-row">
+                      <span class="confirm-icon-check">✓</span>
+                      <strong class="confirm-heading">Search Results (${total || results.length} parcels found)</strong>
+                    </div>
+                    <button type="button" class="btn-clear-search" id="btnClearSearch" title="Clear Search">✕ Clear Search</button>
+                  </div>
+                  <div class="multi-results-hint">Select a parcel below to fly to its exact location on the 3D globe:</div>
+                  <div class="multi-results-list" id="multiResultsList">
+                    ${results.slice(0, 6).map((p, idx) => {
+                      const pNum = p.parcelNumber || (p.parcel_id ? p.parcel_id.replace(/^Plot\s*#/i, '') : p.id);
+                      const sNum = p.surveyNumber || (p.survey_no ? p.survey_no.replace(/^Survey\s*/i, '') : 'N/A');
+                      const village = p.village || p.location || 'Cadastral Block';
+                      return `
+                        <button type="button" class="multi-result-item" data-index="${idx}">
+                          <span class="result-bullet">•</span>
+                          <strong class="result-title">Parcel #${escapeHtml(pNum)}</strong>
+                          <span class="result-sep">—</span>
+                          <span class="result-survey">Survey ${escapeHtml(sNum)}</span>
+                          <span class="result-meta">${escapeHtml(village)}</span>
+                          <span class="result-arrow">&rarr;</span>
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              `;
+
+              const btnClear = document.getElementById('btnClearSearch');
+              if (btnClear) btnClear.addEventListener('click', resetSearchUI);
+
+              searchResultsContainer.querySelectorAll('.multi-result-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                  const idx = parseInt(btn.dataset.index, 10);
+                  const selectedMatch = results[idx];
+                  if (selectedMatch) {
+                    selectAndFocusParcel(selectedMatch);
+                  }
+                });
+              });
+            }
+
+            if (searchStatusIndicator) {
+              searchStatusIndicator.innerHTML = `<span class="search-status-dot" style="background:#10b981;"></span> ${escapeHtml(locName)} • ${total || results.length} parcels found. Select one to inspect.`;
+            }
+          }
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') return; // Ignore aborted requests
+        console.error('Parcel search error:', err);
+        if (window.parcelMapState && typeof window.parcelMapState.setSearchState === 'function') {
+          window.parcelMapState.setSearchState('error', { error: err.message });
+        }
+        if (searchResultsContainer) {
+          searchResultsContainer.innerHTML = `
+            <div class="search-error-state">
+              <div class="search-empty-icon">⚠️</div>
+              <div class="search-empty-title">Unable to search parcels right now.</div>
+              <div class="search-empty-desc">Please try again.</div>
+            </div>
+          `;
+        }
+        if (searchStatusIndicator) {
+          searchStatusIndicator.innerHTML = '<span class="search-status-dot" style="background:#ef4444;"></span> Search service unavailable';
+        }
+      } finally {
+        if (btnSearchGo) btnSearchGo.disabled = false;
+      }
+    }
+
+    if (searchInput) {
+      // Input event: Only reset if input is cleared; DO NOT search/scroll/animate while typing
       searchInput.addEventListener('input', (e) => {
-        searchDropdown.style.display = e.target.value.trim().length > 0 ? 'block' : 'block';
-      });
-
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('.search-box-card')) {
-          searchDropdown.style.display = 'none';
+        const val = e.target.value;
+        if (!val.trim()) {
+          resetSearchUI();
         }
       });
 
-      if (btnSearchGo) {
-        btnSearchGo.addEventListener('click', () => {
-          window.location.href = 'map.html';
-        });
-      }
-
-      if (btnUseLocation) {
-        btnUseLocation.addEventListener('click', () => {
-          if (navigator.geolocation) {
-            btnUseLocation.textContent = 'Acquiring GPS position...';
-            navigator.geolocation.getCurrentPosition(
-              () => { window.location.href = 'map.html'; },
-              () => { window.location.href = 'map.html'; }
-            );
-          } else {
-            window.location.href = 'map.html';
-          }
-        });
-      }
+      // Submit on Enter: execute search, show confirmation, and trigger smooth scrolling & 3D globe animation
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          executeParcelSearch(searchInput.value);
+        }
+      });
     }
+
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const val = (searchInput ? searchInput.value : '').trim();
+        executeParcelSearch(val || '101');
+      });
+    }
+
+    if (btnSearchGo) {
+      btnSearchGo.addEventListener('click', (e) => {
+        e.preventDefault();
+        const val = (searchInput ? searchInput.value : '').trim();
+        executeParcelSearch(val || '101');
+      });
+    }
+
+    if (btnUseLocation) {
+      btnUseLocation.addEventListener('click', () => {
+        if (navigator.geolocation) {
+          if (searchStatusIndicator) {
+            searchStatusIndicator.innerHTML = '<span class="search-status-dot" style="background:#3b82f6;"></span> Acquiring GPS location...';
+          }
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const lat = pos.coords.latitude.toFixed(5);
+              const lng = pos.coords.longitude.toFixed(5);
+              window.location.href = `map.html?lat=${lat}&lng=${lng}&zoom=16`;
+            },
+            (err) => {
+              console.warn('Geolocation failed or denied:', err);
+              if (searchStatusIndicator) {
+                searchStatusIndicator.innerHTML = '<span class="search-status-dot" style="background:#f59e0b;"></span> Location access denied. Type search query above.';
+              }
+            },
+            { timeout: 8000 }
+          );
+        } else {
+          window.location.href = 'map.html';
+        }
+      });
+    }
+
+    // Check URL parameters for direct parcel link (Route State - Requirement 17 & Step 3 Section 13)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      let parcelParam = urlParams.get('parcel');
+      if (!parcelParam) {
+        const pathMatch = window.location.pathname.match(/\/parcel\/([a-zA-Z0-9_-]+)/i);
+        if (pathMatch) parcelParam = pathMatch[1];
+      }
+      if (parcelParam && searchInput) {
+        searchInput.value = parcelParam;
+        setTimeout(() => {
+          executeParcelSearch(parcelParam);
+        }, 350);
+      }
+    } catch (e) {}
 
     // 4. Gigabrain-Style Scroll Reveal Observer (Smooth in-view blur unmasking)
     const revealElements = document.querySelectorAll('.scroll-reveal');
@@ -971,6 +1730,15 @@
       revealElements.forEach((el) => el.classList.add('in-view'));
     }
   </script>
+
+  <!-- Lenis Smooth Scroll Engine (Darkroom Engineering) -->
+  <script type="module" src="./smooth-scroll.js"></script>
+
+  <!-- Parcel Cadastral Service (Central Abstraction) -->
+  <script type="module" src="./parcelService.js"></script>
+
+  <!-- Step 4 High-Definition 2D Parcel Map Engine -->
+  <script type="module" src="./parcel-hd-map.js"></script>
 
   <!-- 3D Cadastral Globe Script -->
   <script type="module" src="./globe.js"></script>

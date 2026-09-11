@@ -117,7 +117,7 @@ export class ReportService {
         name: project.name,
         location: project.location || 'Unspecified Location',
         project_type: project.project_type || 'Rural Cadastral Mapping',
-        created_by: project.created_by || 'Alex Morgan (Lead Surveyor)',
+        created_by: project.created_by || 'Lead Cadastral Surveyor',
         created_at: project.created_at || project.createdDate || new Date().toISOString(),
         status: project.status || 'PROCESSING',
         is_georeferenced: isGeo
@@ -126,6 +126,7 @@ export class ReportService {
         id: imagery.id,
         count: imageryList.length,
         file_name: imagery.file_name,
+        file_url: imagery.file_url || null,
         resolution: imagery.resolution || 'N/A',
         sensor: imagery.sensor || 'UAV Drone Sensor',
         capture_date: imagery.capture_date || 'N/A',
@@ -216,14 +217,18 @@ export class ReportService {
           area: displayArea,
           area_sqm: isGeo ? p.area_sqm : null,
           supporting_features: p.supporting_features || ['Boundary Edge'],
-          reviewer: ver ? ver.reviewer_name : (isAccepted(p) ? 'Alex Morgan (Lead Surveyor)' : 'Pending Review'),
+          reviewer: ver ? ver.reviewer_name : (isAccepted(p) ? 'Lead Cadastral Surveyor' : 'Pending Review'),
           verification_date: ver ? ver.timestamp : (p.updated_at || null),
-          comments: ver ? ver.comments : (p.remarks || null)
+          comments: ver ? ver.comments : (p.remarks || null),
+          geometry: p.geometry || null,
+          geo_geometry: p.geo_geometry || null,
+          image_coordinates: p.image_coordinates || null
         };
       }),
       activities: activities.slice(0, 10),
       disclaimer: LEGAL_DISCLAIMER,
-      coordinate_notice: isGeo ? 'WGS84 Georeferenced Coordinates' : NON_GEO_DISCLAIMER
+      coordinate_notice: isGeo ? 'WGS84 Georeferenced Coordinates' : NON_GEO_DISCLAIMER,
+      map_snapshot: project.latest_map_snapshot || null
     };
   }
 
@@ -274,7 +279,7 @@ export class ReportService {
       area_hectares: isGeo && parcel.area_hectares ? parcel.area_hectares : (isGeo && parcel.area_sqm ? Number((parcel.area_sqm / 10000).toFixed(2)) : null),
       supporting_features: parcel.supporting_features || ['Road Boundary', 'Field Edge'],
       verification_remarks: ver?.comments || parcel.remarks || 'Human verified boundary delineation confirmed by surveyor inspection.',
-      reviewer_name: ver?.reviewer_name || 'Alex Morgan (Lead Surveyor)',
+      reviewer_name: ver?.reviewer_name || 'Lead Cadastral Surveyor',
       created_at: parcel.created_at || project.created_at || new Date().toISOString(),
       verified_at: ver?.timestamp || parcel.verified_at || parcel.updated_at || new Date().toISOString(),
       geometry_status: 'Valid Topology (No self-intersections)',

@@ -87,16 +87,17 @@ router.get('/projects', (req, res) => {
 // POST /api/projects
 router.post('/projects', (req, res) => {
   try {
-    const { name, description, location, coordinates, project_type } = req.body;
+    const { name, description, location, coordinates, project_type, is_demo, created_by } = req.body;
     if (!name) return res.status(400).json({ success: false, error: 'Project name is required' });
 
     const newProject = db.createProject({
       name,
       description,
       location,
-      coordinates: coordinates || [18.5818, 73.9875],
-      project_type: project_type || 'Rural Cadastral Mapping',
-      created_by: 'Alex Morgan (Analyst)'
+      coordinates: coordinates || [0, 0],
+      project_type: project_type || 'Cadastral Survey Project',
+      created_by: created_by || 'Cadastral Surveyor',
+      is_demo: Boolean(is_demo)
     });
 
     res.status(201).json({ success: true, project: newProject });
@@ -133,21 +134,16 @@ router.patch('/projects/:id', (req, res) => {
 // Reusable Upload Handler
 const handleImageryUpload = (req, res) => {
   const requestStarted = new Date().toISOString();
-  const requestedId = req.params.id || req.body.project_id || 'proj_wagholi_demo';
+  const requestedId = req.params.id || req.body.project_id;
   try {
-    let project = db.getProjectById(requestedId);
-
-    // Auto-fallback if the project ID does not exist
-    if (!project) {
-      const allProjects = db.getProjects();
-      if (allProjects && allProjects.length > 0) {
-        project = allProjects.find(p => p.id === 'proj_wagholi_demo') || allProjects[0];
-        console.warn(`[Upload] Project '${requestedId}' not found, automatically recovered to project '${project.id}' (${project.name})`);
-      }
+    if (!requestedId) {
+      return res.status(400).json({ success: false, error: 'Project ID is required for imagery upload' });
     }
 
+    let project = db.getProjectById(requestedId);
+
     if (!project) {
-      const errMsg = `Project '${requestedId}' not found and no default project available.`;
+      const errMsg = `Project '${requestedId}' not found. Please select or create a valid project before uploading imagery.`;
       console.log(`[Upload]`);
       console.log(`project_id: ${requestedId}`);
       console.log(`filename: ${req.file?.originalname || 'none'}`);
@@ -159,6 +155,21 @@ const handleImageryUpload = (req, res) => {
       console.log(`imagery_id: null`);
       console.log(`error: ${errMsg}`);
       return res.status(404).json({ success: false, error: errMsg });
+    }
+
+    if (project.is_demo) {
+      // User is uploading real imagery while in demo project.
+      // Automatically fork into an isolated real user project to maintain strict demo isolation.
+      const baseName = req.file ? path.parse(req.file.originalname).name : 'UAV Survey';
+      project = db.createProject({
+        name: `Survey Project — ${baseName}`,
+        description: 'User-uploaded aerial drone imagery survey project.',
+        location: 'Field Survey Block',
+        status: 'Uploaded',
+        progress: 25,
+        is_demo: false
+      });
+      console.log(`[Upload] Isolated demo from real upload. Created real project: ${project.id} (${project.name})`);
     }
 
     if (!req.file) {
@@ -195,6 +206,14 @@ const handleImageryUpload = (req, res) => {
     if (!width) width = 4000;
     if (!height) height = 3000;
 
+    const isTif = fileName.toLowerCase().endsWith('.tif') || fileName.toLowerCase().endsWith('.tiff');
+    let isGeoreferenced = false;
+    if (req.body.is_georeferenced !== undefined) {
+      isGeoreferenced = req.body.is_georeferenced === 'true' || req.body.is_georeferenced === true;
+    } else if (isTif) {
+      isGeoreferenced = true;
+    }
+
     const imageryItem = db.addImagery({
       project_id: project.id,
       file_name: fileName,
@@ -206,7 +225,12 @@ const handleImageryUpload = (req, res) => {
       resolution: req.body.resolution || '2.8 cm/pixel GSD',
       sensor: req.body.sensor || 'DJI Zenmuse P1 45MP Full-Frame',
       capture_date: req.body.capture_date || new Date().toISOString().split('T')[0],
-      processing_status: 'READY'
+      processing_status: 'READY',
+      is_georeferenced: isGeoreferenced,
+      is_demo: false,
+      metadata: {
+        coordinate_mode: isGeoreferenced ? 'geographic' : 'image-space'
+      }
     });
 
     // Update project status to Uploaded
@@ -292,7 +316,7 @@ router.delete('/projects/:projectId/imagery/:imageryId', (req, res) => {
     // Safely remove physical uploaded file (except baseline demo orthomosaic)
     if (deleted.file_url) {
       const fname = path.basename(deleted.file_url);
-      if (fname && !fname.includes('wagholi_east_ortho')) {
+      if (fname && !fname.includes('coastal_settlement_demo') && !fname.includes('wagholi_east_ortho')) {
         const filePath = path.join(uploadDir, fname);
         if (fs.existsSync(filePath)) {
           try {
@@ -327,7 +351,7 @@ router.delete('/imagery/:id', (req, res) => {
     // Safely remove physical uploaded file (except baseline demo orthomosaic)
     if (deleted.file_url) {
       const fname = path.basename(deleted.file_url);
-      if (fname && !fname.includes('wagholi_east_ortho')) {
+      if (fname && !fname.includes('coastal_settlement_demo') && !fname.includes('wagholi_east_ortho')) {
         const filePath = path.join(uploadDir, fname);
         if (fs.existsSync(filePath)) {
           try {
@@ -384,7 +408,7 @@ router.post('/imagery/:imageryId/detect', async (req, res) => {
       execution_time_ms: result.execution_time_ms
     });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.status || 500).json({ success: false, error: err.message });
   }
 });
 
@@ -515,6 +539,41 @@ router.post('/projects/:id/parcels', (req, res) => {
   }
 });
 
+// GET /api/parcels/search
+router.get('/parcels/search', (req, res) => {
+  try {
+    const q = req.query.q || '';
+    const limit = parseInt(req.query.limit, 10) || 8;
+    const includeDemo = req.query.include_demo !== 'false';
+
+    if (!q.trim()) {
+      return res.json({
+        success: true,
+        query: '',
+        count: 0,
+        total: 0,
+        parcels: []
+      });
+    }
+
+    const allMatches = db.searchParcels(q, { limit: 50, include_demo: includeDemo });
+    const parcels = allMatches.slice(0, limit);
+
+    res.json({
+      success: true,
+      query: q.trim(),
+      count: parcels.length,
+      total: allMatches.length,
+      has_more: allMatches.length > limit,
+      parcels,
+      results: parcels,
+      disclaimer: LEGAL_DISCLAIMER
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // GET /api/parcels/:id
 router.get('/parcels/:id', (req, res) => {
   try {
@@ -567,6 +626,18 @@ const handleEditParcel = (req, res) => {
       area_acres: areaUpdates.area_acres
     });
 
+    db.addParcelVersion({
+      parcel_id: pid,
+      project_id: existing.project_id,
+      imagery_id: existing.imagery_id,
+      geometry: areaUpdates.geometry || existing.geometry,
+      previous_geometry: existing.geometry,
+      edited_by: reviewer_name || 'Alex Morgan (Lead Surveyor)',
+      action: 'Edited',
+      change_type: 'vertex_edit',
+      comments: comments || 'Boundary vertices manually modified and verified against drone imagery.'
+    });
+
     const updated = db.updateParcel(pid, {
       ...areaUpdates,
       status: 'Human Verified'
@@ -585,6 +656,7 @@ const handleEditParcel = (req, res) => {
 };
 router.patch('/parcels/:id', handleEditParcel);
 router.put('/parcels/:id', handleEditParcel);
+router.post('/parcels/:id/versions', handleEditParcel);
 
 // Alias routes for verification
 router.post('/parcels/:id/verify', (req, res, next) => {
@@ -1346,7 +1418,14 @@ router.post('/projects/:id/report', async (req, res) => {
     const project = db.getProjectById(req.params.id);
     if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
     const imageryId = req.query.imagery_id || req.body?.imagery_id || null;
+    const snapshot = req.body?.map_snapshot || null;
+    if (snapshot && typeof snapshot === 'string' && snapshot.startsWith('data:image')) {
+      db.updateProject(req.params.id, { latest_map_snapshot: snapshot });
+    }
     const report = ReportService.generateProjectReport(req.params.id, imageryId);
+    if (snapshot) {
+      report.map_snapshot = snapshot;
+    }
     
     // Log report generation in audit trail
     db.logActivity(req.params.id, {
@@ -1598,6 +1677,21 @@ router.post('/projects/:id/pipeline', async (req, res) => {
 router.post('/demo/reset', (req, res) => {
   const demoData = db.resetToDemo();
   res.json({ success: true, message: 'Database reset to demo state', demoData });
+});
+
+// POST /api/demo/load (Load isolated demo dataset)
+router.post('/demo/load', (req, res) => {
+  const demoData = db.resetToDemo();
+  res.json({ success: true, message: 'Loaded demo dataset', demoData });
+});
+
+// GET /api/demo (Get current demo dataset state)
+router.get('/demo', (req, res) => {
+  const project = db.getProjectById('proj_demo_coastal');
+  const imagery = db.getImageryByProjectId('proj_demo_coastal');
+  const features = db.getFeaturesByProjectId('proj_demo_coastal');
+  const parcels = db.getParcelsByProjectId('proj_demo_coastal');
+  res.json({ success: true, project, imagery, features, parcels });
 });
 
 export default router;

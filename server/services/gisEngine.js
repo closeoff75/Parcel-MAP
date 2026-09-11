@@ -577,7 +577,18 @@ export class GISEngine {
       }
     });
 
-    const readyForReview = Math.max(0, activeParcels.length - invalidParcels.length - overlaps.length - waterOverlaps.length);
+    const rejectedParcels = activeParcels.filter(p => p.status === 'rejected' || p.candidate_status === 'REJECTED');
+    const nonRejectedParcels = activeParcels.filter(p => p.status !== 'rejected' && p.candidate_status !== 'REJECTED');
+    const readyForReview = nonRejectedParcels.filter(p => !invalidParcels.some(inv => inv.parcel_id === (p.parcel_id || p.id))).length;
+    const needsReviewParcels = activeParcels.filter(p => 
+      p.status === 'needs_review' || 
+      p.candidate_status === 'REVIEW' ||
+      invalidParcels.some(inv => inv.parcel_id === (p.parcel_id || p.id)) ||
+      waterOverlaps.some(w => w.parcel_id === (p.parcel_id || p.id)) ||
+      overlaps.some(o => o.parcel_a === (p.parcel_id || p.id) || o.parcel_b === (p.parcel_id || p.id)) ||
+      slivers.some(s => s.parcel_id === (p.parcel_id || p.id)) ||
+      lowConfidenceParcels.some(l => l.parcel_id === (p.parcel_id || p.id))
+    );
 
     return {
       total_parcels: activeParcels.length,
@@ -596,12 +607,14 @@ export class GISEngine {
       low_confidence_parcels: lowConfidenceParcels,
       repairs_performed_count: repairsPerformed.length,
       repairs_performed: repairsPerformed,
+      needs_review_count: needsReviewParcels.length,
+      rejected_count: rejectedParcels.length,
       ready_for_review_count: readyForReview,
       confidence_summary: {
         high: highConf,
         medium: medConf,
         low: lowConf,
-        requires_review: lowConf + overlaps.length + gaps.length + waterOverlaps.length
+        requires_review: needsReviewParcels.length
       },
       summary: {
         valid_geometry: validParcels.length,
@@ -609,6 +622,8 @@ export class GISEngine {
         possible_gaps: gaps.length,
         water_overlaps: waterOverlaps.length,
         low_confidence: lowConf,
+        needs_review: needsReviewParcels.length,
+        rejected: rejectedParcels.length,
         ready_for_review: readyForReview
       }
     };

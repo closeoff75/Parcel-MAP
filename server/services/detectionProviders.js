@@ -35,9 +35,6 @@ export class DetectionProvider {
   }
 
   static getProvider(type = 'ml') {
-    if (type === 'demo') {
-      return new DemoDetectionProvider();
-    }
     if (type === 'computer_vision' || type === 'cv' || type === 'opencv') {
       return new ComputerVisionProvider();
     }
@@ -1164,91 +1161,6 @@ export class MLDetectionProvider extends DetectionProvider {
   }
 }
 
-/**
- * Demo Detection Provider (Strictly reserved for Wagholi Demo Presentation)
- */
-export class DemoDetectionProvider extends DetectionProvider {
-  constructor() {
-    super('demo');
-  }
-
-  async detect(imageInfo, options = {}) {
-    const { project_id, imagery_id, width, height, is_georeferenced, project_coordinates } = imageInfo;
-    const runId = imageInfo.detection_run_id || options.run_id || `run_${Date.now()}_demo`;
-    const w = width || 4000;
-    const h = height || 3000;
-
-    const demoRaw = [
-      {
-        detection_type: 'ROAD',
-        type: 'road',
-        feature_type: 'Road',
-        sub_type: 'Primary Highway Corridor',
-        name: 'Wagholi-Kesnand Main Highway (Demo Corridor)',
-        confidence: 0.96,
-        provider: 'demo',
-        model_name: 'Wagholi Demo Presentation Model',
-        geometry: { type: 'LineString', coordinates: [[Math.round(w * 0.1), Math.round(h * 0.5)], [Math.round(w * 0.5), Math.round(h * 0.48)], [Math.round(w * 0.9), Math.round(h * 0.45)]] }
-      },
-      {
-        detection_type: 'BUILDING',
-        type: 'building',
-        feature_type: 'Building',
-        name: 'Agricultural Homestead Structure (Demo)',
-        confidence: 0.93,
-        provider: 'demo',
-        model_name: 'Wagholi Demo Presentation Model',
-        geometry: { type: 'Polygon', coordinates: [[[Math.round(w * 0.2), Math.round(h * 0.2)], [Math.round(w * 0.3), Math.round(h * 0.2)], [Math.round(w * 0.3), Math.round(h * 0.3)], [Math.round(w * 0.2), Math.round(h * 0.3)], [Math.round(w * 0.2), Math.round(h * 0.2)]]] }
-      }
-    ];
-
-    const features = demoRaw.map((d, i) => ({
-      ...d,
-      id: `det_${imagery_id}_${d.type}_${i + 1}`,
-      project_id,
-      imagery_id,
-      detection_run_id: runId,
-      coordinate_mode: is_georeferenced ? 'geographic' : 'image',
-      source_feature_ids: [],
-      properties: { ...d },
-      created_at: new Date().toISOString()
-    }));
-
-    return {
-      project_id,
-      imagery_id,
-      detection_run_id: runId,
-      status: 'completed',
-      message: null,
-      coordinate_mode: is_georeferenced ? 'geographic' : 'image',
-      provider: 'demo',
-      model_name: 'Wagholi Demo Presentation Model',
-      summary: {
-        roads: features.filter(f => f.type === 'road').length,
-        buildings: features.filter(f => f.type === 'building').length,
-        fields: 0,
-        walls: 0,
-        fences: 0,
-        vegetation: 0,
-        water: 0,
-        total: features.length
-      },
-      layers: {
-        roads: { type: 'FeatureCollection', name: 'Roads', features: features.filter(f => f.type === 'road') },
-        buildings: { type: 'FeatureCollection', name: 'Buildings', features: features.filter(f => f.type === 'building') },
-        fields: { type: 'FeatureCollection', name: 'Fields', features: [] },
-        walls: { type: 'FeatureCollection', name: 'Walls', features: [] },
-        fences: { type: 'FeatureCollection', name: 'Fences', features: [] },
-        vegetation: { type: 'FeatureCollection', name: 'Vegetation', features: [] },
-        water: { type: 'FeatureCollection', name: 'Water', features: [] }
-      },
-      features,
-      features_count: features.length,
-      average_confidence: 0.94,
-      debug: { is_demo_dataset: true }
-    };
-  }
-}
 
 /**
  * Remote Inference Provider (Cloud API inference)

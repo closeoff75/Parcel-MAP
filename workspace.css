@@ -5,6 +5,8 @@
    ========================================================================== */
 
 :root {
+  color-scheme: dark;
+
   /* Surfaces & Backgrounds */
   --bg-app: #090c13;
   --bg-panel: #0d121c;
@@ -175,7 +177,65 @@ body {
   color: var(--text-primary);
 }
 
+/* Global Form Controls Dark Theme */
+select,
+option,
+optgroup,
+input,
+textarea {
+  color-scheme: dark;
+}
+
+select {
+  background-color: var(--bg-card, #131926);
+  color: var(--text-primary, #f8fafc);
+}
+
+select option,
+select optgroup {
+  background-color: #0d121c !important;
+  color: #f8fafc !important;
+  padding: 8px 12px;
+}
+
+select option:checked {
+  background-color: #1e293b !important;
+  color: var(--accent-emerald, #10b981) !important;
+}
+
+select option:hover {
+  background-color: #161e2e !important;
+  color: #ffffff !important;
+}
+
+textarea.input-control {
+  background: var(--bg-card, #131926);
+  color: var(--text-primary, #f8fafc);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  font-family: var(--font-sans);
+  resize: vertical;
+}
+
+textarea.input-control:focus {
+  border-color: var(--accent-emerald, #10b981);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Active Project Selector Pill & Sleek Dark Dropdown */
 .pm-project-pill {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -184,23 +244,205 @@ body {
   border-radius: var(--radius-sm);
   padding: 4px 10px;
   transition: all 0.15s ease;
+  user-select: none;
 }
-.pm-project-pill:hover {
+
+.pm-project-pill:hover,
+.pm-project-pill.active {
   border-color: var(--border-medium);
   background: rgba(255, 255, 255, 0.05);
 }
+
+.pm-project-pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  max-width: 250px;
+}
+
+.pm-project-pill-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 210px;
+  letter-spacing: -0.01em;
+}
+
+.pm-project-pill-arrow {
+  color: var(--text-muted);
+  transition: transform 0.2s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.pm-project-pill.active .pm-project-pill-arrow {
+  transform: rotate(180deg);
+  color: var(--accent-emerald);
+}
+
 .pm-project-select {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
+  background: #0d121c;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   outline: none;
   max-width: 220px;
+  color-scheme: dark;
+  border-radius: 4px;
 }
+
+.pm-project-select option {
+  background-color: #0d121c !important;
+  color: #f8fafc !important;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
 .pm-project-select:hover {
   color: var(--text-primary);
+}
+
+/* Custom Sleek Dark Projects Dropdown Menu */
+.pm-project-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 350px;
+  background: #0d121c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  z-index: 9999;
+  display: none;
+  flex-direction: column;
+  backdrop-filter: blur(12px);
+  animation: pmDropdownSlideDown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pmDropdownSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pm-project-dropdown-menu.open {
+  display: flex;
+}
+
+.pm-project-menu-header {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pm-project-menu-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #131926;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  padding: 5px 8px;
+  flex: 1;
+}
+
+.pm-project-menu-search-wrap svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.pm-project-menu-search-wrap input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 11.5px;
+  width: 100%;
+  font-family: var(--font-sans);
+}
+
+.pm-project-menu-search-wrap input::placeholder {
+  color: var(--text-dim);
+}
+
+.pm-project-menu-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pm-project-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.pm-project-menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pm-project-menu-item.selected {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.pm-project-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pm-project-item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pm-project-item-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pm-project-item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pm-project-check-icon {
+  color: var(--accent-emerald);
+  width: 14px;
+  height: 14px;
 }
 
 .pm-status-tag {

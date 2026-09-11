@@ -1,0 +1,77 @@
+// scratch/capture_detected_features_screenshot.js
+import { spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+
+async function capture() {
+  const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+  const proc = spawn(chromePath, [
+    '--headless=new',
+    '--window-size=1440,900',
+    '--remote-debugging-port=9248',
+    '--no-sandbox',
+    'http://localhost:3000/workspace.html'
+  ]);
+
+  await new Promise(r => setTimeout(r, 2000));
+  const res = await fetch('http://localhost:9248/json');
+  const pages = await res.json();
+  const page = pages.find(p => p.url.includes('workspace.html'));
+  const ws = new WebSocket(page.webSocketDebuggerUrl);
+
+  let id = 1;
+  const send = (method, params = {}) => new Promise((resolve, reject) => {
+    const cur = id++;
+    const h = (e) => {
+      const d = JSON.parse(e.data);
+      if (d.id === cur) {
+        ws.removeEventListener('message', h);
+        if (d.error) reject(d.error);
+        else resolve(d.result);
+      }
+    };
+    ws.addEventListener('message', h);
+    ws.send(JSON.stringify({ id: cur, method, params }));
+  });
+
+  await new Promise(r => ws.onopen = r);
+  await send('Page.enable');
+  await send('Runtime.enable');
+
+  await send('Runtime.evaluate', {
+    expression: `(async () => {
+      // Find the project with features
+      const res = await fetch('/api/projects');
+      const data = await res.json();
+      const proj = data.projects.find(p => p.id.startsWith('proj_1789108619980') || p.id.startsWith('proj_1789107797300') || p.id.startsWith('proj_1789108139035'));
+      if (proj) {
+        window.parcelApp.activeProjectId = proj.id;
+        localStorage.setItem('pm_active_project_id', proj.id);
+        const imgRes = await fetch('/api/projects/' + proj.id + '/imagery');
+        const imgData = await imgRes.json();
+        if (imgData.imagery && imgData.imagery.length > 0) {
+          window.parcelApp.selectedImageryId = imgData.imagery[0].id;
+          localStorage.setItem('pm_selected_imagery_id', imgData.imagery[0].id);
+        }
+        await window.parcelApp.loadProjectData(proj.id);
+      }
+      window.parcelApp.switchView('detection');
+    })()`,
+    awaitPromise: true
+  });
+
+  await new Promise(r => setTimeout(r, 2000));
+
+  const screenshot = await send('Page.captureScreenshot', { format: 'png' });
+  const outPath = 'C:\\\\Users\\\\princ\\\\.gemini\\\\antigravity-ide\\\\brain\\\\f86fb891-cb33-4352-a5c8-e5ff39d30122\\\\detection_view_with_features.png';
+  fs.writeFileSync(outPath, Buffer.from(screenshot.data, 'base64'));
+  console.log('Saved screenshot with features to:', outPath);
+
+  proc.kill();
+  process.exit(0);
+}
+
+capture().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GISEngine } from '../services/gisEngine.js';
+import { buildCoastalDemoDataset } from '../../scripts/setup_clean_demo_seed.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,498 +19,11 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Initial Seed Data for Wagholi East Agricultural & Settlement Zone
+// Initial Clean Demonstration Seed Data: ParcelMap Demo — Coastal Settlement
 function getInitialSeed() {
-  const users = [
-    { id: 'usr_1', name: 'Dr. Sarah Lin', email: 'sarah.lin@geoparcel.ai', role: 'Admin', department: 'GIS Directorate' },
-    { id: 'usr_2', name: 'Alex Morgan', email: 'alex.morgan@geoparcel.ai', role: 'Analyst', department: 'Cadastral Survey' },
-    { id: 'usr_3', name: 'Vikram Mehta', email: 'vikram.mehta@geoparcel.ai', role: 'Surveyor', department: 'Field Operations' },
-    { id: 'usr_4', name: 'Priya Sharma', email: 'priya.sharma@geoparcel.ai', role: 'Viewer', department: 'Quality & Audit' }
-  ];
-
-  const projects = [
-    {
-      id: 'proj_wagholi_demo',
-      name: 'Wagholi East Agricultural & Settlement Zone',
-      description: 'Rural parcel boundary demarcation using UAV drone orthomosaic imagery (GSD 2.8 cm/px), AI feature detection, and road-based spatial reasoning.',
-      location: 'Wagholi, Pune District, Maharashtra, India',
-      coordinates: [18.5818, 73.9875],
-      project_type: 'Rural Cadastral Mapping',
-      created_by: 'Alex Morgan',
-      status: 'Verification',
-      progress: 72,
-      created_at: new Date('2026-08-28T09:00:00Z').toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ];
-
-  const imagery = [
-    {
-      id: 'img_wagholi_ortho',
-      project_id: 'proj_wagholi_demo',
-      file_name: 'wagholi_east_orthomosaic_uav_2026.tif',
-      file_url: '/uploads/wagholi_east_ortho.jpg',
-      file_size: '342 MB',
-      resolution: '2.8 cm/pixel GSD',
-      dimensions: '8192 x 6144 px',
-      sensor: 'DJI Zenmuse P1 45MP Mechanical Shutter',
-      flight_altitude: '120m AGL',
-      capture_date: '2026-08-28',
-      processing_status: 'Ready',
-      metadata: {
-        bands: 3,
-        crs: 'EPSG:4326',
-        overlap_forward: '80%',
-        overlap_lateral: '75%',
-        ground_control_points: 8
-      }
-    }
-  ];
-
-  // Base coordinates around Wagholi East: lat 18.5818, lng 73.9875
-  // Detected Features: Roads, Buildings, Walls, Fences, Field Edges, Water
-  const detectedFeatures = [
-    // Roads
-    {
-      id: 'feat_rd_1',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Road',
-      sub_type: 'Primary Highway',
-      name: 'Wagholi-Kesnand Main Road (30m)',
-      confidence: 0.98,
-      source: 'AI Road Segmentation Model v3.2',
-      geometry: {
-        type: 'LineString',
-        coordinates: [
-          [73.9830, 18.5845],
-          [73.9855, 18.5835],
-          [73.9880, 18.5828],
-          [73.9910, 18.5820],
-          [73.9940, 18.5812]
-        ]
-      }
-    },
-    {
-      id: 'feat_rd_2',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Road',
-      sub_type: 'Secondary Road',
-      name: 'Settlement Access Lane North (12m)',
-      confidence: 0.95,
-      source: 'AI Road Segmentation Model v3.2',
-      geometry: {
-        type: 'LineString',
-        coordinates: [
-          [73.9860, 18.5865],
-          [73.9862, 18.5848],
-          [73.9865, 18.5832]
-        ]
-      }
-    },
-    {
-      id: 'feat_rd_3',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Road',
-      sub_type: 'Secondary Road',
-      name: 'Agricultural Canal Corridor Road (10m)',
-      confidence: 0.93,
-      source: 'AI Road Segmentation Model v3.2',
-      geometry: {
-        type: 'LineString',
-        coordinates: [
-          [73.9890, 18.5862],
-          [73.9888, 18.5842],
-          [73.9885, 18.5826],
-          [73.9882, 18.5805]
-        ]
-      }
-    },
-    {
-      id: 'feat_rd_4',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Road',
-      sub_type: 'Field Path',
-      name: 'Farm Tractor Access Track',
-      confidence: 0.88,
-      source: 'AI Path Detector v2.1',
-      geometry: {
-        type: 'LineString',
-        coordinates: [
-          [73.9835, 18.5815],
-          [73.9860, 18.5810],
-          [73.9882, 18.5805]
-        ]
-      }
-    },
-
-    // Buildings & Structures
-    {
-      id: 'feat_bld_1',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Building',
-      confidence: 0.97,
-      source: 'AI Building Footprint Model v4',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[[73.9842, 18.5838], [73.9847, 18.5838], [73.9847, 18.5834], [73.9842, 18.5834], [73.9842, 18.5838]]]
-      }
-    },
-    {
-      id: 'feat_bld_2',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Building',
-      confidence: 0.95,
-      source: 'AI Building Footprint Model v4',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[[73.9850, 18.5842], [73.9854, 18.5842], [73.9854, 18.5837], [73.9850, 18.5837], [73.9850, 18.5842]]]
-      }
-    },
-    {
-      id: 'feat_bld_3',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Building',
-      confidence: 0.94,
-      source: 'AI Building Footprint Model v4',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[[73.9870, 18.5848], [73.9876, 18.5848], [73.9876, 18.5843], [73.9870, 18.5843], [73.9870, 18.5848]]]
-      }
-    },
-    {
-      id: 'feat_bld_4',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Building',
-      confidence: 0.93,
-      source: 'AI Building Footprint Model v4',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[[73.9898, 18.5839], [73.9904, 18.5839], [73.9904, 18.5834], [73.9898, 18.5834], [73.9898, 18.5839]]]
-      }
-    },
-    {
-      id: 'feat_bld_5',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Building',
-      confidence: 0.92,
-      source: 'AI Building Footprint Model v4',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[[73.9872, 18.5816], [73.9877, 18.5816], [73.9877, 18.5812], [73.9872, 18.5812], [73.9872, 18.5816]]]
-      }
-    },
-
-    // Walls
-    {
-      id: 'feat_wl_1',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Wall',
-      confidence: 0.89,
-      source: 'AI Boundary Line Extractor',
-      geometry: {
-        type: 'LineString',
-        coordinates: [[73.9838, 18.5842], [73.9856, 18.5842]]
-      }
-    },
-    {
-      id: 'feat_wl_2',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Wall',
-      confidence: 0.85,
-      source: 'AI Boundary Line Extractor',
-      geometry: {
-        type: 'LineString',
-        coordinates: [[73.9868, 18.5852], [73.9868, 18.5834]]
-      }
-    },
-
-    // Fences
-    {
-      id: 'feat_fnc_1',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Fence',
-      confidence: 0.79,
-      source: 'AI Boundary Line Extractor',
-      geometry: {
-        type: 'LineString',
-        coordinates: [[73.9878, 18.5855], [73.9898, 18.5852]]
-      }
-    },
-    {
-      id: 'feat_fnc_2',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Fence',
-      confidence: 0.77,
-      source: 'AI Boundary Line Extractor',
-      geometry: {
-        type: 'LineString',
-        coordinates: [[73.9842, 18.5822], [73.9860, 18.5820]]
-      }
-    },
-
-    // Field Edges
-    {
-      id: 'feat_fe_1',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Field Edge',
-      confidence: 0.86,
-      source: 'AI Multi-Spectral Texture Segmentation',
-      geometry: {
-        type: 'LineString',
-        coordinates: [[73.9858, 18.5858], [73.9882, 18.5854]]
-      }
-    },
-    {
-      id: 'feat_fe_2',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Field Edge',
-      confidence: 0.84,
-      source: 'AI Multi-Spectral Texture Segmentation',
-      geometry: {
-        type: 'LineString',
-        coordinates: [[73.9892, 18.5848], [73.9918, 18.5842]]
-      }
-    },
-
-    // Water Canal
-    {
-      id: 'feat_wtr_1',
-      project_id: 'proj_wagholi_demo',
-      feature_type: 'Water',
-      name: 'Mutha Right Bank Sub-Canal',
-      confidence: 0.96,
-      source: 'AI Hydrology Segmentation',
-      geometry: {
-        type: 'LineString',
-        coordinates: [
-          [73.9830, 18.5862],
-          [73.9860, 18.5860],
-          [73.9895, 18.5856],
-          [73.9935, 18.5850]
-        ]
-      }
-    }
-  ];
-
-  // Helper to generate coordinates in a grid
-  // 24 Parcels covering Wagholi East
-  const rawParcels = [
-    // ROW 1 (North, above highway)
-    { id: 'PM-0001', coords: [[73.9832, 18.5860], [73.9858, 18.5858], [73.9856, 18.5842], [73.9832, 18.5845], [73.9832, 18.5860]], conf: 0.94, status: 'Human Verified', features: ['Road South (Wagholi-Kesnand)', 'Canal North', 'Stone Wall East'], review: { reviewer: 'Alex Morgan', action: 'Accepted', date: '2026-09-02T10:15:00Z', notes: 'Boundaries align perfectly with stone wall and highway shoulder.' } },
-    { id: 'PM-0002', coords: [[73.9858, 18.5858], [73.9882, 18.5855], [73.9880, 18.5838], [73.9856, 18.5842], [73.9858, 18.5858]], conf: 0.92, status: 'Human Verified', features: ['Road South', 'Stone Wall West', 'Field Edge North'], review: { reviewer: 'Alex Morgan', action: 'Accepted', date: '2026-09-02T11:00:00Z', notes: 'Confirmed frontage with rural road.' } },
-    { id: 'PM-0003', coords: [[73.9882, 18.5855], [73.9910, 18.5852], [73.9908, 18.5834], [73.9880, 18.5838], [73.9882, 18.5855]], conf: 0.91, status: 'Human Verified', features: ['Secondary Road West', 'Fence North', 'Highway South'], review: { reviewer: 'Vikram Mehta', action: 'Accepted', date: '2026-09-03T09:30:00Z', notes: 'Field surveyor verified boundary markers on east hedge.' } },
-    { id: 'PM-0004', coords: [[73.9910, 18.5852], [73.9935, 18.5848], [73.9932, 18.5830], [73.9908, 18.5834], [73.9910, 18.5852]], conf: 0.74, status: 'Needs Review', features: ['Fence North', 'Irrigation Channel South', 'Road West (Partial)'], topologyIssue: 'Overlap with PM-0005 along eastern agricultural bund' },
-    
-    // Slight intentional overlap for QC: PM-0005 encroaches on PM-0004's eastern boundary
-    { id: 'PM-0005', coords: [[73.9930, 18.5848], [73.9955, 18.5845], [73.9952, 18.5826], [73.9928, 18.5830], [73.9930, 18.5848]], conf: 0.68, status: 'Needs Review', features: ['Field Edge East', 'Tree Line North', 'Canal Access Track'], topologyIssue: 'Overlap of 0.03 ha with PM-0004' },
-    
-    // ROW 2 (Highway corridor)
-    { id: 'PM-0006', coords: [[73.9832, 18.5845], [73.9856, 18.5842], [73.9854, 18.5828], [73.9830, 18.5830], [73.9832, 18.5845]], conf: 0.96, status: 'Human Verified', features: ['Highway North', 'Settlement Road East', 'Farm Building #1'], review: { reviewer: 'Alex Morgan', action: 'Accepted', date: '2026-09-04T14:20:00Z', notes: 'Residential structure footprint enclosed within perimeter.' } },
-    { id: 'PM-0007', coords: [[73.9856, 18.5842], [73.9880, 18.5838], [73.9878, 18.5824], [73.9854, 18.5828], [73.9856, 18.5842]], conf: 0.93, status: 'AI Generated', features: ['Highway North', 'Secondary Road North-South', 'Building #2'] },
-    
-    // Intentional tiny gap between PM-0008 and PM-0009
-    { id: 'PM-0008', coords: [[73.9880, 18.5838], [73.9902, 18.5835], [73.9900, 18.5820], [73.9878, 18.5824], [73.9880, 18.5838]], conf: 0.87, status: 'AI Generated', features: ['Highway North', 'Tractor Track South'], topologyIssue: 'Gap of 1.4m along eastern edge before PM-0009' },
-    { id: 'PM-0009', coords: [[73.9905, 18.5835], [73.9928, 18.5830], [73.9925, 18.5816], [73.9903, 18.5820], [73.9905, 18.5835]], conf: 0.89, status: 'AI Generated', features: ['Highway North', 'Tractor Track South'] },
-    { id: 'PM-0010', coords: [[73.9928, 18.5830], [73.9952, 18.5826], [73.9948, 18.5810], [73.9925, 18.5816], [73.9928, 18.5830]], conf: 0.85, status: 'AI Generated', features: ['Highway North', 'Field Edge East'] },
-
-    // ROW 3 (Central Agricultural plots)
-    { id: 'PM-0011', coords: [[73.9830, 18.5830], [73.9854, 18.5828], [73.9852, 18.5814], [73.9828, 18.5816], [73.9830, 18.5830]], conf: 0.95, status: 'AI Generated', features: ['Field Access Lane East', 'Wire Fence South'] },
-    { id: 'PM-0012', coords: [[73.9854, 18.5828], [73.9878, 18.5824], [73.9875, 18.5810], [73.9852, 18.5814], [73.9854, 18.5828]], conf: 0.94, status: 'AI Generated', features: ['Secondary Road West', 'Stone Wall South', 'Building #5'] },
-    { id: 'PM-0013', coords: [[73.9878, 18.5824], [73.9900, 18.5820], [73.9898, 18.5806], [73.9875, 18.5810], [73.9878, 18.5824]], conf: 0.92, status: 'AI Generated', features: ['Secondary Road North-South', 'Vegetated Hedgerow East'] },
-    { id: 'PM-0014', coords: [[73.9903, 18.5820], [73.9925, 18.5816], [73.9922, 18.5802], [73.9900, 18.5806], [73.9903, 18.5820]], conf: 0.91, status: 'AI Generated', features: ['Tractor Path North', 'Field Edge East'] },
-    { id: 'PM-0015', coords: [[73.9925, 18.5816], [73.9948, 18.5810], [73.9945, 18.5796], [73.9922, 18.5802], [73.9925, 18.5816]], conf: 0.88, status: 'AI Generated', features: ['Tree Line East', 'Field Bund South'] },
-
-    // ROW 4 (Southern agricultural tracts)
-    { id: 'PM-0016', coords: [[73.9828, 18.5816], [73.9852, 18.5814], [73.9850, 18.5800], [73.9825, 18.5802], [73.9828, 18.5816]], conf: 0.93, status: 'AI Generated', features: ['Wire Fence North', 'Tractor Track South'] },
-    { id: 'PM-0017', coords: [[73.9852, 18.5814], [73.9875, 18.5810], [73.9872, 18.5796], [73.9850, 18.5800], [73.9852, 18.5814]], conf: 0.94, status: 'AI Generated', features: ['Tractor Track South', 'Secondary Road West'] },
-    { id: 'PM-0018', coords: [[73.9875, 18.5810], [73.9898, 18.5806], [73.9895, 18.5792], [73.9872, 18.5796], [73.9875, 18.5810]], conf: 0.92, status: 'AI Generated', features: ['Access Road North-South', 'Hedgerow East'] },
-    { id: 'PM-0019', coords: [[73.9900, 18.5806], [73.9922, 18.5802], [73.9920, 18.5788], [73.9895, 18.5792], [73.9900, 18.5806]], conf: 0.90, status: 'AI Generated', features: ['Agricultural Bund North', 'Irrigation Ditch South'] },
-    { id: 'PM-0020', coords: [[73.9922, 18.5802], [73.9945, 18.5796], [73.9942, 18.5782], [73.9920, 18.5788], [73.9922, 18.5802]], conf: 0.86, status: 'AI Generated', features: ['Field Edge South', 'Vegetated Boundary East'] },
-
-    // Additional Settlement & Peripheral plots
-    { id: 'PM-0021', coords: [[73.9825, 18.5802], [73.9850, 18.5800], [73.9848, 18.5786], [73.9822, 18.5788], [73.9825, 18.5802]], conf: 0.91, status: 'AI Generated', features: ['Village Boundary Line', 'Canal Branch West'] },
-    { id: 'PM-0022', coords: [[73.9850, 18.5800], [73.9872, 18.5796], [73.9870, 18.5782], [73.9848, 18.5786], [73.9850, 18.5800]], conf: 0.93, status: 'AI Generated', features: ['Settlement Track East', 'Farm Compound'] },
-    { id: 'PM-0023', coords: [[73.9872, 18.5796], [73.9895, 18.5792], [73.9892, 18.5778], [73.9870, 18.5782], [73.9872, 18.5796]], conf: 0.62, status: 'Needs Review', features: ['Ambiguous Vegetated Hedge', 'Dense Canopy Obscuring Corner'], topologyIssue: 'Low confidence due to tree canopy shadow over southern vertex' },
-    
-    // Micro-sliver candidate for QC demonstration: PM-0024
-    { id: 'PM-0024', coords: [[73.9902, 18.5835], [73.9905, 18.5835], [73.9903, 18.5820], [73.9900, 18.5820], [73.9902, 18.5835]], conf: 0.45, status: 'Rejected', features: ['Sliver artifact along tractor path corridor'], topologyIssue: 'Tiny sliver polygon (< 45 m²) generated by misaligned snap tolerance' }
-  ];
-
-  // Calculate polygon areas approximately: 1 deg lat ~ 111,000m, 1 deg lng ~ 105,000m
-  const parcels = rawParcels.map(p => {
-    let areaSqm = 0;
-    const coords = p.coords;
-    const n = coords.length;
-    for (let i = 0; i < n - 1; i++) {
-      const x1 = coords[i][0] * 105000;
-      const y1 = coords[i][1] * 111000;
-      const x2 = coords[i + 1][0] * 105000;
-      const y2 = coords[i + 1][1] * 111000;
-      areaSqm += (x1 * y2 - x2 * y1);
-    }
-    areaSqm = Math.abs(areaSqm / 2);
-    const areaHectares = Number((areaSqm / 10000).toFixed(2));
-    const areaAcres = Number((areaSqm / 4046.86).toFixed(2));
-
-    return {
-      id: p.id,
-      project_id: 'proj_wagholi_demo',
-      parcel_id: p.id,
-      geometry: {
-        type: 'Polygon',
-        coordinates: [p.coords]
-      },
-      area_sqm: Math.round(areaSqm),
-      area_hectares: areaHectares,
-      area_acres: areaAcres,
-      confidence: p.conf,
-      confidence_label: p.conf >= 0.90 ? 'High' : (p.conf >= 0.70 ? 'Medium' : 'Low'),
-      status: p.status,
-      supporting_features: p.features,
-      source: 'Road-Based Spatial Reasoning v2.4 + AI Feature Fusion',
-      topology_issue: p.topologyIssue || null,
-      created_at: new Date('2026-08-29T11:00:00Z').toISOString(),
-      updated_at: new Date().toISOString()
-    };
-  });
-
-  const verifications = [
-    {
-      id: 'ver_1',
-      parcel_id: 'PM-0001',
-      reviewer_id: 'usr_2',
-      reviewer_name: 'Alex Morgan',
-      action: 'Accepted',
-      comments: 'Preliminary boundaries align with stone wall on the east and highway clearance on south. Verified with ground survey markers.',
-      original_geometry: parcels[0].geometry,
-      edited_geometry: parcels[0].geometry,
-      timestamp: '2026-09-02T10:15:00Z'
-    },
-    {
-      id: 'ver_2',
-      parcel_id: 'PM-0002',
-      reviewer_id: 'usr_2',
-      reviewer_name: 'Alex Morgan',
-      action: 'Accepted',
-      comments: 'Road frontage matches Cadastral Sheet #14 village access.',
-      original_geometry: parcels[1].geometry,
-      edited_geometry: parcels[1].geometry,
-      timestamp: '2026-09-02T11:00:00Z'
-    },
-    {
-      id: 'ver_3',
-      parcel_id: 'PM-0003',
-      reviewer_id: 'usr_3',
-      reviewer_name: 'Vikram Mehta',
-      action: 'Accepted',
-      comments: 'Field officer verified stone cairn boundary points.',
-      original_geometry: parcels[2].geometry,
-      edited_geometry: parcels[2].geometry,
-      timestamp: '2026-09-03T09:30:00Z'
-    },
-    {
-      id: 'ver_4',
-      parcel_id: 'PM-0006',
-      reviewer_id: 'usr_2',
-      reviewer_name: 'Alex Morgan',
-      action: 'Accepted',
-      comments: 'Residential structure enclosed; setback verified.',
-      original_geometry: parcels[5].geometry,
-      edited_geometry: parcels[5].geometry,
-      timestamp: '2026-09-04T14:20:00Z'
-    },
-    {
-      id: 'ver_5',
-      parcel_id: 'PM-0024',
-      reviewer_id: 'usr_2',
-      reviewer_name: 'Alex Morgan',
-      action: 'Rejected',
-      comments: 'Identified as sliver polygon caused by tractor path tolerance gap. Removed from authoritative verified set.',
-      original_geometry: parcels[23].geometry,
-      edited_geometry: null,
-      timestamp: '2026-09-05T16:00:00Z'
-    }
-  ];
-
-  const processingJobs = [
-    {
-      id: 'job_upload_01',
-      project_id: 'proj_wagholi_demo',
-      job_type: 'IMAGERY_INGESTION',
-      status: 'COMPLETED',
-      progress: 100,
-      logs: [
-        '[09:00:01] UAV orthomosaic wagholi_east_ortho.tif ingested (342 MB)',
-        '[09:00:04] Pyramidal tile cache generated (Z12 - Z20)',
-        '[09:00:05] Ground sampling distance verified: 2.8 cm/px'
-      ],
-      started_at: '2026-08-28T09:00:00Z',
-      completed_at: '2026-08-28T09:00:06Z'
-    },
-    {
-      id: 'job_detect_02',
-      project_id: 'proj_wagholi_demo',
-      job_type: 'AI_DETECTION',
-      status: 'COMPLETED',
-      progress: 100,
-      logs: [
-        '[09:05:00] Initialized AI Feature Detection models',
-        '[09:05:12] Detected 4 road network segments (confidence avg 94.5%)',
-        '[09:05:25] Extracted 5 building footprints',
-        '[09:05:38] Segmented 11 visible boundaries (walls, fences, field edges)',
-        '[09:05:42] Completed hydrology layer segmentation'
-      ],
-      started_at: '2026-08-28T09:05:00Z',
-      completed_at: '2026-08-28T09:05:45Z'
-    },
-    {
-      id: 'job_reason_03',
-      project_id: 'proj_wagholi_demo',
-      job_type: 'ROAD_SPATIAL_REASONING',
-      status: 'COMPLETED',
-      progress: 100,
-      logs: [
-        '[09:10:00] Cleaning and snapping road centerline vectors',
-        '[09:10:04] Constructed topological road graph with 6 intersections',
-        '[09:10:08] Partitioned study area into 5 primary road corridors',
-        '[09:10:15] Fused boundary evidence (walls, fences, field bunds)',
-        '[09:10:22] Generated 24 preliminary parcel candidates'
-      ],
-      started_at: '2026-08-28T09:10:00Z',
-      completed_at: '2026-08-28T09:10:25Z'
-    },
-    {
-      id: 'job_gis_04',
-      project_id: 'proj_wagholi_demo',
-      job_type: 'GIS_PROCESSING',
-      status: 'COMPLETED',
-      progress: 100,
-      logs: [
-        '[09:12:00] Performing geometry cleaning and vertex deduplication',
-        '[09:12:03] Closed 24 polygon rings',
-        '[09:12:06] Executing topology quality control',
-        '[09:12:08] Overlap audit: 1 overlap detected (PM-0004 & PM-0005: 0.03 ha)',
-        '[09:12:10] Gap audit: 1 gap detected (PM-0008 & PM-0009: 1.4m)',
-        '[09:12:11] Sliver audit: 1 sliver candidate flagged (PM-0024: 38 m²)',
-        '[09:12:12] Assigned temporary parcel IDs PM-0001 through PM-0024'
-      ],
-      started_at: '2026-08-28T09:12:00Z',
-      completed_at: '2026-08-28T09:12:15Z'
-    }
-  ];
-
-  return {
-    users,
-    projects,
-    imagery,
-    detectedFeatures: detectedFeatures.map(f => ({ ...f, imagery_id: f.imagery_id || 'img_wagholi_ortho' })),
-    parcels: parcels.map(p => ({ ...p, imagery_id: p.imagery_id || 'img_wagholi_ortho' })),
-    verifications,
-    processingJobs,
-    parcel_versions: [],
-    activities: []
-  };
+  return buildCoastalDemoDataset();
 }
+
 
 class Database {
   constructor() {
@@ -585,12 +99,6 @@ class Database {
     }
   }
 
-  resetToDemo() {
-    this.data = getInitialSeed();
-    this.save();
-    return this.data;
-  }
-
   // --- Users ---
   getUsers() { return this.data.users; }
   getUserById(id) { return this.data.users.find(u => u.id === id); }
@@ -611,7 +119,7 @@ class Database {
       title: activity.title || 'Activity Logged',
       description: activity.description || '',
       type: activity.type || 'info', // 'detection', 'spatial_reasoning', 'edit', 'verification', 'report', 'completion'
-      user: activity.user || 'Alex Morgan (Lead Surveyor)',
+      user: activity.user || 'Cadastral Surveyor',
       timestamp: activity.timestamp || new Date().toISOString()
     };
     this.data.activities.unshift(item);
@@ -701,11 +209,12 @@ class Database {
       name: proj.name || 'Untitled Project',
       description: proj.description || '',
       location: proj.location || 'Unknown Location',
-      coordinates: proj.coordinates || [18.5818, 73.9875],
-      project_type: proj.project_type || 'Rural Cadastral Mapping',
-      created_by: proj.created_by || 'Alex Morgan',
-      status: 'Created',
-      progress: 0,
+      coordinates: proj.coordinates || [0, 0],
+      project_type: proj.project_type || 'Cadastral Survey Project',
+      created_by: proj.created_by || 'Cadastral Surveyor',
+      status: proj.status || 'Created',
+      progress: proj.progress || 0,
+      is_demo: Boolean(proj.is_demo),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -747,6 +256,14 @@ class Database {
   }
   addImagery(img) {
     this.reload();
+    const isTif = (img.file_name || '').toLowerCase().endsWith('.tif') || (img.file_name || '').toLowerCase().endsWith('.tiff');
+    let isGeoreferenced = false;
+    if (img.is_georeferenced !== undefined && img.is_georeferenced !== null) {
+      isGeoreferenced = Boolean(img.is_georeferenced);
+    } else if (isTif) {
+      isGeoreferenced = true;
+    }
+
     const item = {
       id: img.id || `img_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       project_id: img.project_id,
@@ -761,8 +278,13 @@ class Database {
       flight_altitude: img.flight_altitude || '120m AGL',
       capture_date: img.capture_date || new Date().toISOString().split('T')[0],
       processing_status: img.processing_status || 'READY',
+      is_georeferenced: isGeoreferenced,
+      coordinate_mode: img.coordinate_mode || (isGeoreferenced ? 'geographic' : 'image-space'),
+      is_demo: Boolean(img.is_demo),
       created_at: img.created_at || new Date().toISOString(),
-      metadata: img.metadata || {}
+      metadata: img.metadata || {
+        coordinate_mode: isGeoreferenced ? 'geographic' : 'image-space'
+      }
     };
     this.data.imagery.push(item);
     this.save();
@@ -832,7 +354,8 @@ class Database {
     this.reload();
     let list = this.data.parcels.filter(p => p.project_id === projectId && p.status !== 'Deleted');
     if (imageryId) {
-      list = list.filter(p => p.imagery_id === imageryId);
+      const projectImgs = this.getImageryByProjectId(projectId);
+      list = list.filter(p => p.imagery_id === imageryId || (!p.imagery_id && projectImgs.length <= 1));
     }
     return list;
   }
@@ -846,6 +369,137 @@ class Database {
     // Search from newest to oldest so newly generated user parcels take precedence
     const p = this.data.parcels.slice().reverse().find(x => (x.id === parcelId || x.parcel_id === parcelId) && x.status !== 'Deleted');
     return p || null;
+  }
+
+  searchParcels(query, options = {}) {
+    this.reload();
+    if (!query || typeof query !== 'string') return [];
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+
+    const limit = options.limit || 8;
+    const includeDemo = options.include_demo !== false;
+    const cleanQ = q
+      .replace(/^parcel\s*#?/i, '')
+      .replace(/^plot\s*#?/i, '')
+      .replace(/^survey\s*#?/i, '')
+      .trim();
+
+    const results = [];
+    const seenIds = new Set();
+
+    // 1. Search real projects and database parcels
+    const allParcels = (this.data.parcels || []).filter(p => p.status !== 'Deleted');
+    const projectsMap = new Map((this.data.projects || []).map(pr => [pr.id, pr]));
+
+    for (const p of allParcels) {
+      const proj = projectsMap.get(p.project_id);
+      const isDemo = p.project_id === 'proj_wagholi_demo';
+
+      const pId = (p.parcel_id || p.id || '').toLowerCase();
+      const pIdClean = pId.replace(/^pm-?/i, '').replace(/^plot-?/i, '');
+      const pStatus = (p.status || p.candidate_status || '').toLowerCase();
+      const pSource = (p.source || '').toLowerCase();
+      const projName = (proj?.name || '').toLowerCase();
+      const projLoc = (proj?.location || '').toLowerCase();
+      const projType = (proj?.project_type || '').toLowerCase();
+      const features = Array.isArray(p.supporting_features) ? p.supporting_features.join(' ').toLowerCase() : '';
+      const comments = (p.comments || p.remarks || p.review?.notes || '').toLowerCase();
+      const reviewer = (p.review?.reviewer || '').toLowerCase();
+
+      const isMatch = pId.includes(q) ||
+        pIdClean.includes(cleanQ) ||
+        pStatus.includes(q) ||
+        projName.includes(q) ||
+        projLoc.includes(q) ||
+        projType.includes(q) ||
+        features.includes(q) ||
+        comments.includes(q) ||
+        reviewer.includes(q);
+
+      if (isMatch) {
+        let lat = proj?.coordinates?.[0] || 18.5512;
+        let lng = proj?.coordinates?.[1] || 73.9341;
+        let boundary = null;
+        const geom = p.geo_geometry || p.geometry;
+        if (geom && geom.coordinates && geom.coordinates[0] && geom.coordinates[0].length >= 3) {
+          const ring = geom.coordinates[0];
+          let sumLat = 0, sumLng = 0;
+          boundary = [];
+          ring.forEach(pt => {
+            sumLng += pt[0];
+            sumLat += pt[1];
+            boundary.push([pt[1], pt[0]]);
+          });
+          lat = +(sumLat / ring.length).toFixed(5);
+          lng = +(sumLng / ring.length).toFixed(5);
+        }
+
+        const formattedId = p.parcel_id || p.id;
+        if (!seenIds.has(formattedId)) {
+          seenIds.add(formattedId);
+          const survNum = p.survey_no || (p.supporting_features?.[0] ? p.supporting_features[0] : `Sector ${p.id ? p.id.slice(-4) : '1'}`);
+          const locParts = (proj?.location || 'Wagholi, Pune, Maharashtra').split(',').map(s => s.trim());
+          const villageName = locParts[0] || 'Wagholi';
+          const districtName = locParts[1] || 'Pune';
+          const stateName = locParts[2] || 'Maharashtra';
+          const areaFormatted = p.area_acres ? `${p.area_acres} acres` : (p.area_sqm ? `${p.area_sqm.toLocaleString()} sqm` : '1.25 acres');
+
+          results.push({
+            id: p.id || formattedId,
+            parcel_id: formattedId,
+            display_name: `Parcel #${formattedId}`,
+            parcelNumber: formattedId,
+            surveyNumber: survNum,
+            survey_no: survNum,
+            village: villageName,
+            district: districtName,
+            state: stateName,
+            latitude: lat,
+            longitude: lng,
+            boundary: boundary,
+            location: proj?.location || `${villageName}, ${districtName}, ${stateName}`,
+            project_id: p.project_id,
+            project_name: proj?.name || 'Active Cadastral Project',
+            land_type: proj?.project_type || 'Rural Cadastral Mapping',
+            landType: proj?.project_type || 'Rural Cadastral Mapping',
+            area_acres: p.area_acres || (p.area_sqm ? +(p.area_sqm * 0.000247105).toFixed(2) : 1.25),
+            area_sqm: p.area_sqm || null,
+            area: areaFormatted,
+            status: p.candidate_status || p.status || 'Verified',
+            confidence: p.confidence ? Math.round(p.confidence * 100) + '%' : '90%',
+            is_demo: isDemo,
+            dataset_type: isDemo ? 'Demo Dataset' : 'Verified Project',
+            coordinates: [lat, lng],
+            map_url: isDemo 
+              ? `map.html?mode=demo&parcel=${encodeURIComponent(p.id)}&lat=${lat}&lng=${lng}`
+              : `map.html?project=${encodeURIComponent(p.project_id)}&parcel=${encodeURIComponent(formattedId)}&lat=${lat}&lng=${lng}`
+          });
+        }
+      }
+    }
+
+    // Sort: Exact matches first, then parcel number match, then real project data before demo data
+    results.sort((a, b) => {
+      if (a._isExactMatch && !b._isExactMatch) return -1;
+      if (!a._isExactMatch && b._isExactMatch) return 1;
+
+      const aNum = (a.parcelNumber || '').toLowerCase();
+      const bNum = (b.parcelNumber || '').toLowerCase();
+      if (aNum === cleanQ && bNum !== cleanQ) return -1;
+      if (aNum !== cleanQ && bNum === cleanQ) return 1;
+
+      const aSurv = (a.surveyNumber || '').toLowerCase();
+      const bSurv = (b.surveyNumber || '').toLowerCase();
+      if (aSurv === cleanQ && bSurv !== cleanQ) return -1;
+      if (aSurv !== cleanQ && bSurv === cleanQ) return 1;
+
+      if (!a.is_demo && b.is_demo) return -1;
+      if (a.is_demo && !b.is_demo) return 1;
+      return 0;
+    });
+
+    return results;
   }
   setParcels(projectId, parcels, imageryId = null) {
     this.reload();
@@ -872,7 +526,7 @@ class Database {
     this.save();
     return p;
   }
-  deleteParcel(parcelId, reviewerName = 'Alex Morgan', projectId = null) {
+  deleteParcel(parcelId, reviewerName = 'Cadastral Surveyor', projectId = null) {
     this.reload();
     const p = this.getParcelById(parcelId, projectId);
     if (!p) return null;
@@ -970,7 +624,7 @@ class Database {
       previous_geometry: prevGeom,
       action: standardAction,
       change_type: change_type || standardAction.toLowerCase().replace(/\s+/g, '_'),
-      edited_by: edited_by || 'Alex Morgan (Lead Surveyor)',
+      edited_by: edited_by || 'Lead Cadastral Surveyor',
       comments: comments || remarks || '',
       remarks: comments || remarks || '',
       timestamp: now,
@@ -993,8 +647,8 @@ class Database {
     const item = {
       id: ver.id || `ver_${Date.now()}`,
       parcel_id: ver.parcel_id,
-      reviewer_id: ver.reviewer_id || 'usr_2',
-      reviewer_name: ver.reviewer_name || 'Alex Morgan',
+      reviewer_id: ver.reviewer_id || 'usr_surveyor',
+      reviewer_name: ver.reviewer_name || 'Lead Cadastral Surveyor',
       action: ver.action, // 'Accepted', 'Edited', 'Rejected', 'Needs Review'
       comments: ver.comments || '',
       remarks: ver.comments || '',
@@ -1037,7 +691,7 @@ class Database {
         project_id: parcel.project_id,
         imagery_id: parcel.imagery_id,
         geometry: ver.edited_geometry || parcel.geometry,
-        edited_by: ver.reviewer_name || 'Alex Morgan',
+        edited_by: ver.reviewer_name || 'Lead Cadastral Surveyor',
         action: ver.action,
         change_type: changeType,
         comments: ver.comments || ''
@@ -1046,9 +700,9 @@ class Database {
       if (parcel.project_id) {
         this.logActivity(parcel.project_id, {
           title: `Parcel ${parcel.parcel_id || parcel.id} ${ver.action}`,
-          description: ver.comments || `Demarcation ${ver.action.toLowerCase()} by ${ver.reviewer_name || 'Alex Morgan'}.`,
+          description: ver.comments || `Demarcation ${ver.action.toLowerCase()} by ${ver.reviewer_name || 'Lead Cadastral Surveyor'}.`,
           type: ver.action.toLowerCase(),
-          user: ver.reviewer_name || 'Alex Morgan'
+          user: ver.reviewer_name || 'Lead Cadastral Surveyor'
         });
       }
     }
@@ -1057,7 +711,7 @@ class Database {
     return item;
   }
 
-  setParcelStatus(parcelId, status, reviewerName = 'Alex Morgan', comments = '') {
+  setParcelStatus(parcelId, status, reviewerName = 'Lead Cadastral Surveyor', comments = '') {
     const parcel = this.getParcelById(parcelId);
     if (!parcel) return null;
     parcel.status = status;
@@ -1119,6 +773,50 @@ class Database {
     Object.assign(j, updates);
     this.save();
     return j;
+  }
+
+  // --- Isolated Demo Dataset Management ---
+  resetToDemo() {
+    this.reload();
+    const cleanSeed = buildCoastalDemoDataset();
+    const demoProjId = 'proj_demo_coastal';
+    const demoImgId = 'img_demo_coastal';
+
+    // Remove any legacy demo projects (e.g. proj_wagholi_demo, proj_demo_coastal, or any with is_demo === true)
+    const demoProjectIds = new Set(
+      this.data.projects.filter(p => p.is_demo || p.id === demoProjId || p.id === 'proj_wagholi_demo').map(p => p.id)
+    );
+    demoProjectIds.add(demoProjId);
+    demoProjectIds.add('proj_wagholi_demo');
+
+    // Keep real user projects (!is_demo)
+    this.data.projects = this.data.projects.filter(p => !demoProjectIds.has(p.id));
+    this.data.imagery = this.data.imagery.filter(img => !demoProjectIds.has(img.project_id) && img.id !== demoImgId && img.id !== 'img_wagholi_ortho');
+    this.data.detectedFeatures = this.data.detectedFeatures.filter(f => !demoProjectIds.has(f.project_id));
+    this.data.parcels = this.data.parcels.filter(p => !demoProjectIds.has(p.project_id));
+    this.data.verifications = (this.data.verifications || []).filter(v => !demoProjectIds.has(v.project_id) && !v.parcel_id?.startsWith('PM-DEMO-') && !v.parcel_id?.startsWith('PM-00'));
+    this.data.processingJobs = (this.data.processingJobs || []).filter(j => !demoProjectIds.has(j.project_id));
+    this.data.parcel_versions = (this.data.parcel_versions || []).filter(v => !demoProjectIds.has(v.project_id));
+    this.data.activities = (this.data.activities || []).filter(a => !demoProjectIds.has(a.project_id));
+
+    // Insert clean Coastal Settlement demo seed at the top
+    this.data.projects.unshift(cleanSeed.projects[0]);
+    this.data.imagery.unshift(cleanSeed.imagery[0]);
+    cleanSeed.detectedFeatures.forEach(f => this.data.detectedFeatures.push(f));
+    cleanSeed.parcels.forEach(p => this.data.parcels.push(p));
+    cleanSeed.processingJobs.forEach(j => this.data.processingJobs.push(j));
+    cleanSeed.parcel_versions.forEach(v => this.data.parcel_versions.push(v));
+    cleanSeed.activities.forEach(a => this.data.activities.push(a));
+
+    this.data.users = cleanSeed.users;
+
+    this.save();
+    return {
+      project: cleanSeed.projects[0],
+      imagery: cleanSeed.imagery[0],
+      features: cleanSeed.detectedFeatures,
+      parcels: cleanSeed.parcels
+    };
   }
 }
 

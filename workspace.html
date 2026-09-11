@@ -42,12 +42,34 @@
         </div>
       </a>
 
-      <!-- Active Project Selector Pill -->
-      <div class="pm-project-pill">
-        <select id="selActiveProject" class="pm-project-select">
-          <option value="proj_wagholi_demo">Wagholi East Cadastre (Sheet #14)</option>
+      <!-- Active Project Selector Pill with Sleek Dark Dropdown -->
+      <div class="pm-project-pill" id="projectPillContainer">
+        <div class="pm-project-pill-btn" id="btnProjectDropdownToggle" title="Click to switch project">
+          <span class="pm-project-pill-title" id="lblActiveProjectName">ParcelMap Demo — Coastal Settlement</span>
+          <svg class="pm-project-pill-arrow" id="arrowProjectDropdown" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <select id="selActiveProject" class="pm-project-select sr-only" aria-label="Select Project">
+          <option value="proj_demo_coastal">ParcelMap Demo — Coastal Settlement</option>
         </select>
-        <span class="pm-status-tag tag-emerald" id="badgeProjectStatus">Verification 72%</span>
+        <span class="pm-status-tag tag-emerald" id="badgeProjectStatus">Ready</span>
+
+        <!-- Sleek Dark Projects Dropdown Menu -->
+        <div class="pm-project-dropdown-menu" id="menuActiveProjects">
+          <div class="pm-project-menu-header">
+            <div class="pm-project-menu-search-wrap">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="inputFilterProjectsDropdown" placeholder="Search projects..." autocomplete="off">
+            </div>
+          </div>
+          <div class="pm-project-menu-list" id="listProjectsDropdown">
+            <!-- Dynamically populated from /api/projects -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -66,22 +88,9 @@
     </nav>
 
     <div class="pm-header-right">
-      <button class="btn-pm btn-pm-secondary" id="btnLaunchDemo" title="Reset and load authentic demo data">
-        Launch Demo
-      </button>
-
       <button class="btn-pm btn-pm-primary" id="btnNewProjectModal">
         <span>+</span> New Project
       </button>
-
-      <div class="user-pill" title="Lead Surveyor">
-        <div class="user-avatar">AM</div>
-        <span>Alex Morgan</span>
-      </div>
-
-      <a href="index.html" class="btn-pm btn-pm-ghost" title="Exit to Landing Page">
-        Exit
-      </a>
     </div>
   </header>
 
@@ -96,22 +105,22 @@
         <!-- Executive Minimalist Project Header -->
         <div class="dash-header-card">
           <div class="dash-meta-box">
-            <h1 class="dash-title" id="dashProjectName">Wagholi East Agricultural &amp; Settlement Zone</h1>
+            <h1 class="dash-title" id="dashProjectName">ParcelMap Demo — Coastal Settlement</h1>
             <div class="dash-chips-row">
-              <span>📍 Wagholi, Pune District, Maharashtra</span>
+              <span>📍 Coastal Bay Sector, Cadastral Block 4</span>
               <span>&bull;</span>
-              <span>UAV Orthomosaic (GSD 2.8 cm/px)</span>
+              <span>UAV Orthomosaic (GSD 3.5 cm/px)</span>
               <span>&bull;</span>
-              <span>Lead: Alex Morgan</span>
+              <span>Cadastral Survey Directorate</span>
             </div>
             <p class="dash-sub-desc" id="dashProjectDesc">
-              Demarcation of rural cadastral boundaries from high-resolution UAV drone orthomosaics using AI feature detection, road-based spatial reasoning, and surveyor verification.
+              AI-assisted parcel mapping demonstration using aerial imagery.
             </p>
           </div>
 
           <div class="dash-progress-box">
             <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Verification</span>
-            <div class="progress-big-num" id="dashOverallProgress">72%</div>
+            <div class="progress-big-num" id="dashOverallProgress">75%</div>
             <button class="btn-pm btn-pm-primary" id="btnStartMappingWorkflow" style="margin-top: 4px;">
               Open Verification Workspace &rarr;
             </button>
@@ -135,7 +144,7 @@
                 <span class="rail-step-pct">100%</span>
               </div>
               <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 100%;"></div></div>
-              <span class="rail-step-sub">8192 x 6144 px &bull; 2.8 cm/px</span>
+              <span class="rail-step-sub">740 x 480 px &bull; 3.5 cm/px</span>
             </div>
 
             <!-- Step 2 -->
@@ -145,7 +154,7 @@
                 <span class="rail-step-pct">100%</span>
               </div>
               <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 100%;"></div></div>
-              <span class="rail-step-sub">16 Features &bull; 90% Avg Conf</span>
+              <span class="rail-step-sub">13 Features &bull; 92% Avg Conf</span>
             </div>
 
             <!-- Step 3 -->
@@ -155,7 +164,7 @@
                 <span class="rail-step-pct">100%</span>
               </div>
               <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 100%;"></div></div>
-              <span class="rail-step-sub">3 Corridors &bull; Topology Graph</span>
+              <span class="rail-step-sub">2 Corridors &bull; 2 Blocks</span>
             </div>
 
             <!-- Step 4 -->
@@ -165,17 +174,17 @@
                 <span class="rail-step-pct">100%</span>
               </div>
               <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 100%;"></div></div>
-              <span class="rail-step-sub">24 Parcels &bull; 97.0 ha</span>
+              <span class="rail-step-sub">3 Parcels Generated</span>
             </div>
 
             <!-- Step 5 -->
             <div class="rail-step active">
               <div class="rail-step-top">
                 <span class="rail-step-name">5. Human Verification</span>
-                <span class="rail-step-pct" style="color: var(--accent-emerald);">72%</span>
+                <span class="rail-step-pct" style="color: var(--accent-emerald);">67%</span>
               </div>
-              <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 72%;"></div></div>
-              <span class="rail-step-sub">18 of 24 Audited</span>
+              <div class="rail-step-bar"><div class="rail-step-bar-fill" style="width: 67%;"></div></div>
+              <span class="rail-step-sub">2 of 3 Audited</span>
             </div>
           </div>
         </div>
@@ -184,38 +193,38 @@
         <div class="stat-strip-grid">
           <div class="stat-strip-card">
             <span class="stat-strip-label">Imagery Ingested</span>
-            <span class="stat-strip-val">342 MB</span>
+            <span class="stat-strip-val">705 KB</span>
             <span class="stat-strip-sub">Orthomosaic Ready</span>
           </div>
 
           <div class="stat-strip-card">
             <span class="stat-strip-label">Features Detected</span>
-            <span class="stat-strip-val" id="statFeaturesCount">16</span>
+            <span class="stat-strip-val" id="statFeaturesCount">13</span>
             <span class="stat-strip-sub">Roads, Footprints, Walls</span>
           </div>
 
           <div class="stat-strip-card">
             <span class="stat-strip-label">Parcels Generated</span>
-            <span class="stat-strip-val" id="statParcelsTotal">24</span>
+            <span class="stat-strip-val" id="statParcelsTotal">3</span>
             <span class="stat-strip-sub" id="statParcelsArea">Demarcated Area</span>
           </div>
 
           <div class="stat-strip-card">
             <span class="stat-strip-label">Human Verified</span>
-            <span class="stat-strip-val" style="color: var(--accent-emerald);" id="statParcelsVerified">18</span>
+            <span class="stat-strip-val" style="color: var(--accent-emerald);" id="statParcelsVerified">2</span>
             <span class="stat-strip-sub">Audited &amp; Signed</span>
           </div>
 
           <div class="stat-strip-card">
             <span class="stat-strip-label">Requires Review</span>
-            <span class="stat-strip-val" style="color: var(--accent-amber);" id="statParcelsReview">6</span>
+            <span class="stat-strip-val" style="color: var(--accent-amber);" id="statParcelsReview">1</span>
             <span class="stat-strip-sub">Low Conf / Gap Flag</span>
           </div>
 
           <div class="stat-strip-card">
             <span class="stat-strip-label">QC Anomalies</span>
-            <span class="stat-strip-val" style="color: var(--accent-rose);" id="statQcErrors">3</span>
-            <span class="stat-strip-sub">1 Overlap, 1 Gap, 1 Sliver</span>
+            <span class="stat-strip-val" style="color: var(--accent-rose);" id="statQcErrors">1</span>
+            <span class="stat-strip-sub">1 Needs Review</span>
           </div>
         </div>
 
@@ -256,18 +265,24 @@
         </div>
 
         <!-- Clean Upload Box -->
-        <div style="border: 1px dashed var(--border-medium); border-radius: var(--radius-lg); padding: 40px 24px; text-align: center; background: var(--bg-panel); margin-bottom: 20px;" id="uavDropzone">
+        <div style="border: 1px dashed var(--border-medium); border-radius: var(--radius-lg); padding: 36px 24px; text-align: center; background: var(--bg-panel); margin-bottom: 20px;" id="uavDropzone">
           <div style="font-size: 32px; margin-bottom: 8px;">🛰️</div>
-          <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Upload Orthomosaic Dataset</div>
-          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Drag and drop file or select from computer (max 500 MB)</div>
+          <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Drone Imagery Ingestion</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Upload real UAV orthomosaics or explore the isolated demonstration dataset</div>
           <input type="file" id="fileUavUpload" accept=".jpg,.jpeg,.png,.tif,.tiff,.jfif,.webp,image/*" style="display: none;">
-          <div style="display: flex; justify-content: center; gap: 8px;">
-            <button class="btn-pm btn-pm-primary" onclick="document.getElementById('fileUavUpload').click()">
-              Select File
-            </button>
-            <button class="btn-pm btn-pm-secondary" id="btnLoadDemoImagery">
-              Load Demo Dataset
-            </button>
+          <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <button class="btn-pm btn-pm-primary" onclick="document.getElementById('fileUavUpload').click()">
+                Select File
+              </button>
+              <span style="font-size: 10px; color: var(--text-muted);">Real User Imagery (creates new project)</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <button class="btn-pm btn-pm-secondary" id="btnLoadDemoImagery">
+                Load Demo Dataset
+              </button>
+              <span style="font-size: 10px; color: var(--text-muted);">Isolated ParcelMap Demonstration</span>
+            </div>
           </div>
         </div>
 
@@ -276,19 +291,19 @@
           <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="pm-status-tag tag-emerald" id="badgeImageryCardStatus">Ready</span>
-              <strong style="font-size: 13px;" id="lblImageryFileName">No imagery uploaded</strong>
+              <strong style="font-size: 13px;" id="lblImageryFileName">coastal_settlement_demo.png</strong>
             </div>
-            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);" id="lblImageryFileSize">-</span>
+            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);" id="lblImageryFileSize">705 KB</span>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; font-size: 12px;">
             <div style="background: var(--bg-card); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
               <div style="color: var(--text-muted); font-size: 11px;">Resolution (GSD)</div>
-              <strong style="font-size: 13px; color: var(--accent-emerald);" id="lblImageryResolution">2.8 cm / pixel</strong>
+              <strong style="font-size: 13px; color: var(--accent-emerald);" id="lblImageryResolution">3.5 cm / pixel</strong>
             </div>
             <div style="background: var(--bg-card); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
               <div style="color: var(--text-muted); font-size: 11px;">Dimensions</div>
-              <strong style="font-size: 13px;" id="lblImageryDimensions">4000 x 3000 px</strong>
+              <strong style="font-size: 13px;" id="lblImageryDimensions">740 x 480 px</strong>
             </div>
             <div style="background: var(--bg-card); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
               <div style="color: var(--text-muted); font-size: 11px;">Sensor Model</div>
@@ -302,7 +317,7 @@
 
           <!-- Preview Frame with Actual Image -->
           <div style="position: relative; height: 260px; width: 100%; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-subtle); background: #0b0f17; display: flex; align-items: center; justify-content: center;">
-            <img id="imgUavPreview" src="/uploads/wagholi_east_ortho.jpg" alt="Drone Orthomosaic" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: brightness(0.95);">
+            <img id="imgUavPreview" src="/uploads/coastal_settlement_demo.png" alt="Drone Orthomosaic" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: brightness(0.95);">
             <div id="uavPreviewBadge" style="position: absolute; bottom: 10px; left: 10px; background: rgba(13, 18, 28, 0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-family: var(--font-mono); color: var(--text-secondary);">
               Uploaded Drone Imagery &bull; Source Imagery Active
             </div>
@@ -325,21 +340,46 @@
     <section class="pm-view-stage" id="viewDetection">
       <div class="workspace-layout">
         <aside class="ws-sidebar" style="width: 330px;">
-          <div class="sidebar-header">
-            <span class="sidebar-title">AI Feature Detection</span>
-            <span class="pm-status-tag tag-emerald" id="badgeDetectionStatus">READY</span>
+          <!-- Sidebar Header: Fixed 2-row layout prevents badge/title overlap -->
+          <div class="sidebar-header" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;">
+              <span class="sidebar-title" style="white-space: nowrap; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: var(--text-primary);">AI Feature Detection</span>
+              <span class="pm-status-tag tag-emerald" id="badgeDetectionStatus" style="font-size: 10px; font-weight: 600; white-space: nowrap; flex-shrink: 0; padding: 2px 7px;">READY</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 6px;">
+              <span class="pm-status-tag tag-blue" id="badgeDetectionCoordMode" style="display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">IMAGE-SPACE</span>
+              <span id="badgeDetectionCoordSubtitle" style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono); white-space: nowrap;">Pixel Coordinates</span>
+            </div>
           </div>
 
           <div class="sidebar-content">
-            <!-- Project Imagery Selector (Section 18) -->
+            <!-- Project Imagery Selector & In-Page Upload Button -->
             <div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <span class="layer-section-title" style="margin: 0;">Project Drone Imagery</span>
-                <span style="font-size: 10px; color: var(--text-dim);" id="lblImageryCount">1 Image</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 10px; color: var(--text-dim);" id="lblImageryCount">1 Image</span>
+                  <button id="btnUploadMoreImageryDetection" type="button" class="btn-pm" style="font-size: 10.5px; font-weight: 600; padding: 2px 8px; height: 22px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--accent-emerald-border); border-radius: var(--radius-sm); color: var(--accent-emerald); background: rgba(16, 185, 129, 0.12); cursor: pointer; transition: all 0.15s ease;" title="Upload another aerial image to this project">
+                    <span style="font-size: 12px; line-height: 1;">+</span>
+                    <span>Upload</span>
+                  </button>
+                </div>
               </div>
-              <div id="listProjectImagery" style="display: flex; flex-direction: column; gap: 4px; max-height: 110px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 6px 8px;">
+              <div id="listProjectImagery" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 6px 8px;">
                 <!-- Populated dynamically: ● image-01.jpg -->
               </div>
+              
+              <!-- Direct Upload Dropzone Button on AI Detection Page -->
+              <div id="dropzoneDetectionQuick" style="margin-top: 6px; border: 1px dashed rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05); border-radius: var(--radius-sm); padding: 8px 10px; text-align: center; cursor: pointer; transition: all 0.2s ease;" title="Click or drag imagery here to upload directly">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--accent-emerald); font-size: 11px; font-weight: 600;">
+                  <span>📤</span>
+                  <span>+ Upload More Imagery</span>
+                </div>
+                <div style="font-size: 9.5px; color: var(--text-dim); margin-top: 2px;">
+                  Supports JPG, PNG, WEBP, GeoTIFF
+                </div>
+              </div>
+              <input type="file" id="inputUploadImageryDetection" accept=".jpg,.jpeg,.png,.tif,.tiff,.jfif,.webp" multiple style="display: none;" />
             </div>
 
             <!-- Image Information Box (Section 9) -->
@@ -747,7 +787,10 @@
               <span style="color: #f59e0b; font-weight: 600;">📐 Image-Space Detection:</span>
               <span style="color: var(--text-secondary);">Image-space detection: this image does not contain verified geographic reference information. Preliminary feature detection &mdash; human verification required.</span>
             </div>
-            <span class="pm-status-tag tag-emerald" id="tagDetectionSourceType" style="font-size: 10px; font-weight: 600;">Uploaded Drone Imagery</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="pm-status-tag tag-blue" id="tagDetectionCoordBadge" style="font-size: 10px; font-weight: 700;">IMAGE-SPACE</span>
+              <span class="pm-status-tag tag-emerald" id="tagDetectionSourceType" style="font-size: 10px; font-weight: 600;">Uploaded Drone Imagery</span>
+            </div>
           </div>
 
           <div id="detectionMap" style="flex: 1; width: 100%; height: 100%; background: #0b0f17;"></div>
@@ -871,6 +914,13 @@
                     <span>Preliminary Parcels</span>
                   </label>
                   <label class="switch"><input type="checkbox" id="srChkParcels" checked><span class="slider"></span></label>
+                </div>
+                <div class="layer-row" style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border-subtle);">
+                  <label class="layer-info" for="chkReasoningDebugMode" title="Inspect supported vs. unsupported perimeter edges and acceptance reasons">
+                    <span class="layer-dot" style="background: #38bdf8;"></span>
+                    <span>Parcel Debug Mode</span>
+                  </label>
+                  <label class="switch"><input type="checkbox" id="chkReasoningDebugMode"><span class="slider"></span></label>
                 </div>
               </div>
             </div>
@@ -1208,7 +1258,7 @@
                 <span id="drwParcelId">P-001</span>
                 <span class="pm-status-tag tag-emerald" id="drwStatusPill">PRELIMINARY</span>
               </div>
-              <div style="font-size: 11px; color: var(--text-dim);" id="drwProjectId">Project: Wagholi East</div>
+              <div style="font-size: 11px; color: var(--text-dim);" id="drwProjectId">Project: Coastal Settlement Demo</div>
               <div style="font-size: 11px; color: var(--accent-emerald); margin-top: 2px;" id="drwCreatedFromImagery">Imagery: UAV Orthomosaic</div>
             </div>
             <div style="text-align: right;">
@@ -1434,6 +1484,98 @@
             </div>
           </div>
           <div id="qcMap" style="height: 380px; width: 100%; background: #0b0f17;"></div>
+        </div>
+
+        <!-- Parcel Explainability & Spatial Evidence Panel (Requirement 7) -->
+        <div id="qcParcelExplainabilityCard" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">PARCEL SPATIAL EXPLAINABILITY</span>
+                <span class="pm-status-tag tag-emerald" id="qcExpStatusBadge">ACCEPTED CANDIDATE</span>
+              </div>
+              <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono); margin: 0;" id="qcExpParcelId">Select a parcel</h3>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div>
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">CONFIDENCE</div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <strong style="font-size: 16px; color: var(--accent-emerald);" id="qcExpConfidence">--</strong>
+                  <span class="pm-status-tag tag-emerald" id="qcExpConfidenceLabel" style="font-size: 10px;">--</span>
+                </div>
+              </div>
+              <div style="border-left: 1px solid var(--border-subtle); padding-left: 16px;">
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">SUPPORTED PERIMETER</div>
+                <strong style="font-size: 15px; color: var(--accent-emerald); font-family: var(--font-mono);" id="qcExpSupportedEdge">--</strong>
+              </div>
+              <div style="border-left: 1px solid var(--border-subtle); padding-left: 16px;">
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">ESTIMATED AREA</div>
+                <strong style="font-size: 14px; color: var(--text-primary); font-family: var(--font-mono);" id="qcExpArea">--</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reason Generated & Status Explanation -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px 14px; margin-bottom: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--accent-emerald); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+              <span>🧭 STATUS REASON &amp; SPATIAL PROVENANCE</span>
+            </div>
+            <p style="font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.5;" id="qcExpReason">
+              Select any parcel polygon on the map above or an entry from the anomalies table to inspect its underlying spatial reasoning chain.
+            </p>
+          </div>
+
+          <!-- Traceable Evidence Verification (Requirement 12) -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px 14px; margin-bottom: 16px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--accent-emerald); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <span>📋 BOUNDARY &amp; CONTEXT EVIDENCE (EXPLAINABILITY)</span>
+            </div>
+            <div id="qcExpEvidenceList" style="display: flex; flex-direction: column; gap: 6px;">
+              <span style="color: var(--text-muted); font-size: 12px;">Select a parcel to view verified edge boundaries and contextual evidence.</span>
+            </div>
+          </div>
+
+          <!-- Supporting Evidence Grid (Requirement 7) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+            <!-- 1. Supporting Roads -->
+            <div style="background: var(--bg-subtle); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                <span class="layer-dot" style="background: #f59e0b;"></span>
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">Supporting Roads</span>
+              </div>
+              <div id="qcExpRoadsList" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">None</div>
+            </div>
+
+            <!-- 2. Supporting Fields -->
+            <div style="background: var(--bg-subtle); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                <span class="layer-dot" style="background: #84cc16;"></span>
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">Field Boundaries</span>
+              </div>
+              <div id="qcExpFieldsList" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">None</div>
+            </div>
+
+            <!-- 3. Supporting Walls & Fences -->
+            <div style="background: var(--bg-subtle); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                <span class="layer-dot" style="background: #a855f7;"></span>
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">Walls &amp; Fences</span>
+              </div>
+              <div id="qcExpWallsList" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">None</div>
+            </div>
+
+            <!-- 4. Supporting Buildings (Context Only) -->
+            <div style="background: var(--bg-subtle); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <span class="layer-dot" style="background: #06b6d4;"></span>
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">Homestead Buildings</span>
+              </div>
+              <div id="qcExpBuildingsList" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 6px;">None</div>
+              <div style="font-size: 10px; color: var(--text-muted); font-style: italic; line-height: 1.3;">
+                ℹ Buildings provide contextual land-use evidence only and do not define parcel boundaries.
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Flagged Topological Anomalies Table (Requirement 8) -->
@@ -1862,7 +2004,7 @@
               </div>
               <div>
                 <span style="color: #64748b; display: block; font-size: 10.5px;">Lead Surveyor</span>
-                <strong id="repLeadSurveyor">Alex Morgan (Lead Surveyor)</strong>
+                <strong id="repLeadSurveyor">Lead Cadastral Surveyor</strong>
               </div>
               <div>
                 <span style="color: #64748b; display: block; font-size: 10.5px;">Imagery Used</span>
@@ -1921,12 +2063,23 @@
 
           <!-- FINAL MAP SNAPSHOT -->
           <div style="margin-bottom: 20px;">
-            <div style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 6px;">FINAL MAP SNAPSHOT (VERIFIED DELINEATIONS)</div>
-            <div id="repMapPreviewCard" style="width: 100%; height: 220px; background: #0f172a; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #cbd5e1;">
-              <img id="repMapSnapshotImg" alt="Final Map Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
-              <div id="repMapPlaceholderText" style="color: #94a3b8; font-size: 12px; text-align: center;">
-                <div>🗺 Verified Parcel Boundary Delineation</div>
-                <span style="font-size: 10px; color: #64748b;">Includes accepted parcel boundaries, road network, and scale</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <div style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase;">FINAL MAP SNAPSHOT (VERIFIED DELINEATIONS)</div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span id="repSnapshotStatusBadge" style="font-size: 10px; color: #059669; font-weight: 600; display: none;">● Snapshot Verified</span>
+                <button class="btn-pm btn-pm-ghost" id="btnRepViewInteractiveMap" style="font-size: 10px; padding: 2px 8px; color: #0284c7;" title="Open interactive Final Map tab">
+                  🗺 Interactive Map &rarr;
+                </button>
+              </div>
+            </div>
+            <div id="repMapPreviewCard" style="width: 100%; height: 260px; background: #0b132b; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #cbd5e1; cursor: pointer;" title="Click to open interactive Final Map">
+              <img id="repMapSnapshotImg" alt="Final Map Preview" style="width: 100%; height: 100%; object-fit: contain; background: #0b132b; display: none;" />
+              <div id="repMapPlaceholderText" style="color: #94a3b8; font-size: 12px; text-align: center; padding: 12px;">
+                <div style="margin-bottom: 4px; font-weight: 600;">🗺 Verified Parcel Boundary Delineation</div>
+                <span style="font-size: 10px; color: #64748b;">Rendering high-resolution map snapshot with verified delineations...</span>
+              </div>
+              <div id="repMapSnapshotOverlayBadge" style="position: absolute; bottom: 8px; right: 8px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 3px 8px; font-size: 9.5px; color: #94a3b8; display: none; pointer-events: none;">
+                Click to view in Interactive Map &rarr;
               </div>
             </div>
           </div>
@@ -1971,13 +2124,13 @@
           <!-- Sign-off Block -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 11px;">
             <div>
-              <div style="font-weight: 700; color: #0f172a;">Alex Morgan</div>
-              <div style="color: #64748b;">Lead Cadastral Surveyor &amp; GIS Analyst</div>
+              <div style="font-weight: 700; color: #0f172a;">Lead Cadastral Surveyor</div>
+              <div style="color: #64748b;">Cadastral Verification Directorate &amp; GIS Analyst</div>
               <div style="margin-top: 28px; border-bottom: 1px solid #cbd5e1; width: 180px;"></div>
               <span style="font-size: 9.5px; color: #94a3b8;">Surveyor Signature &amp; Date</span>
             </div>
             <div>
-              <div style="font-weight: 700; color: #0f172a;">Dr. Sarah Lin</div>
+              <div style="font-weight: 700; color: #0f172a;">Cadastral Survey Directorate</div>
               <div style="color: #64748b;">Cadastral Survey Directorate &amp; Audit Seal</div>
               <div style="margin-top: 28px; border-bottom: 1px solid #cbd5e1; width: 180px;"></div>
               <span style="font-size: 9.5px; color: #94a3b8;">Official Cadastre Seal</span>

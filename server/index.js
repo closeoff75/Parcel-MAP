@@ -12,8 +12,8 @@ const server = app.listen(PORT, HOST, () => {
   console.log(`====================================================`);
   console.log(`🚀 ParcelMap GeoTech API Server running on port ${PORT} (${HOST})`);
   console.log(`📡 Health Check: http://localhost:${PORT}/api/health`);
-  console.log(`🗺️ Demo Project: http://localhost:${PORT}/api/projects/proj_wagholi_demo`);
-  console.log(`📐 Quality Audit: http://localhost:${PORT}/api/projects/proj_wagholi_demo/quality-control`);
+  console.log(`🗺️ Demo Project: http://localhost:${PORT}/api/projects/proj_demo_coastal`);
+  console.log(`📐 Quality Audit: http://localhost:${PORT}/api/projects/proj_demo_coastal/quality-control`);
   console.log(`====================================================`);
 });
 

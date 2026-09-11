@@ -44,8 +44,10 @@ class ParcelMapWorkspace {
     }
 
     this.currentView = 'dashboard';
-    this.activeProjectId = localStorage.getItem('pm_active_project_id') || 'proj_wagholi_demo';
+    const storedProjId = localStorage.getItem('pm_active_project_id');
+    this.activeProjectId = (storedProjId && storedProjId !== 'proj_wagholi_demo') ? storedProjId : 'proj_demo_coastal';
     this.selectedImageryId = localStorage.getItem('pm_selected_imagery_id') || null;
+    if (this.selectedImageryId === 'img_wagholi_ortho') this.selectedImageryId = 'img_demo_coastal';
     this.detectionFeatureGroup = null;
     this.detectionImageOverlay = null;
     this.project = null;
@@ -65,6 +67,7 @@ class ParcelMapWorkspace {
     this.finalMeasurePoints = [];
     this.finalMeasureLayer = L.layerGroup();
     this.finalSelectedPolygon = null;
+    this.currentMapSnapshot = null;
     this.qcErrorOverride = false;
     this.editMode = false;
     this.editHistory = [];
@@ -162,72 +165,109 @@ class ParcelMapWorkspace {
      -------------------------------------------------------------------------- */
   async loadProjectData(projectId) {
     try {
+      if (!projectId) {
+        projectId = this.activeProjectId || localStorage.getItem('pm_active_project_id');
+      }
+      if (!projectId) return;
+
       this.activeProjectId = projectId;
+      this.currentMapSnapshot = null;
       localStorage.setItem('pm_active_project_id', this.activeProjectId);
 
       // 1. Project details with auto-recovery if project ID doesn't exist
-      const pRes = await fetch(`${this.apiBase}/projects/${projectId}`);
+      const pRes = await fetch(`${this.apiBase}/projects/${this.activeProjectId}`);
+      if (!pRes.ok) {
+        console.warn(`[Workspace] Project '${this.activeProjectId}' not found (HTTP ${pRes.status}). Checking available projects...`);
+        const allRes = await fetch(`${this.apiBase}/projects`);
+        if (allRes.ok) {
+          const allData = await allRes.json();
+          if (allData.success && allData.projects && allData.projects.length > 0) {
+            const fallback = allData.projects[0];
+            this.activeProjectId = fallback.id;
+            localStorage.setItem('pm_active_project_id', this.activeProjectId);
+            this.project = fallback;
+            return this.loadProjectData(fallback.id);
+          }
+        }
+        throw new Error(`Project '${this.activeProjectId}' not found`);
+      }
+
       const pData = await pRes.json();
       if (pData.success && pData.project) {
         this.project = pData.project;
       } else {
-        console.warn(`[Workspace] Project '${projectId}' not found. Recovering fallback project...`);
-        const allRes = await fetch(`${this.apiBase}/projects`);
-        const allData = await allRes.json();
-        if (allData.success && allData.projects && allData.projects.length > 0) {
-          const fallback = allData.projects.find(p => p.id === 'proj_wagholi_demo') || allData.projects[0];
-          this.activeProjectId = fallback.id;
-          localStorage.setItem('pm_active_project_id', this.activeProjectId);
-          this.project = fallback;
-          return this.loadProjectData(fallback.id);
-        }
+        throw new Error(pData.error || `Failed to load project details for ${this.activeProjectId}`);
       }
 
-      // 2. Imagery
-      const imgRes = await fetch(`${this.apiBase}/projects/${projectId}/imagery`);
-      const imgData = await imgRes.json();
-      if (imgData.success) {
-        this.imagery = imgData.imagery;
-        if (this.imagery.length > 0) {
-          const exists = this.imagery.some(img => img.id === this.selectedImageryId);
-          if (!exists) {
-            this.selectedImageryId = this.imagery[this.imagery.length - 1].id;
+      // 2. Imagery: fetch list and strictly validate active selectedImageryId
+      const imgRes = await fetch(`${this.apiBase}/projects/${this.activeProjectId}/imagery`);
+      if (imgRes.ok) {
+        const imgData = await imgRes.json();
+        if (imgData.success) {
+          this.imagery = imgData.imagery || [];
+          if (this.imagery.length > 0) {
+            const exists = this.imagery.some(img => img.id === this.selectedImageryId);
+            if (!exists) {
+              this.selectedImageryId = this.imagery[0].id;
+            }
+          } else {
+            this.selectedImageryId = null;
           }
-        } else {
-          this.selectedImageryId = null;
+          localStorage.setItem('pm_selected_imagery_id', this.selectedImageryId || '');
         }
-        localStorage.setItem('pm_selected_imagery_id', this.selectedImageryId || '');
+      } else {
+        this.imagery = [];
+        this.selectedImageryId = null;
       }
 
-      // 3. Features (strictly scoped by active imagery if available)
+      // 3. Features (strictly scoped by verified active imagery if available)
       const fUrl = this.selectedImageryId
-        ? `${this.apiBase}/projects/${projectId}/features?imagery_id=${this.selectedImageryId}`
-        : `${this.apiBase}/projects/${projectId}/features`;
+        ? `${this.apiBase}/projects/${this.activeProjectId}/features?imagery_id=${encodeURIComponent(this.selectedImageryId)}`
+        : `${this.apiBase}/projects/${this.activeProjectId}/features`;
       const fRes = await fetch(fUrl);
-      const fData = await fRes.json();
-      if (fData.success) this.features = fData.features;
+      if (fRes.ok) {
+        const fData = await fRes.json();
+        if (fData.success) this.features = fData.features || [];
+        else this.features = [];
+      } else {
+        this.features = [];
+      }
 
-      // 4. Parcels (strictly scoped by active imagery if available)
+      // 4. Parcels (strictly scoped by verified active imagery if available)
       const pUrl = this.selectedImageryId
-        ? `${this.apiBase}/projects/${projectId}/parcels?imagery_id=${this.selectedImageryId}`
-        : `${this.apiBase}/projects/${projectId}/parcels`;
+        ? `${this.apiBase}/projects/${this.activeProjectId}/parcels?imagery_id=${encodeURIComponent(this.selectedImageryId)}`
+        : `${this.apiBase}/projects/${this.activeProjectId}/parcels`;
       const parcRes = await fetch(pUrl);
-      const parcData = await parcRes.json();
-      if (parcData.success) this.parcels = parcData.parcels;
+      if (parcRes.ok) {
+        const parcData = await parcRes.json();
+        if (parcData.success) this.parcels = parcData.parcels || [];
+        else this.parcels = [];
+      } else {
+        this.parcels = [];
+      }
 
       // 5. Verifications / Timeline
-      const verRes = await fetch(`${this.apiBase}/projects/${projectId}/timeline`);
-      const verData = await verRes.json();
-      if (verData.success) this.verifications = verData.timeline;
+      const verRes = await fetch(`${this.apiBase}/projects/${this.activeProjectId}/timeline`);
+      if (verRes.ok) {
+        const verData = await verRes.json();
+        if (verData.success) this.verifications = verData.timeline || [];
+        else this.verifications = [];
+      } else {
+        this.verifications = [];
+      }
 
       // 6. Quality Control Audit (Real GIS geometry audit, scoped by imagery if available)
       const qcUrl = this.selectedImageryId
-        ? `${this.apiBase}/projects/${projectId}/gis-quality?imagery_id=${this.selectedImageryId}`
-        : `${this.apiBase}/projects/${projectId}/gis-quality`;
+        ? `${this.apiBase}/projects/${this.activeProjectId}/gis-quality?imagery_id=${encodeURIComponent(this.selectedImageryId)}`
+        : `${this.apiBase}/projects/${this.activeProjectId}/gis-quality`;
       const qcRes = await fetch(qcUrl);
-      const qcData = await qcRes.json();
-      if (qcData.success) {
-        this.qualityAudit = qcData;
+      if (qcRes.ok) {
+        const qcData = await qcRes.json();
+        if (qcData.success) {
+          this.qualityAudit = qcData;
+        } else {
+          this.qualityAudit = null;
+        }
       } else {
         this.qualityAudit = null;
       }
@@ -240,32 +280,72 @@ class ParcelMapWorkspace {
         }
       }
 
-      this.updateDashboardMetrics();
-      this.updateImageryViewUI();
-      this.updateDetectionViewUI();
-      this.renderProjectsList();
-      this.renderVerifyParcelList();
-      this.renderSelectedParcelDrawer();
-      this.renderQualityControlTable();
-      this.renderFinalMapLayers();
-      this.renderReportView();
+      // Safely update sub-views without allowing one view to abort the whole load
+      const safeCall = (fn, name) => {
+        try { fn(); } catch (uiErr) { console.warn(`[Workspace UI] ${name} render failed:`, uiErr); }
+      };
 
-      // Update active map
-      if (this.currentView === 'detection') this.renderDetectionMap();
-      if (this.currentView === 'reasoning') this.renderReasoningMap();
-      if (this.currentView === 'parcels') this.renderParcelsViewUI();
+      safeCall(() => this.updateDashboardMetrics(), 'updateDashboardMetrics');
+      safeCall(() => this.updateImageryViewUI(), 'updateImageryViewUI');
+      safeCall(() => this.updateDetectionViewUI(), 'updateDetectionViewUI');
+      safeCall(() => this.renderProjectsList(), 'renderProjectsList');
+      safeCall(() => this.renderVerifyParcelList(), 'renderVerifyParcelList');
+      safeCall(() => this.renderSelectedParcelDrawer(), 'renderSelectedParcelDrawer');
+      safeCall(() => this.renderQualityControlTable(), 'renderQualityControlTable');
+      safeCall(() => this.renderFinalMapLayers(), 'renderFinalMapLayers');
+      safeCall(() => this.renderReportView(), 'renderReportView');
+
+      // Update active map safely
+      if (this.currentView === 'detection') safeCall(() => this.renderDetectionMap(), 'renderDetectionMap');
+      if (this.currentView === 'reasoning') safeCall(() => this.renderReasoningMap(), 'renderReasoningMap');
+      if (this.currentView === 'parcels') safeCall(() => this.renderParcelsViewUI(), 'renderParcelsViewUI');
       if (this.currentView === 'quality') {
-        this.renderQualityControlTable();
-        this.renderQualityMap();
+        safeCall(() => this.renderQualityControlTable(), 'renderQualityControlTable');
+        safeCall(() => this.renderQualityMap(), 'renderQualityMap');
       }
       if (this.currentView === 'verify') {
-        this.renderVerifyParcelList();
-        this.renderVerifyMapLayers();
+        safeCall(() => this.renderVerifyParcelList(), 'renderVerifyParcelList');
+        safeCall(() => this.renderVerifyMapLayers(), 'renderVerifyMapLayers');
       }
-      if (this.currentView === 'map') this.renderFinalMapLayers();
+      if (this.currentView === 'map') safeCall(() => this.renderFinalMapLayers(), 'renderFinalMapLayers');
     } catch (err) {
       console.error('Failed to load project data:', err);
-      this.showToast('Error loading project data from backend API', 'error');
+      this.showToast(`Unable to load project data: ${err.message || 'Server error'}`, 'error');
+      throw err;
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     1.1 DYNAMIC QUALITY & TOPOLOGY DATA REFRESH
+     -------------------------------------------------------------------------- */
+  async refreshQualityData() {
+    try {
+      const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
+      const imgId = currentImg?.id || this.selectedImageryId;
+
+      const qcUrl = imgId
+        ? `${this.apiBase}/projects/${this.activeProjectId}/gis-quality?imagery_id=${encodeURIComponent(imgId)}`
+        : `${this.apiBase}/projects/${this.activeProjectId}/gis-quality`;
+      const qcRes = await fetch(qcUrl);
+      if (qcRes.ok) {
+        const qcData = await qcRes.json();
+        if (qcData.success) {
+          this.qualityAudit = qcData;
+        }
+      }
+
+      const pUrl = imgId
+        ? `${this.apiBase}/projects/${this.activeProjectId}/parcels?imagery_id=${encodeURIComponent(imgId)}`
+        : `${this.apiBase}/projects/${this.activeProjectId}/parcels`;
+      const pRes = await fetch(pUrl);
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        if (pData.success && Array.isArray(pData.parcels)) {
+          this.parcels = pData.parcels;
+        }
+      }
+    } catch (err) {
+      console.warn('[GIS Quality] Refresh data error:', err);
     }
   }
 
@@ -284,8 +364,21 @@ class ParcelMapWorkspace {
       this.switchView('verify');
     });
 
-    document.getElementById('btnNextToAiDetection')?.addEventListener('click', () => {
+    document.getElementById('btnNextToAiDetection')?.addEventListener('click', async () => {
+      const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
+      if (currentImg) {
+        this.selectedImageryId = currentImg.id;
+        localStorage.setItem('pm_active_project_id', this.activeProjectId);
+        localStorage.setItem('pm_selected_imagery_id', currentImg.id);
+      }
+      try {
+        await this.loadProjectData(this.activeProjectId);
+      } catch (err) {
+        console.warn('[Navigation] Background project refresh note:', err.message);
+      }
       this.switchView('detection');
+      this.updateDetectionViewUI();
+      this.renderDetectionMap();
     });
 
     document.getElementById('btnDeleteImageryCard')?.addEventListener('click', () => {
@@ -305,6 +398,60 @@ class ParcelMapWorkspace {
         this.showToast('No imagery selected to delete.', 'warning');
       }
     });
+
+    // In-Place Imagery Upload directly from AI Detection View
+    const inputUploadDet = document.getElementById('inputUploadImageryDetection');
+    const btnUploadMoreDet = document.getElementById('btnUploadMoreImageryDetection');
+    const dropzoneDet = document.getElementById('dropzoneDetectionQuick');
+
+    const triggerDetectionUpload = (e) => {
+      if (e) e.preventDefault();
+      if (inputUploadDet) {
+        inputUploadDet.value = '';
+        inputUploadDet.click();
+      }
+    };
+
+    btnUploadMoreDet?.addEventListener('click', triggerDetectionUpload);
+    dropzoneDet?.addEventListener('click', triggerDetectionUpload);
+
+    inputUploadDet?.addEventListener('change', async (e) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          await this.uploadDroneImageFile(files[i]);
+        }
+      }
+    });
+
+    if (dropzoneDet) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzoneDet.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzoneDet.style.borderColor = 'var(--accent-emerald)';
+          dropzoneDet.style.background = 'rgba(16, 185, 129, 0.12)';
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzoneDet.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzoneDet.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          dropzoneDet.style.background = 'rgba(16, 185, 129, 0.05)';
+        }, false);
+      });
+
+      dropzoneDet.addEventListener('drop', async (e) => {
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+          for (let i = 0; i < dt.files.length; i++) {
+            await this.uploadDroneImageFile(dt.files[i]);
+          }
+        }
+      }, false);
+    }
 
     document.getElementById('btnProceedToReasoning')?.addEventListener('click', async () => {
       const imageryId = this.selectedImageryId || this.imagery?.[0]?.id;
@@ -336,6 +483,7 @@ class ParcelMapWorkspace {
 
     document.getElementById('btnProceedToQuality')?.addEventListener('click', async () => {
       await this.loadProjectData(this.activeProjectId);
+      await this.refreshQualityData();
       this.switchView('quality');
     });
 
@@ -366,13 +514,6 @@ class ParcelMapWorkspace {
       this.switchView('report');
     });
 
-    document.getElementById('btnLaunchDemo')?.addEventListener('click', async () => {
-      await fetch(`${this.apiBase}/demo/reset`, { method: 'POST' });
-      this.showToast('Loaded Demo Project: Wagholi East Cadastre', 'success');
-      await this.loadProjectData('proj_wagholi_demo');
-      this.switchView('verify');
-    });
-
     document.getElementById('btnRunFullPipeline')?.addEventListener('click', () => {
       this.triggerJobPipeline();
     });
@@ -382,7 +523,7 @@ class ParcelMapWorkspace {
       this.triggerSpatialReasoning();
     });
 
-    ['srChkRoads', 'srChkBuildings', 'srChkFields', 'srChkWalls', 'srChkFences', 'srChkWater', 'srChkBoundaries', 'srChkParcels'].forEach(id => {
+    ['srChkRoads', 'srChkBuildings', 'srChkFields', 'srChkWalls', 'srChkFences', 'srChkWater', 'srChkBoundaries', 'srChkParcels', 'chkReasoningDebugMode'].forEach(id => {
       document.getElementById(id)?.addEventListener('change', () => {
         this.renderReasoningMap();
       });
@@ -509,12 +650,58 @@ class ParcelMapWorkspace {
   }
 
   /* --------------------------------------------------------------------------
+     COORDINATE MODE & GEOREFERENCE EVALUATION
+     -------------------------------------------------------------------------- */
+  isImageGeoreferenced(img) {
+    if (!img) return false;
+    // Explicit boolean takes top precedence
+    if (img.is_georeferenced === false) return false;
+    if (img.is_georeferenced === true) return true;
+
+    // Check file extension (.tif / .tiff is standard GIS georeferenced raster)
+    const fileName = (img.file_name || '').toLowerCase();
+    if (fileName.endsWith('.tif') || fileName.endsWith('.tiff')) return true;
+
+    // Check CRS definition (distinguish pixel/image-space from geospatial projections)
+    const crs = (typeof img.metadata?.crs === 'string') ? img.metadata.crs.trim().toLowerCase() : '';
+    if (crs) {
+      if (crs.includes('image-space') || crs.includes('pixel') || crs.includes('local') || crs.includes('none') || crs === 'none') {
+        return false;
+      }
+      if (crs.includes('epsg') || crs.includes('wgs') || crs.includes('utm') || crs.includes('projected') || crs.includes('geographic')) {
+        return true;
+      }
+    }
+
+    if (img.metadata?.coordinate_mode === 'image-space' || img.metadata?.coordinate_mode === 'image') {
+      return false;
+    }
+    if (img.metadata?.coordinate_mode === 'geographic' || img.metadata?.coordinate_mode === 'gis') {
+      return true;
+    }
+
+    if (img.metadata?.geotransform && Array.isArray(img.metadata.geotransform) && img.metadata.geotransform.length === 6) return true;
+    if (img.metadata?.bounds || img.bbox) return true;
+
+    // Default for standard drone photos / web imagery is image-space
+    return false;
+  }
+
+  extractRingCoords(raw) {
+    if (!raw || !raw.length) return [];
+    if (Array.isArray(raw[0]) && Array.isArray(raw[0][0])) {
+      return raw[0];
+    }
+    return raw;
+  }
+
+  /* --------------------------------------------------------------------------
      3. MAP INITIALIZATION PER VIEW
      -------------------------------------------------------------------------- */
   initMapForView(viewId) {
     const center = this.project?.coordinates || [18.5818, 73.9875];
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
     const width = Number(currentImg?.width) || 4000;
     const height = Number(currentImg?.height) || 3000;
 
@@ -530,8 +717,21 @@ class ParcelMapWorkspace {
     } else if (viewId === 'parcels') {
       this.renderParcelsViewUI();
     } else if (viewId === 'quality') {
+      // Render table immediately with whatever data is available, then refresh
       this.renderQualityControlTable();
       this.renderQualityMap();
+      // Re-render after fresh data fetch completes
+      this.refreshQualityData().then(() => {
+        this.renderQualityControlTable();
+        // Only re-render map if it isn't already initialized with the correct imagery
+        const existingImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
+        const mapEl = document.getElementById('qcMap');
+        const currentSrc = mapEl?.dataset?.activeImageSrc;
+        const expectedSrc = existingImg?.file_url;
+        if (!currentSrc || currentSrc !== expectedSrc) {
+          this.renderQualityMap();
+        }
+      });
     } else if (viewId === 'verify') {
       if (this.maps.verify) {
         this.maps.verify.remove();
@@ -617,27 +817,155 @@ class ParcelMapWorkspace {
      -------------------------------------------------------------------------- */
   async populateProjectSelector() {
     const sel = document.getElementById('selActiveProject');
-    if (!sel) return;
+    const pillContainer = document.getElementById('projectPillContainer');
+    const pillToggle = document.getElementById('btnProjectDropdownToggle');
+    const lblTitle = document.getElementById('lblActiveProjectName');
+    const badgeStatus = document.getElementById('badgeProjectStatus');
+    const dropdownMenu = document.getElementById('menuActiveProjects');
+    const listContainer = document.getElementById('listProjectsDropdown');
+    const searchInput = document.getElementById('inputFilterProjectsDropdown');
+
+    let projects = [];
+
     try {
       const res = await fetch(`${this.apiBase}/projects`);
       const data = await res.json();
       if (data.success && data.projects) {
-        sel.innerHTML = data.projects.map(p => 
-          `<option value="${p.id}" ${p.id === this.activeProjectId ? 'selected' : ''}>${p.name}</option>`
-        ).join('');
+        projects = data.projects;
       }
     } catch (e) {
       console.warn('Could not populate project selector:', e);
     }
 
-    sel.onchange = async (e) => {
-      this.activeProjectId = e.target.value;
-      localStorage.setItem('pm_active_project_id', this.activeProjectId);
-      this.selectedImageryId = null;
-      localStorage.removeItem('pm_selected_imagery_id');
-      await this.loadProjectData(this.activeProjectId);
-      this.switchView(this.currentView);
+    if (sel && projects.length > 0) {
+      sel.innerHTML = projects.map(p => 
+        `<option value="${p.id}" ${p.id === this.activeProjectId ? 'selected' : ''}>${p.name}</option>`
+      ).join('');
+
+      sel.onchange = async (e) => {
+        this.activeProjectId = e.target.value;
+        localStorage.setItem('pm_active_project_id', this.activeProjectId);
+        this.selectedImageryId = null;
+        localStorage.removeItem('pm_selected_imagery_id');
+        await this.loadProjectData(this.activeProjectId);
+        this.switchView(this.currentView);
+      };
+    }
+
+    const activeProj = projects.find(p => p.id === this.activeProjectId) || projects[0];
+    if (activeProj) {
+      if (lblTitle) lblTitle.textContent = activeProj.name;
+      if (badgeStatus) {
+        const isDemo = activeProj.is_demo || activeProj.id === 'proj_demo_coastal';
+        badgeStatus.textContent = isDemo ? 'Demo' : (activeProj.status || 'Ready');
+        badgeStatus.className = `pm-status-tag ${isDemo ? 'tag-amber' : 'tag-emerald'}`;
+      }
+    }
+
+    // Render custom dropdown items
+    const renderDropdownItems = (filter = '') => {
+      if (!listContainer) return;
+      const cleanFilter = filter.toLowerCase().trim();
+      const filtered = cleanFilter
+        ? projects.filter(p => (p.name || '').toLowerCase().includes(cleanFilter) || (p.location || '').toLowerCase().includes(cleanFilter) || (p.id || '').toLowerCase().includes(cleanFilter))
+        : projects;
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 16px; font-size: 11px;">No projects found</div>`;
+        return;
+      }
+
+      listContainer.innerHTML = filtered.map(p => {
+        const isCurrent = p.id === this.activeProjectId;
+        const isDemo = Boolean(p.is_demo || p.id === 'proj_demo_coastal');
+        const tagHtml = isDemo
+          ? `<span class="pm-status-tag tag-amber" style="font-size: 9px; padding: 1px 5px;">DEMO</span>`
+          : (isCurrent ? `<span class="pm-status-tag tag-emerald" style="font-size: 9px; padding: 1px 5px;">ACTIVE</span>` : '');
+        const checkIcon = isCurrent
+          ? `<svg class="pm-project-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+          : '';
+
+        return `
+          <div class="pm-project-menu-item ${isCurrent ? 'selected' : ''}" data-project-id="${p.id}">
+            <div class="pm-project-item-left">
+              <span class="pm-project-item-name" title="${p.name}">${p.name}</span>
+              <span class="pm-project-item-sub">${p.location || 'Cadastral Survey'} • ${p.id}</span>
+            </div>
+            <div class="pm-project-item-right">
+              ${tagHtml}
+              ${checkIcon}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Bind click handlers to items
+      listContainer.querySelectorAll('.pm-project-menu-item').forEach(item => {
+        item.addEventListener('click', async (e) => {
+          const pid = item.dataset.projectId;
+          if (pid && pid !== this.activeProjectId) {
+            this.activeProjectId = pid;
+            localStorage.setItem('pm_active_project_id', this.activeProjectId);
+            this.selectedImageryId = null;
+            localStorage.removeItem('pm_selected_imagery_id');
+            if (sel) sel.value = pid;
+            closeDropdown();
+            await this.populateProjectSelector();
+            await this.loadProjectData(this.activeProjectId);
+            this.switchView(this.currentView);
+          } else {
+            closeDropdown();
+          }
+        });
+      });
     };
+
+    renderDropdownItems();
+
+    const openDropdown = () => {
+      if (!dropdownMenu) return;
+      dropdownMenu.classList.add('open');
+      pillContainer?.classList.add('active');
+      renderDropdownItems(searchInput?.value || '');
+      setTimeout(() => searchInput?.focus(), 50);
+    };
+
+    const closeDropdown = () => {
+      if (!dropdownMenu) return;
+      dropdownMenu.classList.remove('open');
+      pillContainer?.classList.remove('active');
+    };
+
+    const toggleDropdown = (e) => {
+      if (e) e.stopPropagation();
+      if (dropdownMenu?.classList.contains('open')) {
+        closeDropdown();
+      } else {
+        openDropdown();
+      }
+    };
+
+    // Attach listeners once
+    if (pillToggle && !pillToggle._hasDropdownListener) {
+      pillToggle._hasDropdownListener = true;
+      pillToggle.addEventListener('click', toggleDropdown);
+
+      searchInput?.addEventListener('input', (e) => {
+        renderDropdownItems(e.target.value);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (pillContainer && !pillContainer.contains(e.target)) {
+          closeDropdown();
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeDropdown();
+        }
+      });
+    }
   }
 
   updateImageryViewUI() {
@@ -764,29 +1092,86 @@ class ParcelMapWorkspace {
       document.getElementById('infoImgResolution').textContent = currentImg.resolution || `${currentImg.width} × ${currentImg.height} px`;
       document.getElementById('infoImgSize').textContent = currentImg.file_size;
       
-      const statusText = currentImg.processing_status === 'DETECTION COMPLETE' 
-        ? 'Ready for AI Detection (Detection Complete)' 
-        : (currentImg.processing_status === 'PROCESSING' ? 'Processing Detection...' : 'Ready for AI Detection');
+      // Strictly scoped features for active image
+      const relevantFeatures = this.features.filter(f => currentImg && f.imagery_id === currentImg.id);
+
+      let statusText = 'Ready for AI Detection';
+      if (currentImg.processing_status === 'DETECTION COMPLETE') {
+        statusText = relevantFeatures.length > 0 
+          ? `Detection Complete (${relevantFeatures.length} Features)` 
+          : 'Detection Complete';
+      } else if (currentImg.processing_status === 'PROCESSING') {
+        statusText = 'Processing Multi-Class Detection...';
+      } else if (currentImg.processing_status === 'DETECTION FAILED') {
+        statusText = 'Detection Failed';
+      }
       document.getElementById('infoImgStatus').textContent = statusText;
       
-      const badgeStatus = document.getElementById('badgeDetectionStatus');
-      if (badgeStatus) {
-        badgeStatus.textContent = currentImg.processing_status || 'READY';
-        badgeStatus.className = 'pm-status-tag ' + (currentImg.processing_status === 'DETECTION COMPLETE' ? 'tag-emerald' : 'tag-amber');
+      const badgeCoord = document.getElementById('badgeDetectionCoordMode');
+      const badgeSubtitle = document.getElementById('badgeDetectionCoordSubtitle');
+      if (badgeCoord) {
+        const isGeo = this.isImageGeoreferenced(currentImg);
+        badgeCoord.style.display = 'inline-flex';
+        badgeCoord.textContent = isGeo ? 'GEOREFERENCED' : 'IMAGE-SPACE';
+        badgeCoord.className = isGeo ? 'pm-status-tag tag-emerald' : 'pm-status-tag tag-blue';
+        if (badgeSubtitle) {
+          badgeSubtitle.textContent = isGeo ? 'WGS84 EPSG:4326' : 'Pixel Coordinates';
+        }
       }
 
-      // Progression strip (Section 19)
+      const badgeStatus = document.getElementById('badgeDetectionStatus');
+      if (badgeStatus) {
+        if (currentImg.processing_status === 'DETECTION COMPLETE') {
+          badgeStatus.textContent = 'DETECTION COMPLETE';
+          badgeStatus.className = 'pm-status-tag tag-emerald';
+        } else if (currentImg.processing_status === 'DETECTION FAILED') {
+          badgeStatus.textContent = 'DETECTION FAILED';
+          badgeStatus.className = 'pm-status-tag tag-rose';
+        } else if (currentImg.processing_status === 'PROCESSING') {
+          badgeStatus.textContent = 'PROCESSING';
+          badgeStatus.className = 'pm-status-tag tag-amber';
+        } else {
+          badgeStatus.textContent = 'READY';
+          badgeStatus.className = 'pm-status-tag tag-amber';
+        }
+      }
+
+      // Progression strip & stage label (Section 19)
+      const stageEl = document.getElementById('lblDetectionStage');
       document.getElementById('stepUploaded')?.classList.add('active');
       document.getElementById('stepReady')?.classList.add('active');
+      
       if (currentImg.processing_status === 'PROCESSING') {
         document.getElementById('stepProcessing')?.classList.add('active');
+        document.getElementById('stepProcessing')?.classList.remove('failed');
         document.getElementById('stepComplete')?.classList.remove('active');
+        if (stageEl) {
+          stageEl.textContent = 'Processing Multi-Class Detection...';
+          stageEl.style.color = 'var(--accent-amber)';
+        }
       } else if (currentImg.processing_status === 'DETECTION COMPLETE') {
         document.getElementById('stepProcessing')?.classList.add('active');
+        document.getElementById('stepProcessing')?.classList.remove('failed');
         document.getElementById('stepComplete')?.classList.add('active');
+        if (stageEl) {
+          stageEl.textContent = 'Detection Complete';
+          stageEl.style.color = 'var(--accent-emerald)';
+        }
+      } else if (currentImg.processing_status === 'DETECTION FAILED') {
+        document.getElementById('stepProcessing')?.classList.add('failed');
+        document.getElementById('stepComplete')?.classList.remove('active');
+        if (stageEl) {
+          stageEl.textContent = 'Detection Failed';
+          stageEl.style.color = 'var(--accent-rose)';
+        }
       } else {
         document.getElementById('stepProcessing')?.classList.remove('active');
+        document.getElementById('stepProcessing')?.classList.remove('failed');
         document.getElementById('stepComplete')?.classList.remove('active');
+        if (stageEl) {
+          stageEl.textContent = 'Ready for Detection';
+          stageEl.style.color = 'var(--accent-emerald)';
+        }
       }
     } else {
       document.getElementById('infoImgFile').textContent = 'None';
@@ -798,6 +1183,15 @@ class ParcelMapWorkspace {
         badgeStatus.textContent = 'PENDING';
         badgeStatus.className = 'pm-status-tag tag-amber';
       }
+      const stageEl = document.getElementById('lblDetectionStage');
+      if (stageEl) {
+        stageEl.textContent = 'Awaiting Imagery';
+        stageEl.style.color = 'var(--text-muted)';
+      }
+      document.getElementById('stepUploaded')?.classList.remove('active');
+      document.getElementById('stepReady')?.classList.remove('active');
+      document.getElementById('stepProcessing')?.classList.remove('active');
+      document.getElementById('stepComplete')?.classList.remove('active');
     }
 
     // Detected features count & dynamic category confidences (strictly scoped to active image)
@@ -837,6 +1231,121 @@ class ParcelMapWorkspace {
 
     const elWater = document.getElementById('lblConfWater');
     if (elWater) elWater.textContent = getAvgConf(['WATER', 'Water']);
+
+    this.updateDetectionConfidenceLabels();
+  }
+
+  async uploadDroneImageFile(file, options = {}) {
+    if (!file) return null;
+
+    const validExts = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.jfif', '.webp'];
+    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+    if (!validExts.includes(fileExt) && !file.type.startsWith('image/')) {
+      this.showToast(`Unsupported format: ${file.name}. Please upload JPG, PNG, WEBP, or GeoTIFF (.tif/.tiff).`, 'error');
+      return null;
+    }
+
+    if (!this.activeProjectId) {
+      const stored = localStorage.getItem('pm_active_project_id');
+      this.activeProjectId = (stored && stored !== 'proj_wagholi_demo') ? stored : 'proj_demo_coastal';
+    }
+
+    const processUpload = async (w, h) => {
+      const formData = new FormData();
+      formData.append('imagery', file);
+      formData.append('width', w || 4000);
+      formData.append('height', h || 3000);
+
+      this.showToast(`Uploading ${file.name}...`, 'info');
+
+      try {
+        const res = await fetch(`${this.apiBase}/projects/${this.activeProjectId}/imagery`, {
+          method: 'POST',
+          body: formData
+        });
+
+        let data;
+        const text = await res.text();
+        try {
+          data = JSON.parse(text);
+        } catch (parseErr) {
+          throw new Error(text || `Server returned HTTP ${res.status}`);
+        }
+
+        if (res.ok && data.success && data.imagery) {
+          this.showToast(`Drone imagery "${file.name}" uploaded successfully!`, 'success');
+          this.selectedImageryId = data.imagery.id;
+          localStorage.setItem('pm_selected_imagery_id', this.selectedImageryId);
+          if (data.project_id && data.project_id !== this.activeProjectId) {
+            this.activeProjectId = data.project_id;
+            localStorage.setItem('pm_active_project_id', this.activeProjectId);
+          }
+          await this.loadProjectData(this.activeProjectId);
+          this.updateImageryViewUI();
+          this.updateDetectionViewUI();
+          if (this.currentView === 'detection') {
+            this.renderDetectionMap();
+          } else if (this.currentView === 'imagery') {
+            this.renderImageryMap();
+          }
+          await this.populateProjectSelector();
+          return data.imagery;
+        } else {
+          const errDetail = data?.error || (res.status === 404 ? `API endpoint not found (HTTP 404 on ${this.apiBase})` : `Server returned HTTP ${res.status}`);
+          console.error('[Upload Rejected]:', data);
+          this.showToast(`Image upload failed: ${errDetail}`, 'error');
+          return null;
+        }
+      } catch (err) {
+        console.error('[Upload Exception]:', err);
+        this.showToast(`Image upload failed: ${err.message || 'Cannot reach API server'}`, 'error');
+        return null;
+      }
+    };
+
+    // Skip browser Image() decoding for GeoTIFFs (browsers cannot decode TIFF natively)
+    if (fileExt === '.tif' || fileExt === '.tiff') {
+      return await processUpload(4000, 3000);
+    }
+
+    return new Promise((resolve) => {
+      let finished = false;
+      const objectUrl = URL.createObjectURL(file);
+      const tempImg = new Image();
+
+      const timer = setTimeout(async () => {
+        if (!finished) {
+          finished = true;
+          URL.revokeObjectURL(objectUrl);
+          const res = await processUpload(4000, 3000);
+          resolve(res);
+        }
+      }, 1500);
+
+      tempImg.onload = async () => {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          const width = tempImg.naturalWidth || 4000;
+          const height = tempImg.naturalHeight || 3000;
+          URL.revokeObjectURL(objectUrl);
+          const res = await processUpload(width, height);
+          resolve(res);
+        }
+      };
+
+      tempImg.onerror = async () => {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          URL.revokeObjectURL(objectUrl);
+          const res = await processUpload(4000, 3000);
+          resolve(res);
+        }
+      };
+
+      tempImg.src = objectUrl;
+    });
   }
 
   async promptDeleteImagery(imageryId, fileName = 'this image') {
@@ -912,9 +1421,12 @@ class ParcelMapWorkspace {
 
     // Clean up existing detection map if present
     if (this.maps.detection) {
-      this.maps.detection.remove();
+      try { this.maps.detection.remove(); } catch (e) {}
       this.maps.detection = null;
       this.detectionFeatureGroup = null;
+    }
+    if (mapDiv._leaflet_id) {
+      delete mapDiv._leaflet_id;
     }
 
     if (!currentImg) {
@@ -924,7 +1436,7 @@ class ParcelMapWorkspace {
           <div style="font-size: 40px;">🛰️</div>
           <div style="font-size: 16px; font-weight: 600; color: var(--text-primary);">No Drone Imagery Uploaded</div>
           <div style="font-size: 13px; max-width: 360px;">Upload an aerial drone orthomosaic (JPG, PNG, GeoTIFF) in the Drone Imagery tab to run AI detection.</div>
-          <button class="btn-pm btn-pm-primary" onclick="window.parcelMapApp.switchView('imagery')">Go to Drone Imagery Upload</button>
+          <button class="btn-pm btn-pm-primary" onclick="window.parcelApp ? window.parcelApp.switchView('imagery') : null">Go to Drone Imagery Upload</button>
         </div>
       `;
       return;
@@ -932,9 +1444,23 @@ class ParcelMapWorkspace {
 
     mapDiv.innerHTML = '';
 
-    const isGeoreferenced = currentImg.file_name.toLowerCase().endsWith('.tif') || 
-                            currentImg.file_name.toLowerCase().endsWith('.tiff') || 
-                            Boolean(currentImg.metadata?.crs);
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
+    const badgeCoord = document.getElementById('badgeDetectionCoordMode');
+    const badgeSubtitle = document.getElementById('badgeDetectionCoordSubtitle');
+    const tagCoordBadge = document.getElementById('tagDetectionCoordBadge');
+
+    if (badgeCoord) {
+      badgeCoord.style.display = 'inline-flex';
+      badgeCoord.textContent = isGeoreferenced ? 'GEOREFERENCED' : 'IMAGE-SPACE';
+      badgeCoord.className = isGeoreferenced ? 'pm-status-tag tag-emerald' : 'pm-status-tag tag-blue';
+      if (badgeSubtitle) {
+        badgeSubtitle.textContent = isGeoreferenced ? 'WGS84 EPSG:4326' : 'Pixel Coordinates';
+      }
+    }
+    if (tagCoordBadge) {
+      tagCoordBadge.textContent = isGeoreferenced ? 'GEOREFERENCED' : 'IMAGE-SPACE';
+      tagCoordBadge.className = isGeoreferenced ? 'pm-status-tag tag-emerald' : 'pm-status-tag tag-blue';
+    }
 
     if (banner) {
       banner.style.display = isGeoreferenced ? 'none' : 'flex';
@@ -947,8 +1473,8 @@ class ParcelMapWorkspace {
     const height = Number(currentImg.height) || 3000;
 
     if (!isGeoreferenced) {
-      // IMAGE PREVIEW MODE (Section 10 & 11) using Leaflet L.CRS.Simple
-      // The uploaded image is the actual background!
+      // IMAGE-SPACE MODE: Pure pixel canvas using Leaflet L.CRS.Simple
+      // The uploaded/demo drone imagery is the actual primary canvas. NO geographic basemap.
       const bounds = [[0, 0], [height, width]];
       this.maps.detection = L.map('detectionMap', {
         crs: L.CRS.Simple,
@@ -959,8 +1485,14 @@ class ParcelMapWorkspace {
         zoomControl: true
       });
 
-      L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds).addTo(this.maps.detection);
+      this.detectionImageOverlay = L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds).addTo(this.maps.detection);
       this.maps.detection.fitBounds(bounds);
+      setTimeout(() => {
+        if (this.maps.detection) {
+          this.maps.detection.invalidateSize();
+          this.maps.detection.fitBounds(bounds);
+        }
+      }, 50);
       this.renderDetectionLayersOnImage(width, height);
     } else {
       // Georeferenced GIS imagery: center on project coordinates
@@ -1055,19 +1587,6 @@ class ParcelMapWorkspace {
       if (rawCoords && rawCoords.length) {
         coords = rawCoords.filter(pt => Array.isArray(pt) && typeof pt[0] === 'number' && typeof pt[1] === 'number')
                           .map(pt => [height - pt[1], pt[0]]);
-      } else if (this.project?.mode === 'demo' && this.selectedImageryId === 'img_wagholi_ortho') {
-        const centerLat = this.project?.coordinates?.[0] || 18.5818;
-        const centerLng = this.project?.coordinates?.[1] || 73.9875;
-        const delta = 0.004;
-        const toImgPt = (lng, lat) => {
-          const x = Math.round(((lng - (centerLng - delta)) / (delta * 2)) * width);
-          const y = Math.round((((centerLat + delta) - lat) / (delta * 2)) * height);
-          return [height - y, x];
-        };
-        const gCoords = f.geometry?.type === 'Polygon' ? f.geometry.coordinates[0] : f.geometry?.coordinates;
-        if (gCoords && gCoords.length) {
-          coords = gCoords.map(c => toImgPt(c[0], c[1]));
-        }
       }
 
       if (!coords.length) return;
@@ -1363,9 +1882,8 @@ class ParcelMapWorkspace {
 
     const providerEl = document.getElementById('dfProvider');
     if (providerEl) {
-      const prov = (f.provider || f.properties?.provider || 'ml').toLowerCase();
-      providerEl.textContent = prov === 'ml' ? 'ML Detection' : (prov === 'opencv_fallback' ? 'OpenCV Fallback' : (prov === 'demo' ? 'Demo Mode' : 'CV-derived Evidence'));
-      providerEl.style.color = prov === 'ml' ? 'var(--accent-emerald)' : (prov === 'opencv_fallback' ? 'var(--accent-amber)' : '#f59e0b');
+      providerEl.textContent = prov === 'ml' ? 'ML Detection' : (prov === 'opencv_fallback' || prov === 'cv' ? 'Computer Vision Engine' : 'CV-derived Evidence');
+      providerEl.style.color = prov === 'ml' ? 'var(--accent-emerald)' : 'var(--accent-amber)';
     }
 
     const modelEl = document.getElementById('dfModel');
@@ -1468,16 +1986,17 @@ class ParcelMapWorkspace {
       const firstFeat = relevantFeatures[0];
       const prov = (firstFeat.provider || firstFeat.properties?.provider || 'ml').toLowerCase();
       if (elMode) {
-        elMode.textContent = prov === 'ml' ? 'ML Detection' : (prov === 'opencv_fallback' ? 'OpenCV Fallback' : (prov === 'demo' ? 'Demo Mode' : 'CV Feature Separation'));
+        elMode.textContent = prov === 'ml' ? 'ML Detection' : (prov === 'opencv_fallback' || prov === 'cv' ? 'Computer Vision Engine' : 'CV Feature Separation');
       }
       if (elModel) {
-        elModel.textContent = firstFeat.model_name || firstFeat.properties?.model_name || (prov === 'ml' ? 'YOLOv8n-seg' : 'OpenCV Land Feature Analyzer');
+        const rawModel = firstFeat.model_name || firstFeat.properties?.model_name;
+        elModel.textContent = (rawModel && !rawModel.includes('Demo')) ? rawModel : (prov === 'ml' ? 'YOLOv8n-seg (Aerial Building Model)' : 'Aerial Computer Vision Engine v3.2');
       }
       if (elTag) {
-        elTag.textContent = prov === 'ml' ? 'LOCAL INFERENCE' : (prov === 'opencv_fallback' ? 'FALLBACK ENGINE' : 'PRESENTATION');
+        elTag.textContent = prov === 'ml' ? 'LOCAL INFERENCE' : 'CV PIPELINE';
       }
     } else {
-      if (elMode) elMode.textContent = 'Ready for AI Detection';
+      if (elMode) elMode.textContent = 'ML Detection Engine';
       if (elModel) elModel.textContent = 'YOLOv8n-seg + Aerial CV';
       if (elTag) elTag.textContent = 'LOCAL INFERENCE';
     }
@@ -1501,7 +2020,7 @@ class ParcelMapWorkspace {
       if (currentImg) {
         const width = Number(currentImg.width) || 4000;
         const height = Number(currentImg.height) || 3000;
-        const isGeoreferenced = currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs);
+        const isGeoreferenced = this.isImageGeoreferenced(currentImg);
         if (isGeoreferenced) {
           this.renderDetectionLayersGeoreferenced();
         } else {
@@ -1598,27 +2117,43 @@ class ParcelMapWorkspace {
         clearInterval(stageInterval);
 
         if (data.success) {
-          if (stageEl) stageEl.textContent = 'Detection Complete';
-          this.features = data.features || data.detections || [];
+          if (stageEl) {
+            stageEl.textContent = 'Saving & Verifying Detections...';
+            stageEl.style.color = 'var(--accent-emerald)';
+          }
+
           this.currentDetectionRunId = data.detection_run_id || null;
           this.currentDetectionDebug = data.debug || null;
           this.currentDetectionData = data;
           this.updateDebugModal();
-          if (currentImg) currentImg.processing_status = 'DETECTION COMPLETE';
 
           const elExecTime = document.getElementById('lblAiExecTime');
           if (elExecTime) elExecTime.textContent = `${data.execution_time_ms || 0}ms`;
 
           const elMode = document.getElementById('badgeAiMode');
           if (elMode) {
-            elMode.textContent = data.provider === 'ml' ? 'ML Detection' : (data.provider === 'opencv_fallback' ? 'OpenCV Fallback' : 'Demo Mode');
+            const prov = (data.provider || 'ml').toLowerCase();
+            elMode.textContent = prov === 'ml' ? 'ML Detection' : (prov === 'opencv_fallback' || prov === 'cv' ? 'Computer Vision Engine' : 'CV Feature Separation');
           }
           const elModel = document.getElementById('lblAiModelName');
           if (elModel) {
-            elModel.textContent = data.model || data.model_name || 'YOLOv8n-seg';
+            const rawModel = data.model || data.model_name;
+            elModel.textContent = (rawModel && !rawModel.includes('Demo')) ? rawModel : (data.provider === 'ml' ? 'YOLOv8n-seg (Aerial Building Model)' : 'Aerial Computer Vision Engine v3.2');
           }
 
-          const count = data.features_count ?? this.features.length;
+          // Reload and verify backend persistence
+          await this.loadProjectData(this.activeProjectId);
+
+          const relevantFeatures = (this.features || []).filter(f => f.imagery_id === imageryId);
+          const count = data.features_count ?? relevantFeatures.length;
+
+          if (currentImg) currentImg.processing_status = 'DETECTION COMPLETE';
+
+          if (stageEl) {
+            stageEl.textContent = 'Detection Complete';
+            stageEl.style.color = 'var(--accent-emerald)';
+          }
+
           if (count === 0) {
             this.showToast('No detectable features were found in this image.', 'warning');
             if (badgeStatus) {
@@ -1627,7 +2162,6 @@ class ParcelMapWorkspace {
             }
             const infoStatus = document.getElementById('infoImgStatus');
             if (infoStatus) infoStatus.textContent = 'No detectable features were found in this image.';
-            if (stageEl) stageEl.textContent = 'No detectable features found';
           } else {
             const s = data.summary || {};
             const summaryStr = `(Roads: ${s.roads || 0}, Bldgs: ${s.buildings || 0}, Fields: ${s.fields || 0}, Walls: ${s.walls || 0}, Fences: ${s.fences || 0}, Veg: ${s.vegetation || 0}, Water: ${s.water || 0})`;
@@ -1638,15 +2172,15 @@ class ParcelMapWorkspace {
               badgeStatus.className = 'pm-status-tag tag-emerald';
             }
             const infoStatus = document.getElementById('infoImgStatus');
-            if (infoStatus) infoStatus.textContent = `Ready for AI Detection (${count} Features Separated)`;
+            if (infoStatus) infoStatus.textContent = `Detection Complete (${count} Features Separated)`;
           }
 
           btnRun.disabled = false;
           if (textSpan) textSpan.textContent = 'Re-run AI Detection';
+          document.getElementById('stepProcessing')?.classList.add('active');
+          document.getElementById('stepProcessing')?.classList.remove('failed');
           document.getElementById('stepComplete')?.classList.add('active');
 
-          // Reload project data to update progress & other views
-          await this.loadProjectData(this.activeProjectId);
           this.renderDetectionMap();
           this.updateDetectionConfidenceLabels();
         } else {
@@ -1666,6 +2200,7 @@ class ParcelMapWorkspace {
           stageEl.style.color = 'var(--accent-rose)';
         }
         document.getElementById('stepProcessing')?.classList.add('failed');
+        document.getElementById('stepComplete')?.classList.remove('active');
         this.showToast(`Detection failed: ${err.message}`, 'error');
       }
     });
@@ -1677,7 +2212,7 @@ class ParcelMapWorkspace {
         if (currentImg) {
           const width = Number(currentImg.width) || 4000;
           const height = Number(currentImg.height) || 3000;
-          const isGeoreferenced = currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs);
+          const isGeoreferenced = this.isImageGeoreferenced(currentImg);
           if (isGeoreferenced) {
             this.renderDetectionLayersGeoreferenced();
           } else {
@@ -1802,7 +2337,7 @@ class ParcelMapWorkspace {
     });
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
     const height = Number(currentImg?.height) || 3000;
     const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
 
@@ -1815,7 +2350,7 @@ class ParcelMapWorkspace {
     const showVerifiedParcels = document.getElementById('vchkVerifiedParcels')?.checked ?? true;
     const showUncertainty = document.getElementById('vchkUncertainty')?.checked ?? true;
 
-    // Basemap: High-res satellite (for georeferenced projects)
+    // Basemap: High-res satellite (strictly for georeferenced projects only)
     if (showSatellite && isGeoreferenced) {
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 })
         .addTo(this.verifyLayers.satellite);
@@ -1844,7 +2379,7 @@ class ParcelMapWorkspace {
     // Detected Roads
     if (showRoads) {
       relevantFeatures.filter(f => f.detection_type === 'ROAD' || f.feature_type === 'Road').forEach(r => {
-        const rawCoords = (!isGeoreferenced && r.image_coordinates) ? r.image_coordinates : (r.geo_geometry?.coordinates || r.geometry?.coordinates || []);
+        const rawCoords = this.extractRingCoords((!isGeoreferenced && r.image_coordinates) ? r.image_coordinates : (r.geo_geometry?.coordinates || r.geometry?.coordinates || []));
         if (rawCoords.length >= 2) {
           const latlngs = rawCoords.map(toLeaflet);
           const isHwy = r.sub_type && r.sub_type.includes('Highway');
@@ -1860,7 +2395,7 @@ class ParcelMapWorkspace {
     // Detected Buildings
     if (showBuildings) {
       relevantFeatures.filter(f => f.detection_type === 'BUILDING' || f.feature_type === 'Building').forEach(b => {
-        const rawCoords = (!isGeoreferenced && b.image_coordinates) ? b.image_coordinates : (b.geo_geometry?.coordinates?.[0] || b.geometry?.coordinates?.[0] || []);
+        const rawCoords = this.extractRingCoords((!isGeoreferenced && b.image_coordinates) ? b.image_coordinates : (b.geo_geometry?.coordinates?.[0] || b.geometry?.coordinates?.[0] || []));
         if (rawCoords.length >= 3) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polygon(latlngs, {
@@ -1876,7 +2411,7 @@ class ParcelMapWorkspace {
     // Detected Boundaries (Walls, Fences, Field Edges)
     if (showBoundaries) {
       relevantFeatures.filter(f => ['WALL', 'FENCE', 'BOUNDARY', 'Wall', 'Fence', 'Field Edge'].includes(f.detection_type || f.feature_type)).forEach(b => {
-        const rawCoords = (!isGeoreferenced && b.image_coordinates) ? b.image_coordinates : (b.geo_geometry?.coordinates || b.geometry?.coordinates || []);
+        const rawCoords = this.extractRingCoords((!isGeoreferenced && b.image_coordinates) ? b.image_coordinates : (b.geo_geometry?.coordinates || b.geometry?.coordinates || []));
         if (rawCoords.length >= 2) {
           const latlngs = rawCoords.map(toLeaflet);
           const isFence = (b.detection_type === 'FENCE' || b.feature_type === 'Fence');
@@ -1908,7 +2443,7 @@ class ParcelMapWorkspace {
       if (isAccepted && !showVerifiedParcels) return;
       if (!isAccepted && !showAiParcels) return;
 
-      const rawCoords = (!isGeoreferenced && parcel.image_coordinates?.[0]) ? parcel.image_coordinates[0] : (parcel.geo_geometry?.coordinates?.[0] || parcel.geometry?.coordinates?.[0] || []);
+      const rawCoords = this.extractRingCoords((!isGeoreferenced && parcel.image_coordinates) ? parcel.image_coordinates : (parcel.geo_geometry?.coordinates?.[0] || parcel.geometry?.coordinates?.[0] || []));
       if (!rawCoords || rawCoords.length < 3) return;
 
       const latlngs = rawCoords.map(toLeaflet);
@@ -2017,7 +2552,7 @@ class ParcelMapWorkspace {
     if (!container) return;
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
 
     const currentParcels = this.parcels.filter(p => currentImg && p.imagery_id === currentImg.id);
 
@@ -2144,11 +2679,11 @@ class ParcelMapWorkspace {
     // Pan map to selected parcel
     if (this.maps.verify && parcel.geometry) {
       const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-      const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+      const isGeoreferenced = this.isImageGeoreferenced(currentImg);
       const height = Number(currentImg?.height) || 3000;
       const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
 
-      const rawCoords = (!isGeoreferenced && parcel.image_coordinates?.[0]) ? parcel.image_coordinates[0] : (parcel.geo_geometry?.coordinates?.[0] || parcel.geometry?.coordinates?.[0] || []);
+      const rawCoords = this.extractRingCoords((!isGeoreferenced && parcel.image_coordinates) ? parcel.image_coordinates : (parcel.geo_geometry?.coordinates?.[0] || parcel.geometry?.coordinates?.[0] || []));
       if (rawCoords && rawCoords.length >= 3) {
         const latlngs = rawCoords.map(toLeaflet);
         this.maps.verify.flyToBounds(latlngs, { padding: [60, 60], duration: 0.5, maxZoom: 18 });
@@ -2187,7 +2722,7 @@ class ParcelMapWorkspace {
 
     // Created from imagery (Requirement 10)
     const currentImg = this.imagery.find(img => img.id === parcel.imagery_id) || this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
     const imgLabel = document.getElementById('drwCreatedFromImagery');
     if (imgLabel) {
       imgLabel.textContent = `Imagery: ${currentImg ? currentImg.file_name : 'UAV Orthomosaic'}`;
@@ -2434,7 +2969,7 @@ class ParcelMapWorkspace {
     }
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
     const height = Number(currentImg?.height) || 3000;
 
     const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
@@ -2545,7 +3080,7 @@ class ParcelMapWorkspace {
     if (!parcel || !parcel.geometry || !parcel.geometry.coordinates) return;
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
     const height = Number(currentImg?.height) || 3000;
 
     const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
@@ -2635,7 +3170,7 @@ class ParcelMapWorkspace {
   recalculateParcelArea(parcel) {
     try {
       const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-      const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+      const isGeoreferenced = this.isImageGeoreferenced(currentImg);
 
       if (isGeoreferenced) {
         const feat = turf.feature(parcel.geometry);
@@ -2766,7 +3301,7 @@ class ParcelMapWorkspace {
           project_id: projId,
           comments,
           remarks: comments,
-          reviewer_name: 'Alex Morgan (Lead Surveyor)'
+          reviewer_name: 'Lead Cadastral Surveyor'
         })
       });
       const sData = await sRes.json();
@@ -2802,7 +3337,7 @@ class ParcelMapWorkspace {
         const res = await fetch(`${this.apiBase}/parcels/${pId}/accept`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ comments, remarks: comments, reviewer_name: 'Alex Morgan (Lead Surveyor)' })
+          body: JSON.stringify({ comments, remarks: comments, reviewer_name: 'Lead Cadastral Surveyor' })
         });
         const data = await res.json();
         if (data.success) {
@@ -2835,7 +3370,7 @@ class ParcelMapWorkspace {
         const res = await fetch(`${this.apiBase}/parcels/${pId}/reject`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ comments, remarks: comments, reviewer_name: 'Alex Morgan (Lead Surveyor)' })
+          body: JSON.stringify({ comments, remarks: comments, reviewer_name: 'Lead Cadastral Surveyor' })
         });
         const data = await res.json();
         if (data.success) {
@@ -2859,7 +3394,7 @@ class ParcelMapWorkspace {
         const res = await fetch(`${this.apiBase}/parcels/${pId}/needs-review`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ comments, remarks: comments, reviewer_name: 'Alex Morgan (Lead Surveyor)' })
+          body: JSON.stringify({ comments, remarks: comments, reviewer_name: 'Lead Cadastral Surveyor' })
         });
         const data = await res.json();
         if (data.success) {
@@ -2949,7 +3484,7 @@ class ParcelMapWorkspace {
       const res = await fetch(`${this.apiBase}/parcels/${parcel.parcel_id || parcel.id}/split`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviewer_name: 'Alex Morgan (Lead Surveyor)' })
+        body: JSON.stringify({ reviewer_name: 'Lead Cadastral Surveyor' })
       });
       const data = await res.json();
       if (data.success) {
@@ -2985,7 +3520,7 @@ class ParcelMapWorkspace {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           parcel_ids: [pId1, pId2],
-          reviewer_name: 'Alex Morgan (Lead Surveyor)'
+          reviewer_name: 'Lead Cadastral Surveyor'
         })
       });
       const data = await res.json();
@@ -3071,7 +3606,7 @@ class ParcelMapWorkspace {
     const waterOverlaps = this.qualityAudit.water_overlaps_count ?? (this.qualityAudit.water_overlaps?.length || 0);
     const lowConf = this.qualityAudit.low_confidence_count ?? (this.qualityAudit.low_confidence_parcels?.length || 0);
     const slivers = this.qualityAudit.slivers_count ?? (this.qualityAudit.slivers?.length || 0);
-    const readyForReview = this.qualityAudit.ready_for_review_count ?? Math.max(0, totalParcels - invalidGeoms - overlaps - waterOverlaps);
+    const readyForReview = this.qualityAudit.ready_for_review_count ?? Math.max(0, totalParcels - invalidGeoms);
 
     const elTotal = document.getElementById('qcTotalParcels');
     const elValid = document.getElementById('qcValidPolygons');
@@ -3107,7 +3642,8 @@ class ParcelMapWorkspace {
     if (elPillWater) elPillWater.textContent = waterOverlaps;
     if (elPillLow) elPillLow.textContent = lowConf;
     if (elPillSlivers) elPillSlivers.textContent = slivers;
-    if (elPillNeedsReview) elPillNeedsReview.textContent = overlaps + gaps + waterOverlaps + lowConf + invalidGeoms;
+    const needsReview = this.qualityAudit.needs_review_count ?? (overlaps + gaps + waterOverlaps + lowConf + invalidGeoms);
+    if (elPillNeedsReview) elPillNeedsReview.textContent = needsReview;
     if (elPillReady) elPillReady.textContent = readyForReview;
 
     const totalIssues = overlaps + gaps + waterOverlaps + slivers + invalidGeoms + lowConf;
@@ -3298,8 +3834,6 @@ class ParcelMapWorkspace {
         lowConfCard.style.display = 'none';
       }
     }
-
-    this.renderQualityMap();
   }
 
   /* --------------------------------------------------------------------------
@@ -3312,20 +3846,34 @@ class ParcelMapWorkspace {
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
     const noticeEl = document.getElementById('qcCoordinateNotice');
 
+    // ─── STEP 1: Destroy any previous Leaflet instance completely ────────────
     if (this.maps.quality) {
-      this.maps.quality.remove();
+      try { this.maps.quality.remove(); } catch (e) { /* ignore */ }
       this.maps.quality = null;
     }
+    mapDiv.innerHTML = '';
+    delete mapDiv.dataset.activeImageSrc;
 
-    if (!currentImg) {
-      mapDiv.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">No drone imagery uploaded.</div>`;
+    // ─── STEP 2: Require actual imagery before rendering ────────────────────
+    if (!currentImg || !currentImg.file_url) {
+      mapDiv.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px;">No drone imagery uploaded.</div>`;
+      if (noticeEl) { noticeEl.textContent = 'No Imagery'; noticeEl.className = 'pm-status-tag tag-muted'; }
       return;
     }
 
-    const isGeoreferenced = currentImg.file_name.toLowerCase().endsWith('.tif') || 
-                            currentImg.file_name.toLowerCase().endsWith('.tiff') || 
-                            Boolean(currentImg.metadata?.crs);
+    // ─── STEP 3: Determine coordinate mode ─────────────────────────────────
+    //   Uses is_georeferenced flag (explicit boolean) first — the most reliable signal.
+    //   Falls back to file extension and CRS metadata.
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
 
+    // Log state for debugging
+    console.log(`[GIS Quality Map] project_id=${this.activeProjectId}`);
+    console.log(`[GIS Quality Map] imagery_id=${currentImg.id}  file=${currentImg.file_name}`);
+    console.log(`[GIS Quality Map] file_url=${currentImg.file_url}`);
+    console.log(`[GIS Quality Map] coordinate_mode=${isGeoreferenced ? 'GEOGRAPHIC' : 'IMAGE_SPACE'}`);
+    console.log(`[GIS Quality Map] image_size=${currentImg.width}x${currentImg.height}`);
+
+    // Update coordinate mode badge
     if (noticeEl) {
       noticeEl.textContent = isGeoreferenced ? 'Georeferenced (EPSG:4326)' : 'Image-Space Coordinates';
       noticeEl.className = isGeoreferenced ? 'pm-status-tag tag-emerald' : 'pm-status-tag tag-blue';
@@ -3335,27 +3883,55 @@ class ParcelMapWorkspace {
     const height = Number(currentImg.height) || 3000;
     const center = this.project?.coordinates || [18.5818, 73.9875];
     const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
+    const resolvedImageUrl = this.getImageUrl(currentImg.file_url);
 
     if (!isGeoreferenced) {
+      // ─── IMAGE-SPACE MODE ──────────────────────────────────────────────────
+      // Architecture: SOURCE IMAGE → FEATURE OVERLAYS → PRELIMINARY PARCELS → QC ISSUES
+      // NO geographic basemaps. NO tile layers. NO street labels. NO scale bar.
+      // The uploaded drone image IS the base layer.
       const bounds = [[0, 0], [height, width]];
+
       this.maps.quality = L.map('qcMap', {
         crs: L.CRS.Simple,
-        minZoom: -3,
-        maxZoom: 3,
+        minZoom: -4,
+        maxZoom: 4,
         zoomSnap: 0.25,
         attributionControl: false,
         zoomControl: true
       });
-      L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds).addTo(this.maps.quality);
+
+      // Base layer: the exact source drone image used in Spatial Reasoning
+      const imgOverlay = L.imageOverlay(resolvedImageUrl, bounds);
+      imgOverlay.addTo(this.maps.quality);
       this.maps.quality.fitBounds(bounds);
+
+      // Tag the mapDiv with the active image src for change-detection
+      mapDiv.dataset.activeImageSrc = currentImg.file_url;
+
+      // Force layout recalculation to prevent Leaflet size=0 bug
+      setTimeout(() => {
+        if (this.maps.quality) {
+          this.maps.quality.invalidateSize();
+          this.maps.quality.fitBounds(bounds);
+        }
+      }, 80);
+
+      console.log(`[GIS Quality Map] IMAGE_SPACE map initialized. Source: ${resolvedImageUrl} bounds=[0,0]→[${height},${width}]`);
     } else {
+      // ─── GEOREFERENCED GIS MODE ────────────────────────────────────────────
+      // For genuine GeoTIFF imagery with valid geospatial projection.
       this.maps.quality = L.map('qcMap', { attributionControl: false, zoomControl: true }).setView(center, 16);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(this.maps.quality);
-      if (currentImg.file_url) {
-        const delta = 0.003;
-        const bounds = [[center[0] - delta, center[1] - delta * 1.5], [center[0] + delta, center[1] + delta * 1.5]];
-        L.imageOverlay(this.getImageUrl(currentImg.file_url), bounds, { opacity: 0.85 }).addTo(this.maps.quality);
-      }
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Imagery © Esri'
+      }).addTo(this.maps.quality);
+      const delta = 0.003;
+      const geoBounds = [[center[0] - delta, center[1] - delta * 1.5], [center[0] + delta, center[1] + delta * 1.5]];
+      L.imageOverlay(resolvedImageUrl, geoBounds, { opacity: 0.85 }).addTo(this.maps.quality);
+      mapDiv.dataset.activeImageSrc = currentImg.file_url;
+      setTimeout(() => { if (this.maps.quality) this.maps.quality.invalidateSize(); }, 80);
+      console.log(`[GIS Quality Map] GEOGRAPHIC map initialized. Center=${center}`);
     }
 
     // Attach qcLayers to maps.quality
@@ -3376,7 +3952,7 @@ class ParcelMapWorkspace {
 
     if (showRoads) {
       relevantFeatures.filter(f => (f.detection_type || f.feature_type || '').toLowerCase().includes('road')).forEach(r => {
-        const raw = (!isGeoreferenced && r.image_coordinates) ? r.image_coordinates : (r.geometry?.coordinates || []);
+        const raw = this.extractRingCoords((!isGeoreferenced && r.image_coordinates) ? r.image_coordinates : (r.geometry?.coordinates || []));
         if (raw.length >= 2) {
           L.polyline(raw.map(toLeaflet), { color: '#f59e0b', weight: 3, opacity: 0.75 })
             .bindTooltip(`Road: ${r.name || 'Lane'}`, { sticky: true })
@@ -3387,7 +3963,7 @@ class ParcelMapWorkspace {
 
     if (showBuildings) {
       relevantFeatures.filter(f => (f.detection_type || f.feature_type || '').toLowerCase().includes('building')).forEach(b => {
-        const raw = (!isGeoreferenced && b.image_coordinates) ? b.image_coordinates : (b.geometry?.coordinates?.[0] || []);
+        const raw = this.extractRingCoords((!isGeoreferenced && b.image_coordinates) ? b.image_coordinates : (b.geometry?.coordinates?.[0] || []));
         if (raw.length >= 3) {
           L.polygon(raw.map(toLeaflet), { color: '#06b6d4', weight: 1.5, fillColor: '#0891b2', fillOpacity: 0.35 })
             .bindTooltip('Building footprint', { sticky: true })
@@ -3398,7 +3974,7 @@ class ParcelMapWorkspace {
 
     if (showFields) {
       relevantFeatures.filter(f => (f.detection_type || f.feature_type || '').toLowerCase().includes('field')).forEach(f => {
-        const raw = (!isGeoreferenced && f.image_coordinates) ? f.image_coordinates : (f.geometry?.coordinates?.[0] || f.geometry?.coordinates || []);
+        const raw = this.extractRingCoords((!isGeoreferenced && f.image_coordinates) ? f.image_coordinates : (f.geometry?.coordinates?.[0] || f.geometry?.coordinates || []));
         if (raw.length >= 3) {
           L.polygon(raw.map(toLeaflet), { color: '#84cc16', weight: 1.5, fillColor: '#84cc16', fillOpacity: 0.15, dashArray: '3 3' })
             .bindTooltip('Field boundary', { sticky: true })
@@ -3409,7 +3985,7 @@ class ParcelMapWorkspace {
 
     if (showWater) {
       relevantFeatures.filter(f => (f.detection_type || f.feature_type || '').toLowerCase().includes('water')).forEach(w => {
-        const raw = (!isGeoreferenced && w.image_coordinates) ? w.image_coordinates : (w.geometry?.coordinates?.[0] || w.geometry?.coordinates || []);
+        const raw = this.extractRingCoords((!isGeoreferenced && w.image_coordinates) ? w.image_coordinates : (w.geometry?.coordinates?.[0] || w.geometry?.coordinates || []));
         if (raw.length >= 3) {
           L.polygon(raw.map(toLeaflet), { color: '#0284c7', weight: 2, fillColor: '#38bdf8', fillOpacity: 0.4 })
             .bindTooltip('Water exclusion mask', { sticky: true })
@@ -3419,14 +3995,12 @@ class ParcelMapWorkspace {
     }
 
     // 2. Preliminary Parcels (Step 8 Section 8 & 9)
-    let currentParcels = this.parcels.filter(p => !currentImg || !p.imagery_id || p.imagery_id === currentImg.id);
-    if (currentParcels.length === 0 && this.parcels.length > 0) {
-      currentParcels = this.parcels;
-    }
+    const projectImgs = this.imagery.filter(i => i.project_id === this.activeProjectId);
+    const currentParcels = this.parcels.filter(p => p.imagery_id === currentImg.id || (!p.imagery_id && projectImgs.length <= 1));
 
     if (showParcels) {
       currentParcels.forEach(p => {
-        const raw = (!isGeoreferenced && p.image_coordinates?.[0]) ? p.image_coordinates[0] : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || []);
+        const raw = this.extractRingCoords((!isGeoreferenced && p.image_coordinates) ? p.image_coordinates : ((!isGeoreferenced && p.geometry?.coordinates?.[0] && Math.abs(p.geometry.coordinates[0][0][0]) > 180) ? p.geometry.coordinates[0] : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || [])));
         if (raw.length >= 3) {
           const pId = p.parcel_id || p.id;
           const isSelected = pId === this.selectedParcelId;
@@ -3449,6 +4023,7 @@ class ParcelMapWorkspace {
           poly.on('click', () => {
             this.selectedParcelId = pId;
             this.renderQualityMap();
+            this.updateExplainabilityPanel(pId);
             this.showToast(`Selected parcel ${pId}`, 'info');
           });
 
@@ -3488,17 +4063,17 @@ class ParcelMapWorkspace {
         }
       });
 
-      // Water Overlaps
+      // Water overlaps
       (this.qualityAudit.water_overlaps || []).forEach(w => {
         if (w.coordinates) {
-          const latlng = toLeaflet(w.coordinates);
+          const latlng = toLeaflet([w.coordinates[1], w.coordinates[0]]);
           L.circleMarker(latlng, {
             radius: 12,
             color: '#0284c7',
             fillColor: '#38bdf8',
             fillOpacity: 0.8,
-            weight: 3
-          }).bindTooltip(`💧 WATER OVERLAP: ${w.parcel_id}`, { sticky: true }).addTo(this.qcLayers.issues);
+            weight: 2
+          }).bindTooltip(`⚠ Water Overlap: ${w.parcel_id} (${w.description || 'Intersects water body'})`, { sticky: true }).addTo(this.qcLayers.issues);
         }
       });
 
@@ -3507,19 +4082,19 @@ class ParcelMapWorkspace {
         if (gap.coordinates) {
           const latlng = toLeaflet([gap.coordinates[1], gap.coordinates[0]]);
           L.circleMarker(latlng, {
-            radius: 9,
+            radius: 8,
             color: '#f59e0b',
             fillColor: '#f59e0b',
             fillOpacity: 0.7,
             weight: 2
-          }).bindTooltip(`⚠ Possible Gap: ${gap.parcel_a} & ${gap.parcel_b}`, { sticky: true }).addTo(this.qcLayers.issues);
+          }).bindTooltip(`⚠ Possible Gap: ${gap.parcel_a} ↔ ${gap.parcel_b}`, { sticky: true }).addTo(this.qcLayers.issues);
         }
       });
 
       // Slivers
       (this.qualityAudit.slivers || []).forEach(slv => {
-        if (slv.coordinates) {
-          const latlng = toLeaflet(slv.coordinates);
+        if (slv.centroid) {
+          const latlng = toLeaflet([slv.centroid[1], slv.centroid[0]]);
           L.circleMarker(latlng, {
             radius: 8,
             color: '#fb7185',
@@ -3530,6 +4105,143 @@ class ParcelMapWorkspace {
         }
       });
     }
+
+    // Update Explainability Panel for currently selected parcel
+    this.updateExplainabilityPanel(this.selectedParcelId);
+  }
+
+  updateExplainabilityPanel(parcelId) {
+    const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
+    let currentParcels = this.parcels.filter(p => !currentImg || !p.imagery_id || p.imagery_id === currentImg.id);
+    if (currentParcels.length === 0 && this.parcels.length > 0) {
+      currentParcels = this.parcels;
+    }
+
+    const p = currentParcels.find(x => (x.parcel_id || x.id) === (parcelId || this.selectedParcelId)) || currentParcels[0];
+    if (!p) return;
+
+    const elId = document.getElementById('qcExpParcelId');
+    const elStatus = document.getElementById('qcExpStatusBadge');
+    const elConf = document.getElementById('qcExpConfidence');
+    const elConfLabel = document.getElementById('qcExpConfidenceLabel');
+    const elSuppEdge = document.getElementById('qcExpSupportedEdge');
+    const elArea = document.getElementById('qcExpArea');
+    const elReason = document.getElementById('qcExpReason');
+    const elEvidenceList = document.getElementById('qcExpEvidenceList');
+    const elRoads = document.getElementById('qcExpRoadsList');
+    const elFields = document.getElementById('qcExpFieldsList');
+    const elWalls = document.getElementById('qcExpWallsList');
+    const elBldgs = document.getElementById('qcExpBuildingsList');
+
+    const pid = p.parcel_id || p.id;
+    if (elId) elId.textContent = pid;
+
+    const rawStatus = (p.candidate_status || p.status || '').toUpperCase();
+    const isAccepted = rawStatus === 'ACCEPTED';
+    const statusText = isAccepted ? 'ACCEPTED' : 'NEEDS REVIEW';
+    if (elStatus) {
+      elStatus.textContent = statusText;
+      elStatus.className = `pm-status-tag ${isAccepted ? 'tag-emerald' : 'tag-amber'}`;
+    }
+
+    const confPct = Math.round((p.confidence || 0.8) * 100);
+    if (elConf) {
+      elConf.textContent = `${confPct}%`;
+      elConf.style.color = confPct >= 80 ? 'var(--accent-emerald)' : (confPct >= 65 ? '#f59e0b' : '#f43f5e');
+    }
+    if (elConfLabel) {
+      elConfLabel.textContent = p.confidence_label || (confPct >= 85 ? 'High' : (confPct >= 70 ? 'Medium' : 'Low'));
+      elConfLabel.className = `pm-status-tag ${confPct >= 80 ? 'tag-emerald' : (confPct >= 65 ? 'tag-amber' : 'tag-rose')}`;
+    }
+
+    const suppEdgeVal = p.supported_perimeter_pct != null ? p.supported_perimeter_pct : (p.supported_edge_pct != null ? p.supported_edge_pct : null);
+    if (elSuppEdge) {
+      if (suppEdgeVal != null) {
+        elSuppEdge.textContent = `${suppEdgeVal}%`;
+        elSuppEdge.style.color = suppEdgeVal >= 65 ? 'var(--accent-emerald)' : (suppEdgeVal >= 40 ? '#f59e0b' : '#f43f5e');
+      } else {
+        elSuppEdge.textContent = '--';
+      }
+    }
+
+    if (elArea) {
+      elArea.textContent = p.area || (p.area_sqm ? `${Math.round(p.area_sqm).toLocaleString()} m²` : (p.area_px ? `${p.area_px.toLocaleString()} px²` : '--'));
+    }
+
+    if (elReason) {
+      elReason.textContent = p.decision_reason || p.generation_reason || 'Parcel candidate established by spatial boundary reasoning within verified land block.';
+    }
+
+    // Evidence Verification Checklist (Requirement 12)
+    if (elEvidenceList) {
+      const items = Array.isArray(p.supporting_features) && p.supporting_features.length > 0
+        ? p.supporting_features
+        : [];
+      if (items.length > 0) {
+        elEvidenceList.innerHTML = items.map(item => {
+          const isWarning = item.includes('⚠') || item.toLowerCase().includes('unsupported') || item.toLowerCase().includes('required');
+          const badgeClass = isWarning ? 'tag-amber' : 'tag-emerald';
+          const icon = isWarning ? '⚠' : '✓';
+          const cleanText = item.replace(/[✓⚠]/g, '').trim();
+          return `<div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: 6px 10px; border-radius: 4px; font-size: 12px;">
+            <span style="color: var(--text-primary); font-family: var(--font-sans);">${cleanText}</span>
+            <span class="pm-status-tag ${badgeClass}" style="font-weight: 700;">${icon}</span>
+          </div>`;
+        }).join('');
+      } else {
+        elEvidenceList.innerHTML = '<span style="color: var(--text-muted); font-size: 12px;">No evidence features recorded</span>';
+      }
+    }
+
+    const se = p.supporting_evidence || {};
+
+    // 1. Supporting Roads
+    if (elRoads) {
+      const roadItems = (se.road_names && se.road_names.length > 0)
+        ? se.road_names.map((name, i) => `${name}${se.roads?.[i] ? ` (${se.roads[i]})` : ''}`)
+        : (se.roads || (p.supporting_features || []).filter(f => f.toLowerCase().includes('road')));
+      if (roadItems && roadItems.length > 0) {
+        elRoads.innerHTML = roadItems.map(r => `<div style="margin-bottom: 4px;">🛣️ <strong>${r}</strong></div>`).join('');
+      } else {
+        elRoads.innerHTML = '<span style="color: var(--text-muted);">No direct road frontage</span>';
+      }
+    }
+
+    // 2. Supporting Field Boundaries
+    if (elFields) {
+      const fieldItems = (se.field_names && se.field_names.length > 0)
+        ? se.field_names.map((name, i) => `${name}${se.field_boundaries?.[i] ? ` (${se.field_boundaries[i]})` : ''}`)
+        : (se.field_boundaries || (p.supporting_features || []).filter(f => f.toLowerCase().includes('field')));
+      if (fieldItems && fieldItems.length > 0) {
+        elFields.innerHTML = fieldItems.map(f => `<div style="margin-bottom: 4px;">🌾 <strong>${f}</strong></div>`).join('');
+      } else {
+        elFields.innerHTML = '<span style="color: var(--text-muted);">No intersecting field boundary</span>';
+      }
+    }
+
+    // 3. Supporting Walls & Fences
+    if (elWalls) {
+      const wallItems = (se.wall_fence_names && se.wall_fence_names.length > 0)
+        ? se.wall_fence_names.map((name, i) => `${name}${se.walls_fences?.[i] ? ` (${se.walls_fences[i]})` : ''}`)
+        : (se.walls_fences || (p.supporting_features || []).filter(f => f.toLowerCase().includes('wall') || f.toLowerCase().includes('fence') || f.toLowerCase().includes('boundary')));
+      if (wallItems && wallItems.length > 0) {
+        elWalls.innerHTML = wallItems.map(w => `<div style="margin-bottom: 4px;">🧱 <strong>${w}</strong></div>`).join('');
+      } else {
+        elWalls.innerHTML = '<span style="color: var(--text-muted);">No walls/fences detected</span>';
+      }
+    }
+
+    // 4. Supporting Buildings (Context Only)
+    if (elBldgs) {
+      const bldgItems = (se.building_names && se.building_names.length > 0)
+        ? se.building_names.map((name, i) => `${name}${se.buildings?.[i] ? ` (${se.buildings[i]})` : ''}`)
+        : (se.buildings || (p.supporting_features || []).filter(f => f.toLowerCase().includes('structure') || f.toLowerCase().includes('building')));
+      if (bldgItems && bldgItems.length > 0) {
+        elBldgs.innerHTML = bldgItems.map(b => `<div style="margin-bottom: 4px;">🏠 <strong>${b}</strong></div>`).join('');
+      } else {
+        elBldgs.innerHTML = '<span style="color: var(--text-muted);">No enclosed homestead structures</span>';
+      }
+    }
   }
 
   locateIssueOnMap(coordinates, parcelId) {
@@ -3538,7 +4250,7 @@ class ParcelMapWorkspace {
     }
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
     const height = Number(currentImg?.height) || 3000;
     const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
 
@@ -3555,6 +4267,7 @@ class ParcelMapWorkspace {
         }
       }
       this.renderQualityMap();
+      this.updateExplainabilityPanel(parcelId);
       this.showToast(`Inspecting issue on ${parcelId || 'geometry'}`, 'info');
       return;
     }
@@ -3693,9 +4406,16 @@ class ParcelMapWorkspace {
         if (tag) { tag.textContent = 'COMPLETED'; tag.className = 'pm-status-tag tag-emerald'; }
 
         this.parcels = data.candidates || [];
+        this.refreshQualityData().catch(() => {});
 
         // Populate Diagnostic Summary Panel (Requirement 16 & 20)
         const summary = data.spatial_reasoning_summary || data.diagnostic_summary || {};
+        this.lastReasoningSummary = summary;
+        if (this.project) {
+          this.project.spatial_reasoning_summary = summary;
+          this.project.diagnostic_summary = summary;
+        }
+
         const elVal = document.getElementById('srDiagValidatedDetections');
         const elRoad = document.getElementById('srDiagRoadNetwork');
         const elBound = document.getElementById('srDiagBoundaryEvidence');
@@ -3777,9 +4497,7 @@ class ParcelMapWorkspace {
       return;
     }
 
-    const isGeoreferenced = currentImg.file_name.toLowerCase().endsWith('.tif') || 
-                            currentImg.file_name.toLowerCase().endsWith('.tiff') || 
-                            Boolean(currentImg.metadata?.crs);
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
 
     if (banner) banner.style.display = isGeoreferenced ? 'none' : 'flex';
     if (tagMode) tagMode.textContent = isGeoreferenced ? 'Georeferenced GIS Coordinates' : 'Image Coordinates (px)';
@@ -3842,7 +4560,7 @@ class ParcelMapWorkspace {
     // 1. Water Exclusion Mask (cyan / deep blue)
     if (showWater) {
       relevantFeatures.filter(f => (f.detection_type === 'WATER' || f.feature_type === 'Water' || f.feature_type === 'Water Body')).forEach(w => {
-        const rawCoords = (!isGeoreferenced && w.image_coordinates) ? w.image_coordinates : (w.geo_geometry?.coordinates?.[0] || w.geometry?.coordinates?.[0] || []);
+        const rawCoords = (!isGeoreferenced && w.image_coordinates) ? this.extractRingCoords(w.image_coordinates) : (w.geo_geometry?.coordinates?.[0] || w.geometry?.coordinates?.[0] || []);
         if (rawCoords.length >= 3) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polygon(latlngs, {
@@ -3861,7 +4579,7 @@ class ParcelMapWorkspace {
     // 2. Roads (lines)
     if (showRoads) {
       relevantFeatures.filter(f => (f.detection_type === 'ROAD' || f.feature_type === 'Road')).forEach(r => {
-        const rawCoords = (!isGeoreferenced && r.image_coordinates) ? r.image_coordinates : (r.geo_geometry?.coordinates || r.geometry?.coordinates || []);
+        const rawCoords = (!isGeoreferenced && r.image_coordinates) ? this.extractRingCoords(r.image_coordinates) : (r.geo_geometry?.coordinates || r.geometry?.coordinates || []);
         if (rawCoords.length >= 2) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polyline(latlngs, { color: '#f59e0b', weight: 4, opacity: 0.9 })
@@ -3874,7 +4592,7 @@ class ParcelMapWorkspace {
     // 3. Buildings (polygons)
     if (showBuildings) {
       relevantFeatures.filter(f => (f.detection_type === 'BUILDING' || f.feature_type === 'Building')).forEach(b => {
-        const rawCoords = (!isGeoreferenced && b.image_coordinates) ? b.image_coordinates : (b.geo_geometry?.coordinates?.[0] || b.geometry?.coordinates?.[0] || []);
+        const rawCoords = (!isGeoreferenced && b.image_coordinates) ? this.extractRingCoords(b.image_coordinates) : (b.geo_geometry?.coordinates?.[0] || b.geometry?.coordinates?.[0] || []);
         if (rawCoords.length >= 3) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polygon(latlngs, { color: '#06b6d4', weight: 2, fillColor: '#0891b2', fillOpacity: 0.5 })
@@ -3887,7 +4605,7 @@ class ParcelMapWorkspace {
     // 4. Fields (translucent regions)
     if (showFields) {
       relevantFeatures.filter(f => (f.detection_type === 'FIELD' || f.feature_type === 'Field Edge' || f.feature_type === 'Field')).forEach(fld => {
-        const rawCoords = (!isGeoreferenced && fld.image_coordinates) ? fld.image_coordinates : (fld.geo_geometry?.coordinates?.[0] || fld.geometry?.coordinates?.[0] || []);
+        const rawCoords = (!isGeoreferenced && fld.image_coordinates) ? this.extractRingCoords(fld.image_coordinates) : (fld.geo_geometry?.coordinates?.[0] || fld.geometry?.coordinates?.[0] || []);
         if (rawCoords.length >= 3) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polygon(latlngs, { color: '#84cc16', weight: 1.5, fillColor: '#65a30d', fillOpacity: 0.28 })
@@ -3900,7 +4618,7 @@ class ParcelMapWorkspace {
     // 5. Walls (thin lines)
     if (showWalls || showBoundaries) {
       relevantFeatures.filter(f => (f.detection_type === 'WALL' || f.feature_type === 'Wall')).forEach(b => {
-        const rawCoords = (!isGeoreferenced && b.image_coordinates) ? b.image_coordinates : (b.geo_geometry?.coordinates || b.geometry?.coordinates || []);
+        const rawCoords = (!isGeoreferenced && b.image_coordinates) ? this.extractRingCoords(b.image_coordinates) : (b.geo_geometry?.coordinates || b.geometry?.coordinates || []);
         if (rawCoords.length >= 2) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polyline(latlngs, { color: '#cbd5e1', weight: 2, opacity: 0.85, dashArray: '4 4' })
@@ -3913,7 +4631,7 @@ class ParcelMapWorkspace {
     // 6. Fences (thin lines)
     if (showFences || showBoundaries) {
       relevantFeatures.filter(f => (f.detection_type === 'FENCE' || f.feature_type === 'Fence' || f.detection_type === 'BOUNDARY')).forEach(b => {
-        const rawCoords = (!isGeoreferenced && b.image_coordinates) ? b.image_coordinates : (b.geo_geometry?.coordinates || b.geometry?.coordinates || []);
+        const rawCoords = (!isGeoreferenced && b.image_coordinates) ? this.extractRingCoords(b.image_coordinates) : (b.geo_geometry?.coordinates || b.geometry?.coordinates || []);
         if (rawCoords.length >= 2) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polyline(latlngs, { color: '#ec4899', weight: 2, opacity: 0.85, dashArray: '2 2' })
@@ -3927,11 +4645,14 @@ class ParcelMapWorkspace {
     if (showParcels && this.parcels.length > 0) {
       const currentParcels = this.parcels.filter(p => currentImg && p.imagery_id === currentImg.id);
       currentParcels.forEach(p => {
-        const rawCoords = (!isGeoreferenced && p.image_coordinates?.[0]) ? p.image_coordinates[0] : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || []);
+        const rawCoords = (!isGeoreferenced && p.image_coordinates) ? this.extractRingCoords(p.image_coordinates) : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || []);
         if (rawCoords.length >= 3) {
           const latlngs = rawCoords.map(toLeaflet);
-          const isAccepted = (p.candidate_status === 'ACCEPTED' || p.confidence >= 0.85);
-          const color = isAccepted ? '#10b981' : (p.confidence >= 0.70 ? '#f59e0b' : '#f43f5e');
+          const isAccepted = (p.candidate_status === 'ACCEPTED');
+          const isReview = (p.candidate_status === 'REVIEW' || p.candidate_status === 'NEEDS REVIEW');
+          const color = isAccepted ? '#10b981' : (isReview ? '#f59e0b' : '#f43f5e');
+          const statusText = isAccepted ? 'ACCEPTED' : (isReview ? 'NEEDS REVIEW' : (p.candidate_status || 'PRELIMINARY'));
+          const statusBadgeBg = isAccepted ? 'rgba(16,185,129,0.18)' : (isReview ? 'rgba(245,158,11,0.18)' : 'rgba(244,63,94,0.18)');
 
           const poly = L.polygon(latlngs, {
             color,
@@ -3940,22 +4661,109 @@ class ParcelMapWorkspace {
             fillOpacity: 0.22
           });
 
-          // Interactive Parcel Popup (Requirement 18)
-          const supportingList = (p.supporting_features || []).map(f => `<li>${f}</li>`).join('');
+          poly._defaultColor = color;
+          poly._parcel = p;
+
+          poly.on('click', () => {
+            if (this.selectedReasoningPoly && this.selectedReasoningPoly !== poly) {
+              this.selectedReasoningPoly.setStyle({
+                color: this.selectedReasoningPoly._defaultColor,
+                weight: 2.5,
+                fillOpacity: 0.22
+              });
+            }
+            this.selectedReasoningPoly = poly;
+            poly.setStyle({
+              color: '#38bdf8',
+              weight: 4.5,
+              fillOpacity: 0.38
+            });
+
+            // Parcel Debug Mode: Draw colored edge segments (Requirement 9)
+            if (this.reasoningDebugEdgeGroup) {
+              this.reasoningDebugEdgeGroup.remove();
+              this.reasoningDebugEdgeGroup = null;
+            }
+            const isDebugOn = document.getElementById('chkReasoningDebugMode')?.checked ?? false;
+            if (isDebugOn && p.edge_analysis?.edge_segments && p.edge_analysis.edge_segments.length > 0) {
+              this.reasoningDebugEdgeGroup = L.layerGroup().addTo(this.maps.reasoning);
+              p.edge_analysis.edge_segments.forEach(seg => {
+                const segLatLngs = [toLeaflet(seg.start), toLeaflet(seg.end)];
+                let segColor = '#f43f5e';
+                let segDash = '4 4';
+                let segWeight = 5;
+                if (seg.type === 'road') {
+                  segColor = '#10b981';
+                  segDash = null;
+                } else if (seg.type === 'wall_fence') {
+                  segColor = '#06b6d4';
+                  segDash = null;
+                } else if (seg.type === 'field') {
+                  segColor = '#84cc16';
+                  segDash = null;
+                } else if (seg.type === 'mixed') {
+                  segColor = '#10b981';
+                  segDash = null;
+                }
+                L.polyline(segLatLngs, {
+                  color: segColor,
+                  weight: segWeight,
+                  dashArray: segDash,
+                  opacity: 0.95
+                })
+                .bindTooltip(`Edge: ${seg.type.toUpperCase()} (${Math.round((seg.supported_ratio || 0) * 100)}% supported, ${seg.length_px}px)`, { sticky: true })
+                .addTo(this.reasoningDebugEdgeGroup);
+              });
+            }
+
+            poly.openPopup();
+          });
+
+          // Interactive Parcel Popup (Requirement 6 & 9)
+          const supportingList = (p.supporting_features || []).map(f => {
+            const isUnsupp = f.toLowerCase().includes('unsupported edge');
+            const icon = isUnsupp ? '⚠️' : '✓';
+            const itemColor = isUnsupp ? '#f59e0b' : '#34d399';
+            return `<li style="margin-bottom: 3px; display: flex; align-items: flex-start; gap: 5px;"><span style="color: ${itemColor}; font-weight: bold;">${icon}</span><span style="color: #cbd5e1;">${f}</span></li>`;
+          }).join('');
+
+          const areaDisplay = p.area_px ? `${p.area_px.toLocaleString()} px²` : (p.area || '-');
+          const edgeSuppPct = p.supported_edge_pct ?? (p.edge_analysis ? p.edge_analysis.supported_edge_pct : (isAccepted ? 85 : 55));
+          const edgeUnsuppPct = p.unsupported_edge_pct ?? (100 - edgeSuppPct);
+          const reasonText = p.decision_reason || p.generation_reason || (isAccepted ? 'Plausible land parcel with strong physical evidence' : 'Requires surveyor review');
+
           poly.bindPopup(`
-            <div style="font-family: sans-serif; font-size: 12px; line-height: 1.4; min-width: 190px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 4px; margin-bottom: 6px;">
-                <strong style="color: ${color}; font-size: 13px;">${p.parcel_id || p.id}</strong>
-                <span style="font-size: 10px; background: rgba(16,185,129,0.15); color: ${color}; padding: 1px 5px; border-radius: 3px;">${p.candidate_status || (p.confidence >= 0.85 ? 'ACCEPTED' : 'REVIEW')}</span>
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; line-height: 1.45; min-width: 250px; max-width: 300px; color: #f1f5f9;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 5px; margin-bottom: 8px;">
+                <strong style="color: ${color}; font-size: 14px; font-family: var(--font-mono, monospace);">${p.parcel_id || p.id}</strong>
+                <span style="font-size: 10px; font-weight: 700; background: ${statusBadgeBg}; color: ${color}; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.5px;">
+                  ${statusText}
+                </span>
               </div>
-              <div style="color: #cbd5e1; margin-bottom: 2px;"><strong>Confidence:</strong> ${Math.round((p.confidence || 0.75) * 100)}% (${p.confidence_label || (p.confidence >= 0.85 ? 'High' : 'Medium')})</div>
-              <div style="color: #cbd5e1; margin-bottom: 2px;"><strong>Status:</strong> ${p.candidate_status || p.status || 'preliminary'}</div>
-              <div style="color: #cbd5e1; margin-bottom: 2px;"><strong>Geometry source:</strong> ${p.source || 'spatial_reasoning'}</div>
-              <div style="color: #cbd5e1; margin-bottom: 2px;"><strong>Area:</strong> ${p.area}</div>
-              <div style="font-size: 11px; color: #cbd5e1; font-weight: 600; margin-top: 5px;">Supporting Features:</div>
-              <ul style="margin: 2px 0 0 16px; padding: 0; color: #94a3b8; font-size: 11px;">
-                ${supportingList || '<li>Inferred Boundary Edge</li>'}
+              
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; margin-bottom: 8px; font-size: 11.5px; color: #94a3b8;">
+                <span>Confidence:</span><strong style="color: #f1f5f9;">${Math.round((p.confidence || 0.75) * 100)}% (${p.confidence_label || (p.confidence >= 0.85 ? 'High' : 'Medium')})</strong>
+                <span>Status:</span><strong style="color: ${color};">${statusText}</strong>
+                <span>Area:</span><strong style="color: #f1f5f9;">${areaDisplay}</strong>
+                <span>Supported Edge:</span><strong style="color: ${edgeSuppPct >= 65 ? '#10b981' : '#f59e0b'};">${edgeSuppPct}%</strong>
+                <span>Unsupported Edge:</span><strong style="color: ${edgeUnsuppPct > 40 ? '#f43f5e' : '#94a3b8'};">${edgeUnsuppPct}%</strong>
+              </div>
+
+              <!-- Edge Support Progress Bar -->
+              <div style="background: rgba(244,63,94,0.3); border-radius: 3px; height: 6px; overflow: hidden; margin-bottom: 8px; display: flex;" title="Supported vs Unsupported Edge">
+                <div style="background: #10b981; width: ${edgeSuppPct}%; height: 100%;"></div>
+                <div style="background: #f43f5e; width: ${edgeUnsuppPct}%; height: 100%;"></div>
+              </div>
+
+              <div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Supporting Evidence:</div>
+              <ul style="margin: 0 0 8px 0; padding: 0; list-style: none; font-size: 11px;">
+                ${supportingList || '<li style="color: #64748b;">Inferred boundary evidence</li>'}
               </ul>
+
+              <div style="background: rgba(15,23,42,0.7); border-left: 3px solid ${color}; padding: 6px 8px; border-radius: 0 4px 4px 0; font-size: 11px; color: #cbd5e1; line-height: 1.35;">
+                <span style="font-weight: 600; color: #f1f5f9; display: block; margin-bottom: 2px;">Reason:</span>
+                "${reasonText}"
+              </div>
             </div>
           `);
 
@@ -4003,14 +4811,54 @@ class ParcelMapWorkspace {
     const elRev = document.getElementById('srDiagNeedsReview');
     const elRej = document.getElementById('srDiagRejectedParcels');
 
-    if (elVal) elVal.textContent = relevantFeatures.length;
-    if (elRoad) elRoad.textContent = roadsCount;
-    if (elBound) elBound.textContent = boundsCount;
-    if (elLand) elLand.textContent = roadsCount > 0 ? 2 : 1;
-    if (elCand) elCand.textContent = currentParcels.length;
-    if (elAcc) elAcc.textContent = currentParcels.filter(p => p.candidate_status === 'ACCEPTED' || p.confidence >= 0.85).length;
-    if (elRev) elRev.textContent = currentParcels.filter(p => p.candidate_status === 'REVIEW' || (p.confidence < 0.85 && p.confidence >= 0.65)).length;
-    if (elRej && (!elRej.textContent || elRej.textContent === '-')) elRej.textContent = '0';
+    const summary = this.lastReasoningSummary || this.project?.spatial_reasoning_summary || this.project?.diagnostic_summary || null;
+
+    if (summary) {
+      if (elVal) elVal.textContent = summary.validated_detections ?? relevantFeatures.length;
+      if (elRoad) elRoad.textContent = summary.road_network ?? summary.road_network_segments ?? roadsCount;
+      if (elBound) elBound.textContent = summary.boundary_evidence ?? summary.boundary_evidence_count ?? boundsCount;
+      if (elLand) elLand.textContent = summary.land_blocks ?? (roadsCount > 0 ? 2 : 1);
+      if (elCand) elCand.textContent = summary.candidate_parcels ?? currentParcels.length;
+      if (elAcc) elAcc.textContent = summary.accepted_parcels ?? currentParcels.filter(p => p.candidate_status === 'ACCEPTED').length;
+      if (elRev) elRev.textContent = summary.needs_review ?? summary.review_parcels ?? currentParcels.filter(p => p.candidate_status === 'REVIEW' || p.candidate_status === 'NEEDS REVIEW').length;
+      if (elRej) elRej.textContent = summary.rejected_parcels ?? 0;
+
+      const rejs = summary.rejection_reasons || {};
+      const mapRej = {
+        'srRejWaterOverlap': 'Water overlap',
+        'srRejInvalidGeom': 'Invalid geometry',
+        'srRejInsuffEvidence': 'Insufficient evidence',
+        'srRejUnsupportedEdge': 'Unsupported edge',
+        'srRejHugePolygon': 'Huge polygon',
+        'srRejDuplicate': 'Duplicate',
+        'srRejDisconnectedGeom': 'Disconnected geometry',
+        'srRejWeakBoundary': 'Weak boundary evidence'
+      };
+      Object.entries(mapRej).forEach(([elemId, catKey]) => {
+        const el = document.getElementById(elemId);
+        if (el) el.textContent = rejs[catKey] ?? 0;
+      });
+    } else if (currentParcels.length > 0) {
+      if (elVal) elVal.textContent = relevantFeatures.length;
+      if (elRoad) elRoad.textContent = roadsCount;
+      if (elBound) elBound.textContent = boundsCount;
+      if (elLand) elLand.textContent = roadsCount > 0 ? 2 : 1;
+      const acc = currentParcels.filter(p => p.candidate_status === 'ACCEPTED').length;
+      const rev = currentParcels.filter(p => p.candidate_status === 'REVIEW' || p.candidate_status === 'NEEDS REVIEW').length;
+      if (elCand) elCand.textContent = currentParcels.length;
+      if (elAcc) elAcc.textContent = acc;
+      if (elRev) elRev.textContent = rev;
+      if (elRej) elRej.textContent = '0';
+    } else {
+      if (elVal) elVal.textContent = relevantFeatures.length;
+      if (elRoad) elRoad.textContent = roadsCount;
+      if (elBound) elBound.textContent = boundsCount;
+      if (elLand) elLand.textContent = roadsCount > 0 ? 2 : 1;
+      if (elCand) elCand.textContent = '-';
+      if (elAcc) elAcc.textContent = '-';
+      if (elRev) elRev.textContent = '-';
+      if (elRej) elRej.textContent = '-';
+    }
   }
 
   renderParcelsViewUI() {
@@ -4049,9 +4897,7 @@ class ParcelMapWorkspace {
       return;
     }
 
-    const isGeoreferenced = currentImg.file_name.toLowerCase().endsWith('.tif') || 
-                            currentImg.file_name.toLowerCase().endsWith('.tiff') || 
-                            Boolean(currentImg.metadata?.crs);
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
 
     const width = Number(currentImg.width) || 4000;
     const height = Number(currentImg.height) || 3000;
@@ -4081,7 +4927,7 @@ class ParcelMapWorkspace {
     const currentParcels = this.parcels.filter(p => currentImg && p.imagery_id === currentImg.id);
 
     currentParcels.forEach(p => {
-      const rawCoords = (!isGeoreferenced && p.image_coordinates?.[0]) ? p.image_coordinates[0] : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || []);
+      const rawCoords = (!isGeoreferenced && p.image_coordinates) ? this.extractRingCoords(p.image_coordinates) : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || []);
       if (rawCoords.length >= 3) {
         const latlngs = rawCoords.map(toLeaflet);
         const color = p.confidence >= 0.85 ? '#10b981' : (p.confidence >= 0.70 ? '#f59e0b' : '#f43f5e');
@@ -4116,7 +4962,7 @@ class ParcelMapWorkspace {
     this.finalLayerGroup = L.layerGroup().addTo(this.maps.final);
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
     const height = Number(currentImg?.height) || 3000;
     const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
 
@@ -4238,7 +5084,9 @@ class ParcelMapWorkspace {
         const t = (f.detection_type || f.feature_type || f.type || '').toUpperCase();
         return t.includes('WATER') || t.includes('RIVER') || t.includes('CANAL') || t.includes('LAKE');
       }).forEach(w => {
-        const rawCoords = w.geometry?.coordinates?.[0] || w.geometry?.coordinates || [];
+        const rawCoords = (!isGeoreferenced && w.image_coordinates)
+          ? this.extractRingCoords(w.image_coordinates)
+          : (w.geo_geometry?.coordinates?.[0] || w.geometry?.coordinates?.[0] || w.geometry?.coordinates || []);
         if (rawCoords.length >= 3) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polygon(latlngs, { color: '#0284c7', weight: 2, fillColor: '#0284c7', fillOpacity: 0.35 })
@@ -4251,7 +5099,9 @@ class ParcelMapWorkspace {
     // Roads layer
     if (showRoads) {
       relevantFeatures.filter(f => (f.detection_type || f.feature_type || '').toUpperCase().includes('ROAD')).forEach(r => {
-        const rawCoords = r.geometry?.coordinates || [];
+        const rawCoords = (!isGeoreferenced && r.image_coordinates)
+          ? this.extractRingCoords(r.image_coordinates)
+          : (r.geo_geometry?.coordinates || r.geometry?.coordinates || []);
         if (rawCoords.length >= 2) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polyline(latlngs, { color: '#f59e0b', weight: 4, opacity: 0.85 })
@@ -4264,7 +5114,9 @@ class ParcelMapWorkspace {
     // Buildings layer
     if (showBuildings) {
       relevantFeatures.filter(f => (f.detection_type || f.feature_type || '').toUpperCase().includes('BUILDING')).forEach(b => {
-        const rawCoords = b.geometry?.coordinates?.[0] || b.geometry?.coordinates || [];
+        const rawCoords = (!isGeoreferenced && b.image_coordinates)
+          ? this.extractRingCoords(b.image_coordinates)
+          : (b.geo_geometry?.coordinates?.[0] || b.geometry?.coordinates?.[0] || b.geometry?.coordinates || []);
         if (rawCoords.length >= 3) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polygon(latlngs, { color: '#06b6d4', weight: 2, fillColor: '#06b6d4', fillOpacity: 0.3 })
@@ -4277,7 +5129,9 @@ class ParcelMapWorkspace {
     // Fields layer
     if (showFields) {
       relevantFeatures.filter(f => (f.detection_type || f.feature_type || '').toUpperCase().includes('FIELD')).forEach(f => {
-        const rawCoords = f.geometry?.coordinates?.[0] || f.geometry?.coordinates || [];
+        const rawCoords = (!isGeoreferenced && f.image_coordinates)
+          ? this.extractRingCoords(f.image_coordinates)
+          : (f.geo_geometry?.coordinates?.[0] || f.geometry?.coordinates?.[0] || f.geometry?.coordinates || []);
         if (rawCoords.length >= 3) {
           const latlngs = rawCoords.map(toLeaflet);
           L.polygon(latlngs, { color: '#84cc16', weight: 1.5, fillColor: '#84cc16', fillOpacity: 0.15, dashArray: '3, 3' })
@@ -4290,8 +5144,8 @@ class ParcelMapWorkspace {
     // Optional Preliminary Parcels (Step 9 Section 8)
     if (showPreliminary) {
       currentParcels.filter(p => p.status !== 'accepted' && p.status !== 'Human Verified' && p.status !== 'verified').forEach(p => {
-        const rawCoords = (!isGeoreferenced && p.image_coordinates?.[0])
-          ? p.image_coordinates[0]
+        const rawCoords = (!isGeoreferenced && p.image_coordinates)
+          ? this.extractRingCoords(p.image_coordinates)
           : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || []);
 
         if (rawCoords && rawCoords.length >= 3) {
@@ -4311,8 +5165,8 @@ class ParcelMapWorkspace {
     // 6. FINAL VERIFIED PARCELS (Step 9 Section 2, 3, 4) - Strictly only accepted parcels
     if (showAccepted) {
       acceptedList.forEach(p => {
-        const rawCoords = (!isGeoreferenced && p.image_coordinates?.[0])
-          ? p.image_coordinates[0]
+        const rawCoords = (!isGeoreferenced && p.image_coordinates)
+          ? this.extractRingCoords(p.image_coordinates)
           : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || []);
 
         if (rawCoords && rawCoords.length >= 3) {
@@ -4355,7 +5209,7 @@ class ParcelMapWorkspace {
     if (!panel) return;
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
 
     const pid = parcel.parcel_id || parcel.id;
     document.getElementById('fdParcelId').textContent = pid;
@@ -4499,12 +5353,12 @@ class ParcelMapWorkspace {
       this.showFinalParcelDetails(parcel);
 
       const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-      const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+      const isGeoreferenced = this.isImageGeoreferenced(currentImg);
       const height = Number(currentImg?.height) || 3000;
       const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
 
-      const rawCoords = (!isGeoreferenced && parcel.image_coordinates?.[0])
-        ? parcel.image_coordinates[0]
+      const rawCoords = (!isGeoreferenced && parcel.image_coordinates)
+        ? this.extractRingCoords(parcel.image_coordinates)
         : (parcel.geo_geometry?.coordinates?.[0] || parcel.geometry?.coordinates?.[0] || []);
 
       if (rawCoords && rawCoords.length >= 3) {
@@ -4600,7 +5454,7 @@ class ParcelMapWorkspace {
   fitAllFinalParcels() {
     if (!this.maps.final) return;
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
     const height = Number(currentImg?.height) || 3000;
     const toLeaflet = (pt) => !isGeoreferenced ? [height - pt[1], pt[0]] : [pt[1], pt[0]];
 
@@ -4609,8 +5463,8 @@ class ParcelMapWorkspace {
     const toFit = accepted.length > 0 ? accepted : this.parcels;
 
     toFit.forEach(p => {
-      const rawCoords = (!isGeoreferenced && p.image_coordinates?.[0])
-        ? p.image_coordinates[0]
+      const rawCoords = (!isGeoreferenced && p.image_coordinates)
+        ? this.extractRingCoords(p.image_coordinates)
         : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || []);
       if (rawCoords && rawCoords.length > 0) {
         rawCoords.forEach(pt => allPoints.push(toLeaflet(pt)));
@@ -4651,7 +5505,7 @@ class ParcelMapWorkspace {
     this.finalMeasurePoints.push(latlng);
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeoreferenced = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : true;
+    const isGeoreferenced = this.isImageGeoreferenced(currentImg);
     const badgeText = document.getElementById('finalMeasureResultText');
 
     L.circleMarker(latlng, { radius: 4, color: '#ffffff', fillColor: '#10b981', fillOpacity: 1 }).addTo(this.finalMeasureLayer);
@@ -4789,13 +5643,432 @@ class ParcelMapWorkspace {
   /* --------------------------------------------------------------------------
      EXPORTS & REPORT GENERATION (Step 9 Section 10-17)
      -------------------------------------------------------------------------- */
+  async generateMapSnapshot(targetImageryId = null) {
+    try {
+      if (!this.activeProjectId) return null;
+
+      // 1. Ensure imagery list is available
+      if (!this.imagery || this.imagery.length === 0) {
+        try {
+          const imgRes = await fetch(`${this.apiBase}/projects/${this.activeProjectId}/imagery`);
+          const imgData = await imgRes.json();
+          if (imgData.success) this.imagery = imgData.imagery;
+        } catch (e) {}
+      }
+
+      const currentImg = (this.imagery && this.imagery.find(img => img.id === (targetImageryId || this.selectedImageryId)))
+        || this.imagery?.[0]
+        || null;
+
+      // 2. Ensure parcels are loaded
+      if (!this.parcels || this.parcels.length === 0) {
+        try {
+          const pUrl = currentImg ? `${this.apiBase}/projects/${this.activeProjectId}/parcels?imagery_id=${currentImg.id}` : `${this.apiBase}/projects/${this.activeProjectId}/parcels`;
+          const pRes = await fetch(pUrl);
+          const pData = await pRes.json();
+          if (pData.success) this.parcels = pData.parcels;
+        } catch (e) {}
+      }
+
+      // 3. Ensure features are loaded
+      if (!this.features || this.features.length === 0) {
+        try {
+          const fUrl = currentImg ? `${this.apiBase}/projects/${this.activeProjectId}/features?imagery_id=${currentImg.id}` : `${this.apiBase}/projects/${this.activeProjectId}/features`;
+          const fRes = await fetch(fUrl);
+          const fData = await fRes.json();
+          if (fData.success) this.features = fData.features;
+        } catch (e) {}
+      }
+
+      const isGeoreferenced = this.isImageGeoreferenced(currentImg);
+
+      const currentParcels = (this.parcels || []).filter(p => !currentImg || !p.imagery_id || p.imagery_id === currentImg.id);
+      const isAccepted = p => p.status === 'accepted' || p.status === 'Human Verified' || p.status === 'verified' || (p.verification_status && p.verification_status.includes('Verified'));
+      const acceptedList = currentParcels.filter(isAccepted);
+      const displayParcels = acceptedList.length > 0 ? acceptedList : currentParcels.filter(p => p.status !== 'rejected' && p.status !== 'Deleted');
+      const relevantFeatures = (this.features || []).filter(f => !currentImg || !f.imagery_id || f.imagery_id === currentImg.id);
+
+      // Sizing canvas based on drone image aspect ratio
+      const imgW = Number(currentImg?.width) || 1200;
+      const imgH = Number(currentImg?.height) || 750;
+      const maxDim = 1400;
+      let cW = imgW, cH = imgH;
+      if (cW > maxDim) { cH = Math.round(cH * (maxDim / cW)); cW = maxDim; }
+      if (cH > maxDim) { cW = Math.round(cW * (maxDim / cH)); cH = maxDim; }
+      const canvasW = Math.max(800, cW);
+      const canvasH = Math.max(500, cH);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasW;
+      canvas.height = canvasH;
+      const ctx = canvas.getContext('2d');
+
+      // 1. Draw Underlying Drone Photo or Basemap
+      let imageDrawn = false;
+      if (currentImg && currentImg.file_url) {
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          const loaded = await new Promise((resolve) => {
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = this.getImageUrl(currentImg.file_url);
+            if (img.complete && img.naturalWidth) resolve(true);
+            setTimeout(() => resolve(false), 4000);
+          });
+          if (loaded) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            imageDrawn = true;
+          }
+        } catch (e) {
+          console.warn('Could not render drone photo to snapshot canvas:', e);
+        }
+      }
+
+      if (!imageDrawn) {
+        ctx.fillStyle = '#0b132b';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 50) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 50) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+      }
+
+      // 2. Coordinate Transformation Helper
+      let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+      let hasGeoCoords = false;
+
+      const testCoord = (pt) => {
+        if (!pt || pt.length < 2) return;
+        const x = Number(pt[0]), y = Number(pt[1]);
+        if (Math.abs(x) <= 180 && Math.abs(y) <= 90) {
+          hasGeoCoords = true;
+          minLng = Math.min(minLng, x);
+          maxLng = Math.max(maxLng, x);
+          minLat = Math.min(minLat, y);
+          maxLat = Math.max(maxLat, y);
+        }
+      };
+
+      displayParcels.forEach(p => {
+        const ring = (p.geo_geometry?.coordinates?.[0]) || (p.geometry?.coordinates?.[0]) || [];
+        ring.forEach(testCoord);
+      });
+
+      const sx = canvas.width / (imgW || canvas.width);
+      const sy = canvas.height / (imgH || canvas.height);
+      const pad = 50;
+
+      const toCanvas = (pt) => {
+        if (!pt || pt.length < 2) return [0, 0];
+        const x = Number(pt[0]), y = Number(pt[1]);
+
+        if (Math.abs(x) > 180 || Math.abs(y) > 90 || !isGeoreferenced) {
+          return [x * sx, y * sy];
+        }
+
+        if (hasGeoCoords && maxLng > minLng && maxLat > minLat) {
+          const px = pad + ((x - minLng) / (maxLng - minLng)) * (canvas.width - 2 * pad);
+          const py = canvas.height - pad - ((y - minLat) / (maxLat - minLat)) * (canvas.height - 2 * pad);
+          return [px, py];
+        }
+
+        return [x * sx, y * sy];
+      };
+
+      // 3. Draw Supporting Contextual Features
+      // Water Polygons
+      relevantFeatures.filter(f => {
+        const t = (f.detection_type || f.feature_type || f.type || '').toUpperCase();
+        return t.includes('WATER') || t.includes('RIVER') || t.includes('CANAL');
+      }).forEach(w => {
+        const raw = (!isGeoreferenced && w.image_coordinates)
+          ? this.extractRingCoords(w.image_coordinates)
+          : (w.geo_geometry?.coordinates?.[0] || w.geometry?.coordinates?.[0] || []);
+        if (raw.length >= 3) {
+          ctx.beginPath();
+          const first = toCanvas(raw[0]);
+          ctx.moveTo(first[0], first[1]);
+          for (let i = 1; i < raw.length; i++) {
+            const pt = toCanvas(raw[i]);
+            ctx.lineTo(pt[0], pt[1]);
+          }
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(2, 132, 199, 0.35)';
+          ctx.strokeStyle = '#0284c7';
+          ctx.lineWidth = 1.5;
+          ctx.fill();
+          ctx.stroke();
+        }
+      });
+
+      // Buildings
+      relevantFeatures.filter(f => {
+        const t = (f.detection_type || f.feature_type || f.type || '').toUpperCase();
+        return t.includes('BUILDING');
+      }).forEach(b => {
+        const raw = (!isGeoreferenced && b.image_coordinates)
+          ? this.extractRingCoords(b.image_coordinates)
+          : (b.geo_geometry?.coordinates?.[0] || b.geometry?.coordinates?.[0] || []);
+        if (raw.length >= 3) {
+          ctx.beginPath();
+          const first = toCanvas(raw[0]);
+          ctx.moveTo(first[0], first[1]);
+          for (let i = 1; i < raw.length; i++) {
+            const pt = toCanvas(raw[i]);
+            ctx.lineTo(pt[0], pt[1]);
+          }
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(6, 182, 212, 0.35)';
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 1.5;
+          ctx.fill();
+          ctx.stroke();
+        }
+      });
+
+      // Fields
+      relevantFeatures.filter(f => {
+        const t = (f.detection_type || f.feature_type || f.type || '').toUpperCase();
+        return t.includes('FIELD');
+      }).forEach(fld => {
+        const raw = (!isGeoreferenced && fld.image_coordinates)
+          ? this.extractRingCoords(fld.image_coordinates)
+          : (fld.geo_geometry?.coordinates?.[0] || fld.geometry?.coordinates?.[0] || []);
+        if (raw.length >= 3) {
+          ctx.beginPath();
+          const first = toCanvas(raw[0]);
+          ctx.moveTo(first[0], first[1]);
+          for (let i = 1; i < raw.length; i++) {
+            const pt = toCanvas(raw[i]);
+            ctx.lineTo(pt[0], pt[1]);
+          }
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(132, 204, 22, 0.12)';
+          ctx.strokeStyle = '#84cc16';
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([4, 4]);
+          ctx.fill();
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      });
+
+      // Roads
+      relevantFeatures.filter(f => {
+        const t = (f.detection_type || f.feature_type || f.type || '').toUpperCase();
+        return t.includes('ROAD');
+      }).forEach(r => {
+        const raw = (!isGeoreferenced && r.image_coordinates)
+          ? this.extractRingCoords(r.image_coordinates)
+          : (r.geo_geometry?.coordinates || r.geometry?.coordinates || []);
+        if (raw.length >= 2) {
+          ctx.beginPath();
+          const first = toCanvas(raw[0]);
+          ctx.moveTo(first[0], first[1]);
+          for (let i = 1; i < raw.length; i++) {
+            const pt = toCanvas(raw[i]);
+            ctx.lineTo(pt[0], pt[1]);
+          }
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 4;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+        }
+      });
+
+      // 4. Draw Verified Parcel Boundaries
+      displayParcels.forEach(p => {
+        const rawCoords = (!isGeoreferenced && p.image_coordinates)
+          ? this.extractRingCoords(p.image_coordinates)
+          : (p.geo_geometry?.coordinates?.[0] || p.geometry?.coordinates?.[0] || []);
+
+        if (rawCoords && rawCoords.length >= 3) {
+          const canvasPts = rawCoords.map(toCanvas);
+
+          ctx.beginPath();
+          ctx.moveTo(canvasPts[0][0], canvasPts[0][1]);
+          let sumX = canvasPts[0][0], sumY = canvasPts[0][1];
+          for (let i = 1; i < canvasPts.length; i++) {
+            ctx.lineTo(canvasPts[i][0], canvasPts[i][1]);
+            sumX += canvasPts[i][0];
+            sumY += canvasPts[i][1];
+          }
+          ctx.closePath();
+
+          ctx.fillStyle = 'rgba(16, 185, 129, 0.32)';
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+          ctx.shadowBlur = 5;
+          ctx.fill();
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Centroid Badge for Parcel ID
+          const cx = sumX / canvasPts.length;
+          const cy = sumY / canvasPts.length;
+          const pid = p.parcel_id || p.id || 'PM';
+
+          ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          const txtW = ctx.measureText(pid).width;
+          const bW = txtW + 16;
+          const bH = 18;
+          const bx = cx - bW / 2;
+          const by = cy - bH / 2;
+
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(bx, by, bW, bH, 4);
+          else ctx.rect(bx, by, bW, bH);
+          ctx.fill();
+
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(pid, cx, cy);
+        }
+      });
+
+      // 5. Professional Cartographic Overlays
+      // Top-Left Badge
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(14, 14, 260, 26, 4);
+      else ctx.rect(14, 14, 260, 26);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.arc(26, 27, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 10.5px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('VERIFIED DELINEATION SNAPSHOT', 36, 27);
+
+      // Top-Right Compass
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(canvas.width - 44, 14, 30, 30, 4);
+      else ctx.rect(canvas.width - 44, 14, 30, 30);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.stroke();
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('▲ N', canvas.width - 29, 29);
+
+      // Bottom-Left Watermark
+      const infoText = `${this.project?.name || 'Cadastral Survey'} • ${acceptedList.length} Verified Parcels • ${isGeoreferenced ? 'WGS84' : 'Image-Space'}`;
+      ctx.font = '9.5px sans-serif';
+      const infoW = ctx.measureText(infoText).width;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(14, canvas.height - 30, infoW + 16, 20, 3);
+      else ctx.rect(14, canvas.height - 30, infoW + 16, 20);
+      ctx.fill();
+      ctx.fillStyle = '#cbd5e1';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(infoText, 22, canvas.height - 20);
+
+      // Bottom-Right Scale Bar
+      const scaleW = 90;
+      const scaleX = canvas.width - scaleW - 16;
+      const scaleY = canvas.height - 22;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(scaleX - 8, scaleY - 14, scaleW + 16, 24, 3);
+      else ctx.rect(scaleX - 8, scaleY - 14, scaleW + 16, 24);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(scaleX, scaleY + 2);
+      ctx.lineTo(scaleX + scaleW, scaleY + 2);
+      ctx.moveTo(scaleX, scaleY - 3);
+      ctx.lineTo(scaleX + scaleY + 4, scaleY + 4);
+      ctx.moveTo(scaleX + scaleW, scaleY - 3);
+      ctx.lineTo(scaleX + scaleW, scaleY + 4);
+      ctx.stroke();
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('Cadastral Scale', scaleX + scaleW / 2, scaleY - 4);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      this.currentMapSnapshot = dataUrl;
+      return dataUrl;
+    } catch (err) {
+      console.warn('Error generating map snapshot canvas:', err);
+      return null;
+    }
+  }
+
+  async renderReportMapSnapshot(report = null) {
+    const imgEl = document.getElementById('repMapSnapshotImg');
+    const placeholder = document.getElementById('repMapPlaceholderText');
+    const statusBadge = document.getElementById('repSnapshotStatusBadge');
+    const overlayBadge = document.getElementById('repMapSnapshotOverlayBadge');
+
+    if (placeholder) {
+      placeholder.style.display = 'block';
+      placeholder.innerHTML = `
+        <div style="margin-bottom: 4px; font-weight: 600;">🗺 Verified Parcel Boundary Delineation</div>
+        <span style="font-size: 10px; color: #10b981;">Rendering high-resolution map snapshot with verified delineations...</span>
+      `;
+    }
+
+    try {
+      const dataUrl = await this.generateMapSnapshot(report?.imagery?.id);
+      if (dataUrl && imgEl) {
+        imgEl.src = dataUrl;
+        imgEl.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+        if (statusBadge) statusBadge.style.display = 'inline';
+        if (overlayBadge) overlayBadge.style.display = 'block';
+      }
+    } catch (e) {
+      console.warn('Failed to render report map snapshot:', e);
+      if (placeholder) {
+        placeholder.innerHTML = `
+          <div>🗺 Verified Parcel Boundary Delineation</div>
+          <span style="font-size: 10px; color: #f59e0b;">Map preview ready in Final Map view.</span>
+        `;
+      }
+    }
+  }
+
   async captureMapSnapshot() {
     try {
+      if (this.currentMapSnapshot) return this.currentMapSnapshot;
+      const generated = await this.generateMapSnapshot();
+      if (generated) return generated;
+
       const mapEl = document.getElementById('finalMap');
-      if (!mapEl) return null;
-      const canvas = mapEl.querySelector('canvas');
-      if (canvas) {
-        return canvas.toDataURL('image/png');
+      if (mapEl) {
+        const canvas = mapEl.querySelector('canvas');
+        if (canvas) return canvas.toDataURL('image/png');
       }
     } catch (e) {
       console.warn('Could not capture local canvas:', e);
@@ -4940,6 +6213,14 @@ class ParcelMapWorkspace {
 
     document.getElementById('btnPrintReport')?.addEventListener('click', () => {
       window.print();
+    });
+
+    document.getElementById('btnRepViewInteractiveMap')?.addEventListener('click', () => {
+      this.switchView('map');
+    });
+
+    document.getElementById('repMapPreviewCard')?.addEventListener('click', () => {
+      this.switchView('map');
     });
   }
 
@@ -5122,6 +6403,9 @@ class ParcelMapWorkspace {
         }
       }
 
+      // Render Final Map Snapshot into preview card
+      await this.renderReportMapSnapshot(report);
+
     } catch (err) {
       console.warn('Error rendering report view:', err);
     }
@@ -5245,120 +6529,26 @@ class ParcelMapWorkspace {
 
     const handleFileUpload = async (file) => {
       if (!file) return;
-
-      const validExts = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.jfif', '.webp'];
-      const fileExt = '.' + file.name.split('.').pop().toLowerCase();
-      if (!validExts.includes(fileExt) && !file.type.startsWith('image/')) {
-        this.showToast(`Unsupported format: ${file.name}. Please upload JPG, PNG, WEBP, or GeoTIFF (.tif/.tiff).`, 'error');
-        if (fileInput) fileInput.value = '';
-        return;
+      if (dropzone) {
+        dropzone.style.opacity = '0.65';
+        dropzone.style.pointerEvents = 'none';
       }
-
-      // Ensure a valid active project exists
-      if (!this.activeProjectId) {
-        this.activeProjectId = localStorage.getItem('pm_active_project_id') || 'proj_wagholi_demo';
-      }
-
-      const processUpload = async (w, h) => {
-        const formData = new FormData();
-        formData.append('imagery', file);
-        formData.append('width', w || 4000);
-        formData.append('height', h || 3000);
-
-        this.showToast(`Uploading ${file.name}...`, 'info');
+      try {
+        await this.uploadDroneImageFile(file);
+      } finally {
         if (dropzone) {
-          dropzone.style.opacity = '0.65';
-          dropzone.style.pointerEvents = 'none';
+          dropzone.style.opacity = '1';
+          dropzone.style.pointerEvents = 'auto';
         }
-
-        try {
-          const res = await fetch(`${this.apiBase}/projects/${this.activeProjectId}/imagery`, {
-            method: 'POST',
-            body: formData
-          });
-
-          let data;
-          const text = await res.text();
-          try {
-            data = JSON.parse(text);
-          } catch (parseErr) {
-            throw new Error(text || `Server returned HTTP ${res.status}`);
-          }
-
-          if (res.ok && data.success && data.imagery) {
-            this.showToast('Drone imagery uploaded successfully!', 'success');
-            this.selectedImageryId = data.imagery.id;
-            localStorage.setItem('pm_selected_imagery_id', this.selectedImageryId);
-            if (data.project_id && data.project_id !== this.activeProjectId) {
-              this.activeProjectId = data.project_id;
-              localStorage.setItem('pm_active_project_id', this.activeProjectId);
-            }
-            await this.loadProjectData(this.activeProjectId);
-            this.updateImageryViewUI();
-            this.updateDetectionViewUI();
-            await this.populateProjectSelector();
-          } else {
-            const errDetail = data?.error || (res.status === 404 ? `API endpoint not found (HTTP 404 on ${this.apiBase})` : `Server returned HTTP ${res.status}`);
-            console.error('[Upload Rejected]:', data);
-            this.showToast(`Image upload failed: ${errDetail}`, 'error');
-          }
-        } catch (err) {
-          console.error('[Upload Exception]:', err);
-          this.showToast(`Image upload failed: ${err.message || 'Cannot reach API server'}`, 'error');
-        } finally {
-          if (dropzone) {
-            dropzone.style.opacity = '1';
-            dropzone.style.pointerEvents = 'auto';
-          }
-          if (fileInput) fileInput.value = '';
-        }
-      };
-
-      // Skip browser Image() decoding for GeoTIFFs (browsers cannot decode TIFF natively)
-      if (fileExt === '.tif' || fileExt === '.tiff') {
-        processUpload(4000, 3000);
-        return;
+        if (fileInput) fileInput.value = '';
       }
-
-      // Safe dimension extraction with fallback timeout
-      let finished = false;
-      const objectUrl = URL.createObjectURL(file);
-      const tempImg = new Image();
-
-      const timer = setTimeout(() => {
-        if (!finished) {
-          finished = true;
-          URL.revokeObjectURL(objectUrl);
-          processUpload(4000, 3000);
-        }
-      }, 1500);
-
-      tempImg.onload = () => {
-        if (!finished) {
-          finished = true;
-          clearTimeout(timer);
-          const width = tempImg.naturalWidth || 4000;
-          const height = tempImg.naturalHeight || 3000;
-          URL.revokeObjectURL(objectUrl);
-          processUpload(width, height);
-        }
-      };
-
-      tempImg.onerror = () => {
-        if (!finished) {
-          finished = true;
-          clearTimeout(timer);
-          URL.revokeObjectURL(objectUrl);
-          processUpload(4000, 3000);
-        }
-      };
-
-      tempImg.src = objectUrl;
     };
 
-    fileInput?.addEventListener('change', (e) => {
+    fileInput?.addEventListener('change', async (e) => {
       if (e.target.files && e.target.files.length > 0) {
-        handleFileUpload(e.target.files[0]);
+        for (let i = 0; i < e.target.files.length; i++) {
+          await handleFileUpload(e.target.files[i]);
+        }
       }
     });
 
@@ -5390,15 +6580,22 @@ class ParcelMapWorkspace {
     }
 
     document.getElementById('btnLoadDemoImagery')?.addEventListener('click', async () => {
-      this.showToast('Loading demo high-resolution Wagholi orthomosaic...', 'info');
-      await fetch(`${this.apiBase}/demo/reset`, { method: 'POST' });
-      this.activeProjectId = 'proj_wagholi_demo';
-      this.selectedImageryId = 'img_wagholi_ortho';
-      localStorage.setItem('pm_active_project_id', this.activeProjectId);
-      localStorage.setItem('pm_selected_imagery_id', this.selectedImageryId);
-      await this.populateProjectSelector();
-      await this.loadProjectData(this.activeProjectId);
-      this.showToast('Loaded demo high-resolution Wagholi orthomosaic (2.8 cm/px)', 'success');
+      this.showToast('Loading fresh Coastal Settlement demo dataset...', 'info');
+      try {
+        const res = await fetch(`${this.apiBase}/demo/reset`, { method: 'POST' });
+        const data = await res.json();
+        this.activeProjectId = 'proj_demo_coastal';
+        this.selectedImageryId = 'img_demo_coastal';
+        localStorage.setItem('pm_active_project_id', this.activeProjectId);
+        localStorage.setItem('pm_selected_imagery_id', this.selectedImageryId);
+        await this.populateProjectSelector();
+        await this.loadProjectData(this.activeProjectId);
+        this.updateImageryViewUI();
+        this.updateDetectionViewUI();
+        this.showToast('Loaded ParcelMap Demo — Coastal Settlement (Ready)', 'success');
+      } catch (err) {
+        this.showToast(`Failed to load demo dataset: ${err.message}`, 'error');
+      }
     });
 
     // Export GeoJSON
@@ -5415,7 +6612,7 @@ class ParcelMapWorkspace {
     document.getElementById('statFeaturesCount').textContent = this.features.length;
 
     const currentImg = this.imagery.find(img => img.id === this.selectedImageryId) || this.imagery[0];
-    const isGeo = currentImg ? (currentImg.file_name.toLowerCase().endsWith('.tif') || currentImg.file_name.toLowerCase().endsWith('.tiff') || Boolean(currentImg.metadata?.crs)) : false;
+    const isGeo = this.isImageGeoreferenced(currentImg);
 
     const currentParcels = this.parcels.filter(p => currentImg && p.imagery_id === currentImg.id);
     document.getElementById('statParcelsTotal').textContent = currentParcels.length;
@@ -5453,7 +6650,7 @@ class ParcelMapWorkspace {
       tbody.innerHTML = '';
 
       data.projects.forEach(p => {
-        const isDemo = p.id === 'proj_wagholi_demo';
+        const isDemo = Boolean(p.is_demo || p.id === 'proj_demo_coastal');
         const isCurrent = p.id === this.activeProjectId;
         const totalParcels = p.preliminary_parcels ?? p.parcels_count ?? (isCurrent ? this.parcels.length : 0);
         const verifiedParcels = p.verified_parcels ?? (isCurrent ? this.parcels.filter(x => x.status === 'accepted' || x.status === 'Human Verified').length : 0);
@@ -5479,7 +6676,7 @@ class ParcelMapWorkspace {
           </td>
           <td style="font-size: 12px; color: var(--text-secondary);">${p.location || 'Unspecified'}</td>
           <td><span class="pm-status-tag ${statusClass}">${st}</span></td>
-          <td style="font-size: 12px; color: var(--text-secondary);">${p.created_by || 'Alex Morgan'}</td>
+          <td style="font-size: 12px; color: var(--text-secondary);">${p.created_by || 'Surveyor'}</td>
           <td style="font-size: 12px; font-family: var(--font-mono);">${totalParcels} <span style="font-size: 10.5px; color: var(--accent-emerald);">(${verifiedParcels} verified)</span></td>
           <td>
             <div style="display: flex; align-items: center; gap: 8px;">

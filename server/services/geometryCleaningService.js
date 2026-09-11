@@ -350,7 +350,7 @@ export class GeometryCleaningService {
       if (type === 'road') {
         if (len > maxDim * 2.2) return { valid: false, reason: 'road_length_excessive' };
       } else {
-        if (len > maxDim * 0.75) return { valid: false, reason: 'extreme_diagonal_artifact' };
+        if (len > 150) return { valid: false, reason: 'extreme_diagonal_artifact' };
       }
 
       return { valid: true };
