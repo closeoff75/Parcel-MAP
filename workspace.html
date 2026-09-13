@@ -76,14 +76,14 @@
     <!-- CLEAN 7-STAGE NAVIGATION (NO EMOJIS, MINIMALIST PILLS) -->
     <nav class="pm-header-center">
       <div class="pm-nav-tabs">
-        <button class="pm-nav-tab active" data-view="dashboard">Projects</button>
-        <button class="pm-nav-tab" data-view="imagery">Drone Imagery</button>
+        <button class="pm-nav-tab active" data-view="imagery">Drone Imagery</button>
         <button class="pm-nav-tab" data-view="detection">AI Detection</button>
         <button class="pm-nav-tab" data-view="reasoning">Spatial Reasoning</button>
         <button class="pm-nav-tab" data-view="quality">GIS Quality</button>
         <button class="pm-nav-tab" data-view="verify">Verification</button>
         <button class="pm-nav-tab" data-view="map">Final Map</button>
         <button class="pm-nav-tab" data-view="report">Reports</button>
+        <button class="pm-nav-tab" data-view="dashboard">Projects</button>
       </div>
     </nav>
 
@@ -100,7 +100,7 @@
   <div class="pm-view-container">
 
     <!-- 1. PROJECT DASHBOARD VIEW -->
-    <section class="pm-view-stage active" id="viewDashboard">
+    <section class="pm-view-stage" id="viewDashboard">
       <div class="dashboard-scroll">
         <!-- Executive Minimalist Project Header -->
         <div class="dash-header-card">
@@ -255,7 +255,7 @@
     </section>
 
     <!-- 2. DRONE IMAGERY VIEW -->
-    <section class="pm-view-stage" id="viewImagery">
+    <section class="pm-view-stage active" id="viewImagery">
       <div class="dashboard-scroll" style="max-width: 880px;">
         <div style="margin-bottom: 20px;">
           <h2 style="font-size: 1.35rem; font-weight: 600; color: var(--text-primary);">Upload Drone Imagery</h2>
@@ -1098,9 +1098,9 @@
         </div>
       </div>
 
-      <div class="workspace-layout" style="flex: 1; min-height: 0;">
+      <div class="workspace-layout verify-workspace-layout">
         <!-- 6.1 LEFT COLUMN: Parcel List & Layer Controls (Requirement 8 & 9) -->
-        <aside class="ws-sidebar" style="width: 320px; display: flex; flex-direction: column;">
+        <aside class="ws-sidebar">
           <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px;">
             <div style="display: flex; gap: 4px; background: var(--bg-subtle); padding: 2px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
               <button class="filter-pill active" id="tabVerifyParcelsList" style="padding: 3px 10px; font-size: 11px;">Parcels</button>
@@ -1241,6 +1241,34 @@
             <input type="text" class="search-input-pill" id="wsQuickSearch" placeholder="Search Parcel ID (e.g. PM-0001)...">
           </div>
 
+          <!-- Interactive Parcel Split Mode HUD Banner (Requirements 1, 2, 3, 9, 10) -->
+          <div id="splitModeHud" class="split-mode-hud" style="display: none;">
+            <div class="split-hud-header">
+              <div class="split-hud-badge">
+                <span class="split-hud-icon">✂</span>
+                <span>SPLIT MODE</span>
+              </div>
+              <div class="split-hud-target">
+                Target: <strong id="splitTargetParcelId">PM-0001</strong>
+              </div>
+              <span id="splitStatusTag" class="split-status-tag">Point 1 of 2</span>
+            </div>
+            <div class="split-hud-instruction" id="splitInstructionText">
+              Draw a line across the selected parcel &bull; Click first point &rarr; click second point &bull; Double-click to finish
+            </div>
+            <div class="split-hud-actions">
+              <button type="button" class="btn-split-action btn-split-undo" id="btnSplitUndoPoint" title="Undo last point (Ctrl+Z)" disabled>
+                ↺ Undo Point
+              </button>
+              <button type="button" class="btn-split-action btn-split-apply" id="btnSplitApply" title="Apply Split (Double-click)" disabled>
+                ✓ Apply Split
+              </button>
+              <button type="button" class="btn-split-action btn-split-cancel" id="btnSplitCancel" title="Cancel Split (Esc)">
+                ✕ Cancel Split
+              </button>
+            </div>
+          </div>
+
           <!-- Leaflet GIS Map Canvas -->
           <div id="wsGisMap"></div>
 
@@ -1269,14 +1297,14 @@
 
           <div class="drawer-content">
             <!-- Metadata Strip: Source & Quality Status (Requirement 2) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-              <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 8px;">
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px;">
+              <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 8px; min-width: 0;">
                 <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block;">Source</span>
-                <strong style="font-size: 11px; color: #38bdf8;" id="drwSource">Spatial Reasoning</strong>
+                <strong style="font-size: 11px; color: #38bdf8; overflow-wrap: anywhere; word-break: break-word;" id="drwSource">Spatial Reasoning</strong>
               </div>
-              <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 8px;">
+              <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 8px; min-width: 0;">
                 <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block;">Quality Status</span>
-                <strong style="font-size: 11px; color: #10b981;" id="drwQualityStatus">Topology Valid</strong>
+                <strong style="font-size: 11px; color: #10b981; overflow-wrap: anywhere; word-break: break-word;" id="drwQualityStatus">Topology Valid</strong>
               </div>
             </div>
 
@@ -1284,13 +1312,13 @@
             <div class="area-diff-grid">
               <div class="area-cell">
                 <span class="area-cell-label">AI Calculated Area</span>
-                <span class="area-cell-val" id="drwAiArea">1.84 ha</span>
-                <span class="area-cell-sub" id="drwAiAreaSub">18,400 m²</span>
+                <span class="area-cell-val" id="drwAiArea">8,137 px²</span>
+                <span class="area-cell-sub" id="drwAiAreaSub">Real-world area unavailable until imagery is georeferenced.</span>
               </div>
-              <div class="area-cell" style="border-left: 1px solid var(--border-subtle); padding-left: 10px;">
+              <div class="area-cell area-cell-verified">
                 <span class="area-cell-label" style="color: var(--accent-emerald);">Verified Area</span>
-                <span class="area-cell-val" style="color: var(--accent-emerald);" id="drwVerifiedArea">1.84 ha</span>
-                <span class="area-cell-sub" id="drwVerifiedAreaSub">18,400 m²</span>
+                <span class="area-cell-val" style="color: var(--accent-emerald);" id="drwVerifiedArea">8,137 px²</span>
+                <span class="area-cell-sub" id="drwVerifiedAreaSub">Real-world area unavailable until imagery is georeferenced.</span>
               </div>
             </div>
 
@@ -1299,6 +1327,45 @@
               <span class="layer-section-title">Supporting Features</span>
               <div id="drwSupportingFeatures" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
                 <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Explainability & Provenance (Requirement 10) -->
+            <div class="drw-panel-card" style="margin-top: 10px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 12px;">
+              <span class="layer-section-title" style="margin-bottom: 8px; display: block; color: var(--text-primary); font-weight: 700; font-size: 11px;">EVIDENCE &amp; PROVENANCE</span>
+              <div class="drw-kv-grid">
+                <div class="drw-kv-row">
+                  <span class="drw-kv-label">Supporting Building:</span>
+                  <strong class="drw-kv-val" id="drwSuppBuilding">-</strong>
+                </div>
+                <div class="drw-kv-row">
+                  <span class="drw-kv-label">Supporting Road:</span>
+                  <strong class="drw-kv-val" id="drwSuppRoad">-</strong>
+                </div>
+                <div class="drw-kv-row">
+                  <span class="drw-kv-label">Boundary Evidence:</span>
+                  <strong class="drw-kv-val" id="drwSuppBoundary">-</strong>
+                </div>
+                <div class="drw-kv-row">
+                  <span class="drw-kv-label">Perimeter Support:</span>
+                  <strong class="drw-kv-val" style="color: var(--accent-emerald);" id="drwSuppPerimeter">-</strong>
+                </div>
+                <div class="drw-kv-row">
+                  <span class="drw-kv-label">Current Version:</span>
+                  <strong class="drw-kv-val" style="color: #38bdf8; font-family: var(--font-mono);" id="drwVersionNumber">v1</strong>
+                </div>
+                <div class="drw-kv-row">
+                  <span class="drw-kv-label">Last Modified:</span>
+                  <strong class="drw-kv-val" style="color: var(--text-secondary); font-size: 10px;" id="drwLastModified">-</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- "Why This Parcel Exists" (Requirement 10) -->
+            <div class="drw-panel-card" style="margin-top: 8px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 6px; padding: 10px 12px;">
+              <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--accent-emerald); display: block; margin-bottom: 6px; letter-spacing: 0.5px;">WHY THIS PARCEL EXISTS</span>
+              <div id="drwWhyExistsList" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-secondary);">
+                <!-- Populated dynamically with checkmarks -->
               </div>
             </div>
 
@@ -1311,7 +1378,7 @@
             <!-- Primary Decision & Action Buttons (Requirements 3, 4, 5, 6, 7) -->
             <div class="ws-action-bar" style="display: flex; flex-direction: column; gap: 6px;">
               <!-- Verification Decision Row -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
+              <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;">
                 <button class="btn-action btn-verify-action" id="btnActionAccept" title="Accept Parcel (status = ACCEPTED)">
                   ✓ Accept
                 </button>
@@ -1324,7 +1391,7 @@
               </div>
 
               <!-- Geometric Editing Row -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
+              <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;">
                 <button class="btn-action btn-edit-action" id="btnActionEdit" title="Edit Boundary Vertices directly on map">
                   ✎ Edit
                 </button>

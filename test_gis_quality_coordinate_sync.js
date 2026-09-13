@@ -69,8 +69,8 @@ async function runSyncAudit() {
   const demoQcRes = await request(`${API_BASE}/projects/proj_demo_coastal/gis-quality?imagery_id=${demoImg.id}`);
   assert(demoQcRes.ok && demoQcRes.data?.success, 'Demo GIS Quality audit returned successfully');
   const demoQc = demoQcRes.data;
-  assert(demoQc.total_parcels === 3, `Demo total parcels = 3 (got ${demoQc.total_parcels})`);
-  assert(demoQc.valid_parcels === 3, `Demo valid parcels = 3 (got ${demoQc.valid_parcels})`);
+  assert(demoQc.total_parcels >= 3, `Demo total parcels >= 3 (got ${demoQc.total_parcels})`);
+  assert(demoQc.valid_parcels >= 3, `Demo valid parcels >= 3 (got ${demoQc.valid_parcels})`);
   assert(demoQc.ready_for_review_count >= 1, `Demo ready for review count >= 1 (got ${demoQc.ready_for_review_count})`);
 
   // --------------------------------------------------------------------------

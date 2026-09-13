@@ -7,9 +7,12 @@
 
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { db } from '../db/database.js';
 import { CVEngine } from './cvEngine.js';
 import { DetectionProvider } from './detectionProviders.js';
+import { EnvConfig } from '../config/envConfig.js';
+import { StorageService } from './storageService.js';
 
 export class DetectionService {
   /**
@@ -20,7 +23,7 @@ export class DetectionService {
     if (!imagery) {
       throw new Error(`Imagery item not found with ID: ${imageryId}`);
     }
-    return this.runDetection(imagery.project_id, { ...options, imagery_id: imageryId });
+    return this.runDetection(imagery.project_id, { ...options, imagery_id: imageryId, request_endpoint: `/api/imagery/${imageryId}/detect` });
   }
 
   /**
@@ -28,6 +31,7 @@ export class DetectionService {
    */
   static async runDetection(projectId, options = {}) {
     const startTime = Date.now();
+    const endpoint = options.request_endpoint || `/api/projects/${projectId}/detect`;
 
     // 1. Verify project
     const project = db.getProjectById(projectId);
@@ -57,34 +61,58 @@ export class DetectionService {
     // Set processing state
     db.updateImagery(imagery.id, { processing_status: 'PROCESSING' });
 
-    console.log(`[Detection] imagery_id: ${imagery.id}`);
-    console.log(`[Detection] project_id: ${projectId}`);
-    console.log(`[Detection] file_name: ${imagery.file_name}`);
-
-    // 3. Resolve disk file path
+    // 3. Resolve image buffer & disk file path via StorageService
+    let imageBuffer = await StorageService.ensureLocalBuffer(imagery);
     let filePath = null;
-    if (imagery.file_url) {
-      const urlClean = imagery.file_url.replace(/^\//, '');
-      const candidatePath = path.join(process.cwd(), urlClean);
-      if (fs.existsSync(candidatePath)) {
-        filePath = candidatePath;
+
+    if (!imageBuffer) {
+      if (imagery.file_url) {
+        const urlClean = imagery.file_url.replace(/^\//, '');
+        const candidatePath = path.join(process.cwd(), urlClean);
+        if (fs.existsSync(candidatePath)) {
+          filePath = candidatePath;
+          imageBuffer = fs.readFileSync(filePath);
+        }
+      }
+
+      if (!imageBuffer) {
+        const baseName = path.basename(imagery.file_url || imagery.file_name || '');
+        const uploadsCandidate = path.join(process.cwd(), 'uploads', baseName);
+        if (fs.existsSync(uploadsCandidate)) {
+          filePath = uploadsCandidate;
+          imageBuffer = fs.readFileSync(filePath);
+        }
       }
     }
 
-    // Check fallback in uploads folder
-    if (!filePath) {
-      const baseName = path.basename(imagery.file_url || imagery.file_name);
-      const uploadsCandidate = path.join(process.cwd(), 'uploads', baseName);
-      if (fs.existsSync(uploadsCandidate)) {
-        filePath = uploadsCandidate;
-      }
+    if (!imageBuffer || imageBuffer.length < 100) {
+      db.updateImagery(imagery.id, { processing_status: 'DETECTION FAILED' });
+      EnvConfig.logDiagnostic('Imagery File Missing', {
+        project_id: projectId,
+        imagery_id: imagery.id,
+        filename: imagery.file_name,
+        expected_path: imagery.storage_key || imagery.file_url,
+        request_endpoint: endpoint,
+        status: 'FAILED',
+        error: 'File does not exist in storage or is too small (< 100 bytes)'
+      });
+      throw new Error(`Imagery file not found in storage at: ${imagery.storage_key || imagery.file_url}. Please upload drone imagery first.`);
     }
 
-    const hasDiskFile = filePath && fs.existsSync(filePath);
+    // Ensure a physical file exists on disk for downstream CV/OpenCV models
+    if (!filePath || !fs.existsSync(filePath)) {
+      const ext = path.extname(imagery.file_name || imagery.filename || 'image.jpg') || '.jpg';
+      const tmpFilename = `parcelmap_${imagery.id}_${Date.now()}${ext}`;
+      const tmpPath = path.join(os.tmpdir(), tmpFilename);
+      fs.writeFileSync(tmpPath, imageBuffer);
+      filePath = tmpPath;
+    }
 
+    const fileStats = fs.statSync(filePath);
+
+    // 5. Image-space mode validation (Section 3: non-georeferenced images are fully supported)
     let imageWidth = Number(imagery.width) || 4000;
     let imageHeight = Number(imagery.height) || 3000;
-    let detectorLabel = 'Edge & Pixel Computer Vision AI Engine';
 
     const isTif = imagery.file_name.toLowerCase().endsWith('.tif') || imagery.file_name.toLowerCase().endsWith('.tiff');
     let isGeoreferenced = false;
@@ -99,57 +127,105 @@ export class DetectionService {
       }
     }
 
-    let detectionResult = null;
+    const coordinateMode = isGeoreferenced ? 'geographic' : 'image-space';
 
-    const detectionRunId = options.run_id || options.detection_run_id || `run_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-
-    if (hasDiskFile) {
-      // ACTUAL COMPUTER VISION / ML ON UPLOADED IMAGE VIA MULTI-CLASS PROVIDER
-      console.log(`[Detection] image loaded: ${filePath}`);
-      try {
-        try {
-          const decoded = CVEngine.loadImage(filePath);
-          if (decoded && decoded.width && decoded.height) {
-            imageWidth = decoded.width;
-            imageHeight = decoded.height;
-          }
-        } catch (loadErr) {
-          console.log(`[Detection] Note: JS CVEngine decode skipped, will use Python OpenCV directly: ${loadErr.message}`);
-        }
-        console.log(`[Detection] image dimensions: ${imageWidth}x${imageHeight}`);
-
-        // Update database with true dimensions from decoded file
-        db.updateImagery(imagery.id, { width: imageWidth, height: imageHeight });
-
-        // Always use configured ML or CV provider for actual detection
-        const providerName = options.provider || (options.mode === 'cv' ? 'cv' : (process.env.DETECTION_PROVIDER || 'ml'));
-
-        const provider = DetectionProvider.getProvider(providerName);
-        detectionResult = await provider.detect({
-          filePath,
-          width: imageWidth,
-          height: imageHeight,
-          project_id: projectId,
-          imagery_id: imagery.id,
-          detection_run_id: detectionRunId,
-          is_georeferenced: isGeoreferenced,
-          project_coordinates: project.coordinates || [18.5818, 73.9875]
-        }, options);
-
-      } catch (cvErr) {
-        console.error(`[Detection] ML/CV analysis failed on file: ${cvErr.message}`);
-        db.updateImagery(imagery.id, { processing_status: 'DETECTION FAILED' });
-        throw new Error(`Detection processing failed on uploaded image: ${cvErr.message}`);
-      }
-    } else {
+    // 6. Provider selection & configuration validation (Section 6)
+    const providerName = options.provider || (options.mode === 'cv' ? 'cv' : (process.env.DETECTION_PROVIDER || 'ml'));
+    try {
+      EnvConfig.validateDetectionConfig(providerName);
+    } catch (cfgErr) {
       db.updateImagery(imagery.id, { processing_status: 'DETECTION FAILED' });
-      throw new Error(`Imagery file not found on disk at: ${filePath || imagery.file_url}. Please upload drone imagery first.`);
+      EnvConfig.logDiagnostic('Config Validation Error', {
+        project_id: projectId,
+        imagery_id: imagery.id,
+        provider: providerName,
+        request_endpoint: endpoint,
+        status: 'FAILED',
+        error: cfgErr.message
+      });
+      throw cfgErr;
     }
 
-    // Save features in database scoped to imagery.id
+    // Diagnostic logging before model inference (Section 1)
+    EnvConfig.logDiagnostic('Pre-Inference', {
+      project_id: projectId,
+      imagery_id: imagery.id,
+      image_filename: imagery.file_name,
+      image_path_or_url: filePath,
+      file_size_bytes: fileStats.size,
+      coordinate_mode: coordinateMode,
+      request_endpoint: endpoint,
+      provider: providerName
+    });
+
+    let detectionResult = null;
+    const detectionRunId = options.run_id || options.detection_run_id || `run_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    try {
+      // Decode image dimensions if possible
+      try {
+        const decoded = CVEngine.loadImage(filePath);
+        if (decoded && decoded.width && decoded.height) {
+          imageWidth = decoded.width;
+          imageHeight = decoded.height;
+        }
+      } catch (loadErr) {
+        console.log(`[Detection] Note: JS CVEngine decode skipped, using Python OpenCV / safe decode: ${loadErr.message}`);
+      }
+
+      // Update database with true dimensions from decoded file
+      db.updateImagery(imagery.id, { width: imageWidth, height: imageHeight });
+
+      const provider = DetectionProvider.getProvider(providerName);
+      detectionResult = await provider.detect({
+        filePath,
+        width: imageWidth,
+        height: imageHeight,
+        project_id: projectId,
+        imagery_id: imagery.id,
+        detection_run_id: detectionRunId,
+        is_georeferenced: isGeoreferenced,
+        project_coordinates: project.coordinates || [18.5818, 73.9875]
+      }, options);
+
+    } catch (cvErr) {
+      console.error(`[Detection] Detection inference failed: ${cvErr.message}`);
+      db.updateImagery(imagery.id, { processing_status: 'DETECTION FAILED' });
+      EnvConfig.logDiagnostic('Inference Failure', {
+        project_id: projectId,
+        imagery_id: imagery.id,
+        filename: imagery.file_name,
+        request_endpoint: endpoint,
+        status: 'FAILED',
+        error: cvErr.message
+      });
+      throw new Error(`Detection processing failed on uploaded image: ${cvErr.message}`);
+    }
+
+    if (!detectionResult || !detectionResult.features) {
+      db.updateImagery(imagery.id, { processing_status: 'DETECTION FAILED' });
+      throw new Error('Detection processing failed: No features returned from model');
+    }
+
+    // 7. Persist successful results (Section 7)
+    // Associate each detection strictly with project_id and imagery_id
+    detectionResult.features.forEach(f => {
+      f.project_id = projectId;
+      f.imagery_id = imagery.id;
+    });
+
     db.setFeatures(projectId, detectionResult.features, imagery.id);
 
-    // Update imagery & project status
+    // Verify persistence immediately
+    const persisted = db.getFeaturesByProjectId(projectId, imagery.id);
+    const saveSuccess = persisted && (persisted.length === detectionResult.features.length || detectionResult.features.length === 0);
+
+    if (!saveSuccess) {
+      db.updateImagery(imagery.id, { processing_status: 'DETECTION FAILED' });
+      throw new Error('Database persistence failed: Detected features could not be verified in store.');
+    }
+
+    // Update imagery & project status only after verified persistence
     db.updateImagery(imagery.id, { processing_status: 'DETECTION COMPLETE' });
     db.updateProject(projectId, {
       status: 'Detection Complete',
@@ -157,7 +233,6 @@ export class DetectionService {
     });
 
     const summary = detectionResult.summary || {};
-    const boundariesCount = (summary.walls || 0) + (summary.fences || 0);
     const processingTime = Date.now() - startTime;
     const finalProvider = detectionResult.provider || 'ml';
     const finalModel = detectionResult.model_name || (
@@ -166,8 +241,22 @@ export class DetectionService {
         : (finalProvider === 'opencv_fallback' ? 'OpenCV Fallback Engine v1.0' : 'Aerial Computer Vision Engine v3.2')
     );
 
-    // Structured logging (Step 6B Requirement 19)
-    console.log(`\n[AI Detection Run Complete]`);
+    // Structured diagnostic logging for completed flow (Section 1)
+    EnvConfig.logDiagnostic('Detection Flow Complete', {
+      project_id: projectId,
+      imagery_id: imagery.id,
+      image_filename: imagery.file_name,
+      image_path_or_url: filePath,
+      coordinate_mode: coordinateMode,
+      request_endpoint: endpoint,
+      http_status: 200,
+      model_service_response: 'SUCCESS',
+      model_name: finalModel,
+      provider: finalProvider,
+      number_of_detections: detectionResult.features.length,
+      database_save_result: `SUCCESS (${persisted.length} features persisted)`,
+      execution_time_ms: processingTime
+    });
     console.log(`[AI] Project: ${projectId}`);
     console.log(`[AI] Imagery: ${imagery.id}`);
     console.log(`[AI] Run ID: ${detectionResult.detection_run_id || detectionRunId}`);
@@ -200,8 +289,9 @@ export class DetectionService {
       model_name: finalModel,
       mode: 'Production AI / ML Pipeline',
       provider: finalProvider,
-      coordinate_mode: isGeoreferenced ? 'geographic' : 'image',
+      coordinate_mode: isGeoreferenced ? 'GEOGRAPHIC' : 'IMAGE_SPACE',
       summary,
+      counts: summary,
       layers: detectionResult.layers,
       detections: detectionResult.features,
       features: detectionResult.features,

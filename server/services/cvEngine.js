@@ -30,13 +30,27 @@ export class CVEngine {
    * Load and decode an image file from disk (JPG or PNG).
    * Returns { width, height, data: Uint8Array(RGBA) }
    */
-  static loadImage(filePath) {
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`Image file not found on disk at: ${filePath}`);
-    }
+  static loadImage(input) {
+    let buffer;
+    let ext = '.jpg';
 
-    const ext = path.extname(filePath).toLowerCase();
-    const buffer = fs.readFileSync(filePath);
+    if (Buffer.isBuffer(input) || input instanceof Uint8Array) {
+      buffer = Buffer.isBuffer(input) ? input : Buffer.from(input);
+      // Auto-detect format from magic bytes if buffer
+      if (buffer.length > 8 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+        ext = '.png';
+      } else {
+        ext = '.jpg';
+      }
+    } else if (typeof input === 'string') {
+      if (!fs.existsSync(input)) {
+        throw new Error(`Image file not found on disk at: ${input}`);
+      }
+      ext = path.extname(input).toLowerCase();
+      buffer = fs.readFileSync(input);
+    } else {
+      throw new Error('Invalid input to loadImage: expected file path string or Buffer');
+    }
 
     if (ext === '.jpg' || ext === '.jpeg' || ext === '.jfif') {
       const decoded = jpeg.decode(buffer, { useTArray: true });

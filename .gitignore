@@ -6,3 +6,4 @@ uploads/*
 !uploads/.gitkeep
 __pycache__
 *.pyc
+scratch/chrome_dbg/

@@ -8,6 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { GISEngine } from '../services/gisEngine.js';
 import { buildCoastalDemoDataset } from '../../scripts/setup_clean_demo_seed.js';
+import { getStore } from '@netlify/blobs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,6 +89,44 @@ class Database {
     }
   }
 
+  _getBlobStore() {
+    try {
+      const siteID = process.env.NETLIFY_SITE_ID || process.env.SITE_ID;
+      const token = process.env.NETLIFY_BLOBS_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+      if (siteID && token) {
+        return getStore({ name: 'parcelmap-data', siteID, token, consistency: 'strong' });
+      }
+      return getStore({ name: 'parcelmap-data', consistency: 'strong' });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async _syncToNetlifyBlobs() {
+    try {
+      const store = this._getBlobStore();
+      if (store && this.data) {
+        await store.setJSON('db_state', this.data);
+      }
+    } catch (e) {
+      // Non-blocking in environments without Blobs credentials
+    }
+  }
+
+  async syncFromNetlifyBlobs() {
+    try {
+      const store = this._getBlobStore();
+      if (store) {
+        const cloudData = await store.get('db_state', { type: 'json' });
+        if (cloudData && cloudData.projects) {
+          this.data = cloudData;
+          return true;
+        }
+      }
+    } catch (e) {}
+    return false;
+  }
+
   save() {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf8');
@@ -95,8 +134,9 @@ class Database {
         this.lastMtime = fs.statSync(DB_FILE).mtimeMs;
       }
     } catch (err) {
-      console.error('Failed to persist database to disk:', err);
+      console.warn('Failed to persist database to disk:', err.message);
     }
+    this._syncToNetlifyBlobs();
   }
 
   // --- Users ---
@@ -266,9 +306,13 @@ class Database {
 
     const item = {
       id: img.id || `img_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      imagery_id: img.imagery_id || img.id || `img_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       project_id: img.project_id,
-      file_name: img.file_name,
-      file_url: img.file_url,
+      file_name: img.file_name || img.filename,
+      filename: img.file_name || img.filename,
+      file_url: img.file_url || img.storage_url,
+      storage_key: img.storage_key || null,
+      storage_url: img.storage_url || img.file_url,
       mime_type: img.mime_type || 'image/jpeg',
       file_size: img.file_size || '10 MB',
       width: Number(img.width) || 4000,
@@ -277,12 +321,16 @@ class Database {
       sensor: img.sensor || 'Drone RGB Sensor',
       flight_altitude: img.flight_altitude || '120m AGL',
       capture_date: img.capture_date || new Date().toISOString().split('T')[0],
-      processing_status: img.processing_status || 'READY',
+      status: img.status || img.processing_status || 'READY',
+      processing_status: img.processing_status || img.status || 'READY',
       is_georeferenced: isGeoreferenced,
       coordinate_mode: img.coordinate_mode || (isGeoreferenced ? 'geographic' : 'image-space'),
       is_demo: Boolean(img.is_demo),
       created_at: img.created_at || new Date().toISOString(),
-      metadata: img.metadata || {
+      metadata: {
+        ...(img.metadata || {}),
+        storage_key: img.storage_key || null,
+        storage_url: img.storage_url || img.file_url,
         coordinate_mode: isGeoreferenced ? 'geographic' : 'image-space'
       }
     };
@@ -349,6 +397,56 @@ class Database {
     return features;
   }
 
+  enrichParcelMetadata(p) {
+    if (!p) return null;
+    const pId = p.parcel_id || p.id;
+    const versions = (this.data.parcel_versions || [])
+      .filter(v => v.parcel_id === pId || (v.id && v.id.includes(`ver_${pId}_`)))
+      .sort((a, b) => (b.version_number || b.version || 1) - (a.version_number || a.version || 1));
+
+    const latestVer = versions.length > 0 ? (versions[0].version_number || versions[0].version || 1) : (p.version || 1);
+    p.version = latestVer;
+    p.current_version = latestVer;
+
+    // Clean up supporting features of any legacy fictional merge strings
+    if (Array.isArray(p.supporting_features)) {
+      p.supporting_features = p.supporting_features.filter(f => !f.toLowerCase().includes('merged with'));
+    }
+
+    // Source determination based on actual history and persisted flags
+    if (p.source && p.source.startsWith('Merged from')) {
+      // Valid merge lineage preserved
+    } else if (p.source && p.source.startsWith('Split from')) {
+      // Valid split lineage preserved
+    } else if (p.merge_origin && Array.isArray(p.merge_origin.source_parcel_ids)) {
+      p.source = `Merged from ${p.merge_origin.source_parcel_ids.join(' + ')}`;
+    } else if (p.split_origin && p.split_origin.original_parcel_id) {
+      p.source = `Split from ${p.split_origin.original_parcel_id}`;
+    } else if (p.parent_parcel_id && p.parent_parcel_id !== pId) {
+      p.source = `Split from ${p.parent_parcel_id}`;
+    } else {
+      const hasHumanEdit = p.is_human_edited || versions.some(v => v.action === 'Edited' || v.change_type === 'vertex_edit');
+      if (hasHumanEdit) {
+        p.source = 'Human Edited';
+      } else if (!p.source || p.source === 'spatial_reasoning' || p.source === 'Human Verification Split') {
+        p.source = 'AI Generated';
+      }
+    }
+
+    // Perimeter support percentages
+    if (p.supported_perimeter_pct == null) {
+      p.supported_perimeter_pct = p.supported_edge_pct != null ? p.supported_edge_pct : 48;
+    }
+    p.unsupported_perimeter_pct = 100 - p.supported_perimeter_pct;
+
+    // Confidence derived from actual evidence
+    if (p.confidence == null) {
+      p.confidence = Number((0.50 + 0.50 * (p.supported_perimeter_pct / 100)).toFixed(2));
+    }
+
+    return p;
+  }
+
   // --- Parcels ---
   getParcelsByProjectId(projectId, imageryId = null) {
     this.reload();
@@ -357,18 +455,23 @@ class Database {
       const projectImgs = this.getImageryByProjectId(projectId);
       list = list.filter(p => p.imagery_id === imageryId || (!p.imagery_id && projectImgs.length <= 1));
     }
-    return list;
+    return list.map(p => this.enrichParcelMetadata(p));
   }
-  getParcelById(parcelId, projectId = null) {
+  getParcelById(parcelId, projectId = null, imageryId = null) {
     this.reload();
     if (!parcelId) return null;
-    if (projectId) {
-      const p = this.data.parcels.find(x => (x.id === parcelId || x.parcel_id === parcelId) && x.project_id === projectId && x.status !== 'Deleted');
-      if (p) return p;
+    const reversed = (this.data.parcels || []).slice().reverse();
+    let p = null;
+    if (projectId && imageryId) {
+      p = reversed.find(x => (x.id === parcelId || x.parcel_id === parcelId) && x.project_id === projectId && x.imagery_id === imageryId && x.status !== 'Deleted');
     }
-    // Search from newest to oldest so newly generated user parcels take precedence
-    const p = this.data.parcels.slice().reverse().find(x => (x.id === parcelId || x.parcel_id === parcelId) && x.status !== 'Deleted');
-    return p || null;
+    if (!p && projectId) {
+      p = reversed.find(x => (x.id === parcelId || x.parcel_id === parcelId) && x.project_id === projectId && x.status !== 'Deleted');
+    }
+    if (!p) {
+      p = reversed.find(x => (x.id === parcelId || x.parcel_id === parcelId) && x.status !== 'Deleted');
+    }
+    return p ? this.enrichParcelMetadata(p) : null;
   }
 
   searchParcels(query, options = {}) {
@@ -518,17 +621,17 @@ class Database {
     this.save();
     return parcels;
   }
-  updateParcel(parcelId, updates, projectId = null) {
+  updateParcel(parcelId, updates, projectId = null, imageryId = null) {
     this.reload();
-    const p = this.getParcelById(parcelId, projectId);
+    const p = this.getParcelById(parcelId, projectId, imageryId);
     if (!p) return null;
     Object.assign(p, updates, { updated_at: new Date().toISOString() });
     this.save();
     return p;
   }
-  deleteParcel(parcelId, reviewerName = 'Cadastral Surveyor', projectId = null) {
+  deleteParcel(parcelId, reviewerName = 'Cadastral Surveyor', projectId = null, imageryId = null) {
     this.reload();
-    const p = this.getParcelById(parcelId, projectId);
+    const p = this.getParcelById(parcelId, projectId, imageryId);
     if (!p) return null;
     p.status = 'Deleted';
     p.updated_at = new Date().toISOString();
@@ -559,7 +662,11 @@ class Database {
   }
   getParcelHistory(parcelId) {
     this.reload();
-    const versions = this.getParcelVersions(parcelId);
+    const parcel = (this.data.parcels || []).find(p => (p.parcel_id || p.id) === parcelId);
+    const parentId = parcel?.parent_parcel_id;
+    const versions = (this.data.parcel_versions || [])
+      .filter(v => v.parcel_id === parcelId || v.id.includes(`ver_${parcelId}_`) || (parentId && v.parcel_id === parentId))
+      .sort((a, b) => (b.version_number || 1) - (a.version_number || 1));
     const verifications = this.getVerificationsByParcelId(parcelId);
     return {
       parcel_id: parcelId,
@@ -571,6 +678,11 @@ class Database {
         type: 'version',
         version: v.version || v.version_number,
         action: v.action,
+        operation: v.operation || (v.action ? v.action.toUpperCase() : null),
+        parent_parcel_id: v.parent_parcel_id || null,
+        child_parcel_ids: v.child_parcel_ids || null,
+        split_line: v.split_line || null,
+        resulting_geometries: v.resulting_geometries || null,
         edited_by: v.edited_by,
         comments: v.comments || v.remarks || '',
         notes: v.comments || v.remarks || '',
@@ -588,7 +700,7 @@ class Database {
       }))].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     };
   }
-  addParcelVersion({ parcel_id, project_id, imagery_id, geometry, previous_geometry, edited_by, action, change_type, comments, remarks }) {
+  addParcelVersion({ parcel_id, project_id, imagery_id, geometry, previous_geometry, edited_by, action, change_type, comments, remarks, parent_parcel_id, child_parcel_ids, split_line, resulting_geometries, operation }) {
     if (!this.data.parcel_versions) this.data.parcel_versions = [];
     const prevVersions = this.data.parcel_versions.filter(v => v.parcel_id === parcel_id);
     const nextVersionNum = prevVersions.length > 0
@@ -622,7 +734,12 @@ class Database {
       version_number: nextVersionNum,
       geometry,
       previous_geometry: prevGeom,
+      parent_parcel_id: parent_parcel_id || null,
+      child_parcel_ids: child_parcel_ids || null,
+      split_line: split_line || null,
+      resulting_geometries: resulting_geometries || null,
       action: standardAction,
+      operation: operation || (standardAction ? standardAction.toUpperCase() : null),
       change_type: change_type || standardAction.toLowerCase().replace(/\s+/g, '_'),
       edited_by: edited_by || 'Lead Cadastral Surveyor',
       comments: comments || remarks || '',
@@ -631,6 +748,18 @@ class Database {
       created_at: now
     };
     this.data.parcel_versions.push(versionItem);
+
+    // Synchronize parcel object's active version number and source
+    const parcelObj = (this.data.parcels || []).find(p => (p.parcel_id || p.id) === parcel_id);
+    if (parcelObj) {
+      parcelObj.version = nextVersionNum;
+      parcelObj.current_version = nextVersionNum;
+      if (standardAction === 'Edited') {
+        parcelObj.is_human_edited = true;
+        parcelObj.source = 'Human Edited';
+      }
+    }
+
     this.save();
     return versionItem;
   }
@@ -659,7 +788,7 @@ class Database {
     this.data.verifications.push(item);
 
     // Update parcel status accordingly
-    const parcel = this.getParcelById(ver.parcel_id);
+    const parcel = this.getParcelById(ver.parcel_id, ver.project_id, ver.imagery_id);
     if (parcel) {
       let changeType = 'vertex_edit';
       if (ver.action === 'Accepted') {

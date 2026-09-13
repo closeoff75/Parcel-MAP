@@ -17,10 +17,12 @@
  * 8. unknown
  */
 
+import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { CVEngine } from './cvEngine.js';
 import { GeometryCleaningService } from './geometryCleaningService.js';
+import { EnvConfig } from '../config/envConfig.js';
 
 /**
  * Base Abstract Detection Provider
@@ -1098,35 +1100,28 @@ export class MLDetectionProvider extends DetectionProvider {
         disclaimer: mlResult.disclaimer
       };
     } catch (err) {
-      console.warn(`[MLDetectionProvider] ML inference failed (${err.message}). Falling back to ComputerVisionProvider...`);
-      const cvProvider = new ComputerVisionProvider();
-      const fallbackResult = await cvProvider.detect(imageInfo, { ...options, fallback: true, run_id: runId });
-      fallbackResult.provider = 'opencv_fallback';
-      fallbackResult.model_name = 'OpenCV Fallback Engine v1.0';
-      fallbackResult.fallback_reason = err.message;
-      if (fallbackResult.features) {
-        fallbackResult.features.forEach(f => {
-          f.provider = 'opencv_fallback';
-          f.model_name = 'OpenCV Fallback Engine v1.0';
-          if (f.properties) {
-            f.properties.provider = 'opencv_fallback';
-            f.properties.model_name = 'OpenCV Fallback Engine v1.0';
-          }
-        });
-      }
-      return fallbackResult;
+      console.error(`[MLDetectionProvider] ML inference failed on image: ${err.message}`);
+      // Zero fallback enforcement: propagate exact error without falling back to demo or alternative detections
+      throw new Error(`ML Detection processing failed: ${err.message}`);
     }
   }
 
   runPythonInference(filePath, projectId, imageryId, runId, options) {
     return new Promise((resolve, reject) => {
       const scriptPath = path.join(process.cwd(), 'server', 'ml', 'ml_detector.py');
+      const localModelCandidate = path.join(process.cwd(), 'server', 'ml', 'models', 'yolov8n-building-seg.pt');
+      const rootModelCandidate = path.join(process.cwd(), 'yolov8n-seg.pt');
+      const modelPath = fs.existsSync(localModelCandidate) 
+        ? localModelCandidate 
+        : (fs.existsSync(rootModelCandidate) ? rootModelCandidate : localModelCandidate);
+
       const args = [
         scriptPath,
         '--input', filePath,
         '--project_id', projectId,
         '--imagery_id', imageryId,
         '--run_id', runId,
+        '--model_path', modelPath,
         '--conf', String(options.confidence_threshold || 0.35),
         '--tile_size', String(options.tile_size || 640),
         '--overlap', String(options.overlap || 0.20)
@@ -1135,7 +1130,8 @@ export class MLDetectionProvider extends DetectionProvider {
         args.push('--debug');
       }
 
-      const py = spawn('python', ['-B', ...args]);
+      const pythonCmd = process.env.PYTHON_PATH || 'python';
+      const py = spawn(pythonCmd, ['-B', ...args], { cwd: process.cwd() });
       let stdout = '';
       let stderr = '';
 
@@ -1143,11 +1139,31 @@ export class MLDetectionProvider extends DetectionProvider {
       py.stderr.on('data', data => { stderr += data.toString(); });
 
       py.on('close', code => {
+        const raw = stdout.trim();
         if (code !== 0) {
-          return reject(new Error(`Python process exited with code ${code}: ${stderr || stdout}`));
+          // Attempt to extract structured error from stdout/stderr
+          try {
+            const firstBrace = raw.indexOf('{');
+            const lastBrace = raw.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace > firstBrace) {
+              const errParsed = JSON.parse(raw.substring(firstBrace, lastBrace + 1));
+              if (errParsed && errParsed.error) {
+                return reject(new Error(errParsed.error));
+              }
+            }
+          } catch {}
+          return reject(new Error(`Python process exited with code ${code}: ${(stderr || stdout).trim()}`));
         }
         try {
-          const parsed = JSON.parse(stdout.trim());
+          // Locate valid JSON payload even if warnings or logs preceded or followed it
+          let parsed;
+          const firstBrace = raw.indexOf('{');
+          const lastBrace = raw.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace > firstBrace) {
+            parsed = JSON.parse(raw.substring(firstBrace, lastBrace + 1));
+          } else {
+            throw new Error('No JSON object found in stdout');
+          }
           resolve(parsed);
         } catch (parseErr) {
           reject(new Error(`Failed to parse ML detector output: ${parseErr.message}\nRaw: ${stdout.slice(0, 300)}`));
@@ -1155,7 +1171,7 @@ export class MLDetectionProvider extends DetectionProvider {
       });
 
       py.on('error', err => {
-        reject(new Error(`Failed to spawn Python process: ${err.message}`));
+        reject(new Error(`The model is currently unreachable: Failed to spawn Python process (${err.message}). Ensure Python is in PATH.`));
       });
     });
   }
@@ -1171,7 +1187,57 @@ export class RemoteInferenceProvider extends DetectionProvider {
   }
 
   async detect(imageInfo, options = {}) {
-    throw new Error('Remote inference endpoint not configured.');
+    const serviceUrl = process.env.AI_SERVICE_URL;
+    if (!serviceUrl) {
+      throw new Error('Configuration error: AI_SERVICE_URL environment variable is required for remote AI detection service.');
+    }
+
+    const { filePath, project_id, imagery_id, is_georeferenced, project_coordinates } = imageInfo;
+    const runId = imageInfo.detection_run_id || options.run_id || `run_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+    console.log(`[RemoteInferenceProvider] Dispatching remote inference to: ${EnvConfig.redactSecret(serviceUrl)}`);
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (process.env.AI_SERVICE_KEY) {
+        headers['Authorization'] = `Bearer ${process.env.AI_SERVICE_KEY}`;
+        headers['X-API-Key'] = process.env.AI_SERVICE_KEY;
+      }
+
+      // Read image base64 if needed by remote endpoint
+      const imageBuffer = fs.readFileSync(filePath);
+      const payload = {
+        project_id,
+        imagery_id,
+        run_id: runId,
+        image_base64: imageBuffer.toString('base64'),
+        filename: path.basename(filePath),
+        coordinate_mode: is_georeferenced ? 'geographic' : 'image',
+        project_coordinates
+      };
+
+      const response = await fetch(serviceUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(Number(process.env.AI_SERVICE_TIMEOUT_MS) || 60000)
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Remote inference returned HTTP ${response.status}: ${text.slice(0, 200)}`);
+      }
+
+      const remoteData = await response.json();
+      if (!remoteData || !remoteData.success) {
+        throw new Error(remoteData?.error || 'Remote inference returned unsuccessful status');
+      }
+
+      return remoteData;
+    } catch (err) {
+      console.error(`[RemoteInferenceProvider] Error: ${err.message}`);
+      throw new Error(`Error: The model is currently unreachable at ${serviceUrl}: ${err.message}`);
+    }
   }
 }
 

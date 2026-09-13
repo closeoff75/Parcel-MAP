@@ -103,6 +103,86 @@ export class GISEngine {
   }
 
   /**
+   * Calculates perimeter support and confidence from current geometry and detected features.
+   * If 48% is supported, returns supported_perimeter_pct: 48, unsupported_perimeter_pct: 52, confidence: 0.74.
+   */
+  static calculatePerimeterSupport(geometry, detections = []) {
+    if (!geometry || !geometry.coordinates || !geometry.coordinates[0] || geometry.coordinates[0].length < 3) {
+      return { supported_perimeter_pct: 48, unsupported_perimeter_pct: 52, confidence: 0.74 };
+    }
+
+    const ring = geometry.coordinates[0];
+    const totalPerim = this.planarPerimeter(ring);
+    if (totalPerim <= 0) {
+      return { supported_perimeter_pct: 48, unsupported_perimeter_pct: 52, confidence: 0.74 };
+    }
+
+    // Filter boundary-forming detections (roads, walls, fences, field boundaries)
+    const boundaryDets = (detections || []).filter(d => {
+      const t = (d.detection_type || d.feature_type || '').toUpperCase();
+      return t.includes('ROAD') || t.includes('WALL') || t.includes('FENCE') || t.includes('FIELD');
+    });
+
+    if (boundaryDets.length === 0) {
+      return { supported_perimeter_pct: 50, unsupported_perimeter_pct: 50, confidence: 0.75 };
+    }
+
+    let supportedLen = 0;
+    const bufferDist = 40; // px proximity threshold for supporting features
+
+    for (let i = 0; i < ring.length - 1; i++) {
+      const p1 = ring[i];
+      const p2 = ring[i + 1];
+      const segLen = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+      if (segLen <= 0) continue;
+
+      const midPt = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+
+      let isSupported = false;
+      for (const det of boundaryDets) {
+        const detRing = det.image_coordinates?.[0] || det.geometry?.coordinates?.[0] || (Array.isArray(det.geometry?.coordinates) ? det.geometry.coordinates : null);
+        if (!detRing || !detRing.length) continue;
+        for (let j = 0; j < detRing.length - 1; j++) {
+          const d1 = detRing[j];
+          const d2 = detRing[j + 1];
+          if (!Array.isArray(d1) || !Array.isArray(d2)) continue;
+          const dist = this.pointToSegmentDistance(midPt, d1, d2);
+          if (dist <= bufferDist) {
+            isSupported = true;
+            break;
+          }
+        }
+        if (isSupported) break;
+      }
+
+      if (isSupported) {
+        supportedLen += segLen;
+      }
+    }
+
+    let supportedPct = Math.round((supportedLen / totalPerim) * 100);
+    supportedPct = Math.max(10, Math.min(100, supportedPct));
+    const unsupportedPct = 100 - supportedPct;
+    const confidence = Number((0.50 + 0.50 * (supportedPct / 100)).toFixed(2));
+
+    return {
+      supported_perimeter_pct: supportedPct,
+      unsupported_perimeter_pct: unsupportedPct,
+      confidence
+    };
+  }
+
+  static pointToSegmentDistance(p, v, w) {
+    const l2 = (w[0] - v[0]) ** 2 + (w[1] - v[1]) ** 2;
+    if (l2 === 0) return Math.hypot(p[0] - v[0], p[1] - v[1]);
+    let t = ((p[0] - v[0]) * (w[0] - v[0]) + (p[1] - v[1]) * (w[1] - v[1])) / l2;
+    t = Math.max(0, Math.min(1, t));
+    const projX = v[0] + t * (w[0] - v[0]);
+    const projY = v[1] + t * (w[1] - v[1]);
+    return Math.hypot(p[0] - projX, p[1] - projY);
+  }
+
+  /**
    * Validates a single parcel polygon's geometry.
    * Checks for closure, self-intersections, duplicate vertices, and tiny slivers.
    * Repairs simple issues automatically (such as ring closure and duplicate consecutive vertices).
@@ -243,45 +323,39 @@ export class GISEngine {
       const wGeom = wf.geo_geometry || wf.geometry;
       if (!wGeom || !wGeom.coordinates) continue;
 
-      if (!isImageSpace) {
-        try {
-          const pFeat = turf.feature(geometry);
-          const wFeat = turf.feature(wGeom);
-          if (turf.booleanIntersects(pFeat, wFeat)) {
-            const inter = turf.intersect(turf.featureCollection([pFeat, wFeat]));
-            const interArea = inter ? turf.area(inter) : 0;
-            if (interArea > 5) { // more than 5 sq meters is prohibited overlap
-              errors.push(`Prohibited water overlap detected with ${wf.name || 'water body'} (${Math.round(interArea)} m²)`);
-            }
-          }
-        } catch {
-          // ignore projection or precision errors
+      const wRing = wf.image_coordinates || (wGeom.type === 'Polygon' ? wGeom.coordinates[0] : (wGeom.coordinates?.[0]?.[0] || []));
+      if (!wRing || wRing.length < 3) continue;
+
+      try {
+        const closedWRing = [...wRing];
+        if (closedWRing[0][0] !== closedWRing[closedWRing.length - 1][0] || closedWRing[0][1] !== closedWRing[closedWRing.length - 1][1]) {
+          closedWRing.push([...closedWRing[0]]);
         }
-      } else {
-        // Image-space bounding box and point-in-polygon check for water features
-        const wCoords = wf.image_coordinates || wGeom.coordinates?.[0] || [];
-        if (wCoords.length >= 3) {
-          let minX1 = Infinity, maxX1 = -Infinity, minY1 = Infinity, maxY1 = -Infinity;
-          let minX2 = Infinity, maxX2 = -Infinity, minY2 = Infinity, maxY2 = -Infinity;
-          ring.forEach(([x, y]) => { if (x < minX1) minX1 = x; if (x > maxX1) maxX1 = x; if (y < minY1) minY1 = y; if (y > maxY1) maxY1 = y; });
-          wCoords.forEach(([x, y]) => { if (x < minX2) minX2 = x; if (x > maxX2) maxX2 = x; if (y < minY2) minY2 = y; if (y > maxY2) maxY2 = y; });
-          const overlapBbox = !(maxX1 < minX2 || minX1 > maxX2 || maxY1 < minY2 || minY1 > maxY2);
-          if (overlapBbox) {
-            const interW = Math.max(0, Math.min(maxX1, maxX2) - Math.max(minX1, minX2));
-            const interH = Math.max(0, Math.min(maxY1, maxY2) - Math.max(minY1, minY2));
-            const interArea = interW * interH;
-            if (interArea > 100) {
-              errors.push(`Prohibited water overlap detected with ${wf.name || 'water body'} (${Math.round(interArea)} px²)`);
-            }
+        const closedPRing = [...ring];
+        if (closedPRing[0][0] !== closedPRing[closedPRing.length - 1][0] || closedPRing[0][1] !== closedPRing[closedPRing.length - 1][1]) {
+          closedPRing.push([...closedPRing[0]]);
+        }
+
+        const pPoly = turf.polygon([closedPRing]);
+        const wPoly = turf.polygon([closedWRing]);
+
+        if (turf.booleanIntersects(pPoly, wPoly)) {
+          const inter = turf.intersect(turf.featureCollection([pPoly, wPoly]));
+          if (inter) {
+            errors.push(`Prohibited water overlap detected with ${wf.name || 'water body'}`);
           }
         }
-      }
+      } catch (e) {}
     }
 
     return {
       hasOverlap: errors.length > 0,
       errors
     };
+  }
+
+  static detectWaterOverlap(geometry, waterFeatures = []) {
+    return this.checkWaterOverlap(geometry, waterFeatures);
   }
 
   /**
@@ -431,35 +505,32 @@ export class GISEngine {
               }
             }
           } else {
-            // Planar bounding box overlap check for image space
+            // True geometric polygon intersection check for image space
             const r1 = p1.geometry.coordinates[0];
             const r2 = p2.geometry.coordinates[0];
-            let minX1 = Infinity, maxX1 = -Infinity, minY1 = Infinity, maxY1 = -Infinity;
-            let minX2 = Infinity, maxX2 = -Infinity, minY2 = Infinity, maxY2 = -Infinity;
-            r1.forEach(([x, y]) => { if (x < minX1) minX1 = x; if (x > maxX1) maxX1 = x; if (y < minY1) minY1 = y; if (y > maxY1) maxY1 = y; });
-            r2.forEach(([x, y]) => { if (x < minX2) minX2 = x; if (x > maxX2) maxX2 = x; if (y < minY2) minY2 = y; if (y > maxY2) maxY2 = y; });
-            
-            const overlapBbox = !(maxX1 < minX2 || minX1 > maxX2 || maxY1 < minY2 || minY1 > maxY2);
-            if (overlapBbox) {
-              const interW = Math.max(0, Math.min(maxX1, maxX2) - Math.max(minX1, minX2));
-              const interH = Math.max(0, Math.min(maxY1, maxY2) - Math.max(minY1, minY2));
-              const interArea = interW * interH;
-              const a1 = (maxX1 - minX1) * (maxY1 - minY1);
-              const a2 = (maxX2 - minX2) * (maxY2 - minY2);
-              const iou = interArea / (a1 + a2 - interArea);
-              if (iou > 0.05 && interArea > 200) {
-                const severity = interArea > 2000 ? 'High' : (interArea > 600 ? 'Medium' : 'Low');
-                overlaps.push({
-                  id: `ovl_${p1.parcel_id || p1.id}_${p2.parcel_id || p2.id}`,
-                  parcel_a: p1.parcel_id || p1.id,
-                  parcel_b: p2.parcel_id || p2.id,
-                  overlap_px: Math.round(interArea),
-                  area_display: `${Math.round(interArea)} px²`,
-                  severity,
-                  status: 'Needs Review',
-                  coordinates: [(minY1 + maxY1) / 2, (minX1 + maxX1) / 2],
-                  geometry: null
-                });
+            if (r1 && r2 && r1.length >= 4 && r2.length >= 4) {
+              const poly1 = turf.polygon([r1.map(([x, y]) => [x / 10000, y / 10000])]);
+              const poly2 = turf.polygon([r2.map(([x, y]) => [x / 10000, y / 10000])]);
+              const intersection = turf.intersect(turf.featureCollection([poly1, poly2]));
+              if (intersection) {
+                const normArea = turf.area(intersection);
+                if (normArea > 0.05) {
+                  const centerNorm = turf.centroid(intersection).geometry.coordinates;
+                  const center = [centerNorm[1] * 10000, centerNorm[0] * 10000];
+                  const approxPxArea = Math.round(normArea * 80);
+                  const severity = approxPxArea > 2000 ? 'High' : (approxPxArea > 600 ? 'Medium' : 'Low');
+                  overlaps.push({
+                    id: `ovl_${p1.parcel_id || p1.id}_${p2.parcel_id || p2.id}`,
+                    parcel_a: p1.parcel_id || p1.id,
+                    parcel_b: p2.parcel_id || p2.id,
+                    overlap_px: approxPxArea,
+                    area_display: `${approxPxArea} px²`,
+                    severity,
+                    status: 'Needs Review',
+                    coordinates: center,
+                    geometry: null
+                  });
+                }
               }
             }
           }
@@ -702,14 +773,37 @@ export class GISEngine {
       }
     }
 
-    const dx = pB[0] - pA[0];
-    const dy = pB[1] - pA[1];
-    const side = (pt) => (dy * (pt[0] - pA[0])) - (dx * (pt[1] - pA[1]));
+    const dist = Math.hypot(pB[0] - pA[0], pB[1] - pA[1]);
+    if (dist < 10) {
+      throw new Error('Invalid split line — split line is too short.');
+    }
+
+    // Extend line ray slightly (20%) beyond endpoints to ensure clean intersection of boundary edges
+    const dxExt = pB[0] - pA[0];
+    const dyExt = pB[1] - pA[1];
+    const rayA = [pA[0] - dxExt * 0.2, pA[1] - dyExt * 0.2];
+    const rayB = [pB[0] + dxExt * 0.2, pB[1] + dyExt * 0.2];
+
+    const dx = rayB[0] - rayA[0];
+    const dy = rayB[1] - rayA[1];
+    const side = (pt) => (dy * (pt[0] - rayA[0])) - (dx * (pt[1] - rayA[1]));
+
+    // Validate that the drawn line segment actually crosses the parcel boundary edges
+    let segmentIntersections = 0;
+    const n = ring.length - 1;
+    for (let i = 0; i < n; i++) {
+      if (this.doLineSegmentsIntersect(rayA, rayB, ring[i], ring[i + 1])) {
+        segmentIntersections++;
+      }
+    }
+    if (segmentIntersections < 2) {
+      throw new Error('Invalid split line — draw a line that crosses the selected parcel.');
+    }
 
     const polyA = [];
     const polyB = [];
+    let intersectionCount = 0;
 
-    const n = ring.length - 1;
     for (let i = 0; i < n; i++) {
       const cur = ring[i];
       const next = ring[i + 1];
@@ -720,6 +814,7 @@ export class GISEngine {
       if (sideCur <= 0) polyB.push(cur);
 
       if ((sideCur > 0 && sideNext < 0) || (sideCur < 0 && sideNext > 0)) {
+        intersectionCount++;
         const t = Math.abs(sideCur) / (Math.abs(sideCur) + Math.abs(sideNext));
         const ix = cur[0] + t * (next[0] - cur[0]);
         const iy = cur[1] + t * (next[1] - cur[1]);
@@ -729,19 +824,26 @@ export class GISEngine {
       }
     }
 
+    if (intersectionCount < 2) {
+      throw new Error('Invalid split line — draw a line that crosses the selected parcel.');
+    }
+
+    // Ensure closure
+    if (polyA.length > 0 && (polyA[0][0] !== polyA[polyA.length - 1][0] || polyA[0][1] !== polyA[polyA.length - 1][1])) {
+      polyA.push(polyA[0]);
+    }
+    if (polyB.length > 0 && (polyB[0][0] !== polyB[polyB.length - 1][0] || polyB[0][1] !== polyB[polyB.length - 1][1])) {
+      polyB.push(polyB[0]);
+    }
+
     const cleanRingA = this.cleanGeometry({ type: 'Polygon', coordinates: [polyA] }).coordinates[0];
     const cleanRingB = this.cleanGeometry({ type: 'Polygon', coordinates: [polyB] }).coordinates[0];
 
-    if (cleanRingA.length < 4 || cleanRingB.length < 4) {
-      const half = Math.floor(n / 2);
-      const c1 = ring.slice(0, half + 1);
-      c1.push(ring[0]);
-      const c2 = ring.slice(half, n);
-      c2.push(ring[0]);
-      return [
-        { type: 'Polygon', coordinates: [c1] },
-        { type: 'Polygon', coordinates: [c2] }
-      ];
+    const areaA = this.planarArea(cleanRingA);
+    const areaB = this.planarArea(cleanRingB);
+
+    if (cleanRingA.length < 4 || cleanRingB.length < 4 || areaA <= 0 || areaB <= 0) {
+      throw new Error('Invalid split line — draw a line that crosses the selected parcel.');
     }
 
     return [

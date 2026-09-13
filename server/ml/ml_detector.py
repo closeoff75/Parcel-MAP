@@ -88,6 +88,27 @@ def parse_args():
 # GEOMETRY UTILITIES & SANITY VALIDATION
 # ==============================================================================
 
+def safe_imread(image_path):
+    """Reliably read image bytes and decode using OpenCV, supporting Windows unicode paths and spaces."""
+    if not os.path.exists(image_path):
+        return None
+    try:
+        with open(image_path, 'rb') as f:
+            file_bytes = f.read()
+        if len(file_bytes) < 100:
+            return None
+        arr = np.frombuffer(file_bytes, dtype=np.uint8)
+        decoded = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        if decoded is not None and decoded.size > 0:
+            return decoded
+    except Exception:
+        pass
+    try:
+        return cv2.imread(image_path)
+    except Exception:
+        return None
+
+
 def calculate_polygon_area(points):
     """Shoelace formula for polygon area in pixels."""
     if not points or len(points) < 3:
@@ -1765,9 +1786,17 @@ def main():
         print(json.dumps({"success": False, "error": f"Input image not found: {args.input}"}))
         sys.exit(1)
 
-    img = cv2.imread(args.input)
-    if img is None:
-        print(json.dumps({"success": False, "error": f"Failed to decode image file: {args.input}"}))
+    file_size = os.path.getsize(args.input)
+    if file_size < 100:
+        print(json.dumps({
+            "success": False,
+            "error": f"Uploaded image file is corrupted or unreadable (file size: {file_size} bytes). Please upload a valid drone image."
+        }))
+        sys.exit(1)
+
+    img = safe_imread(args.input)
+    if img is None or img.size == 0 or img.shape[0] < 10 or img.shape[1] < 10:
+        print(json.dumps({"success": False, "error": f"Failed to decode image file: {args.input}. Supported formats: PNG, JPG, JPEG."}))
         sys.exit(1)
 
     img_h, img_w = img.shape[:2]
@@ -1783,15 +1812,50 @@ def main():
 
     ignore_mask = get_collage_and_margin_mask(img)
 
-    # 2. Load model
-    from ultralytics import YOLO
-    model_path = args.model_path
-    if not os.path.isabs(model_path):
-        model_path = os.path.join(os.getcwd(), model_path)
-    if not os.path.exists(model_path):
-        model = YOLO("server/ml/models/yolov8n-building-seg.pt")
-    else:
-        model = YOLO(model_path)
+    # 2. Load model with robust multi-location discovery
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.abspath(os.path.join(script_dir, "..", ".."))
+
+    resolved_model_path = None
+    candidate_paths = []
+
+    if args.model_path:
+        if os.path.isabs(args.model_path):
+            candidate_paths.append(args.model_path)
+        else:
+            candidate_paths.append(os.path.join(os.getcwd(), args.model_path))
+            candidate_paths.append(os.path.join(project_root, args.model_path))
+            candidate_paths.append(os.path.join(script_dir, args.model_path))
+
+    candidate_paths.extend([
+        os.path.join(script_dir, "models", "yolov8n-building-seg.pt"),
+        os.path.join(project_root, "server", "ml", "models", "yolov8n-building-seg.pt"),
+        os.path.join(os.getcwd(), "server", "ml", "models", "yolov8n-building-seg.pt"),
+        os.path.join(project_root, "yolov8n-seg.pt"),
+        os.path.join(os.getcwd(), "yolov8n-seg.pt")
+    ])
+
+    for cand in candidate_paths:
+        if cand and os.path.exists(cand) and os.path.isfile(cand):
+            resolved_model_path = cand
+            break
+
+    if not resolved_model_path:
+        print(json.dumps({
+            "success": False,
+            "error": "The model is currently unreachable: Model weights file (yolov8n-building-seg.pt) not found."
+        }))
+        sys.exit(1)
+
+    try:
+        from ultralytics import YOLO
+        model = YOLO(resolved_model_path)
+    except Exception as model_err:
+        print(json.dumps({
+            "success": False,
+            "error": f"The model is currently unreachable: Failed to initialize model weights ({str(model_err)})"
+        }))
+        sys.exit(1)
 
     # 3. Stage 1: Early Water & Coastline Segmentation with Hard Exclusion Masks
     water, water_clean, water_exclusion_mask, coastline_exclusion_mask, raw_water_count = detect_water_cv(
@@ -2144,8 +2208,37 @@ def main():
         "disclaimer": "AI-generated preliminary feature detection. Results require human verification. Non-georeferenced imagery is displayed in image space. AI-derived parcel boundaries are not legal cadastral boundaries."
     }
 
-    print(json.dumps(output))
+    def make_json_safe(obj):
+        if obj is None:
+            return None
+        if isinstance(obj, (bool, str)):
+            return obj
+        if isinstance(obj, (int, np.integer)):
+            return int(obj)
+        if isinstance(obj, (float, np.floating)):
+            if math.isnan(obj) or math.isinf(obj):
+                return None
+            return round(float(obj), 6)
+        if isinstance(obj, np.ndarray):
+            return make_json_safe(obj.tolist())
+        if isinstance(obj, dict):
+            return {str(k): make_json_safe(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [make_json_safe(item) for item in obj]
+        return str(obj)
+
+    safe_output = make_json_safe(output)
+    print(json.dumps(safe_output, allow_nan=False))
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        import traceback
+        err_msg = str(exc)
+        print(json.dumps({
+            "success": False,
+            "error": f"ML Detection Engine error: {err_msg}"
+        }))
+        sys.exit(1)

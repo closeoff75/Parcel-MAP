@@ -8,11 +8,15 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
-        changeOrigin: true
+        changeOrigin: true,
+        timeout: 120000,
+        proxyTimeout: 120000
       },
       '/uploads': {
         target: 'http://localhost:3001',
-        changeOrigin: true
+        changeOrigin: true,
+        timeout: 120000,
+        proxyTimeout: 120000
       }
     }
   },

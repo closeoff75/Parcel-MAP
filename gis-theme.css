@@ -4431,3 +4431,46 @@ img, svg {
 .globe-error-text {
   color: #fca5a5;
 }
+
+/* Spatial Reasoning Map Parcel Popup (Dark Cadastral Theme) */
+#reasoningMap .leaflet-popup-content-wrapper,
+.reasoning-parcel-popup .leaflet-popup-content-wrapper {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75), 0 0 15px rgba(56, 189, 248, 0.12) !important;
+  color: #f8fafc !important;
+  padding: 4px !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+#reasoningMap .leaflet-popup-content,
+.reasoning-parcel-popup .leaflet-popup-content {
+  margin: 10px 12px !important;
+  line-height: 1.45 !important;
+  color: #f8fafc !important;
+}
+
+#reasoningMap .leaflet-popup-tip,
+.reasoning-parcel-popup .leaflet-popup-tip {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  box-shadow: none !important;
+}
+
+#reasoningMap a.leaflet-popup-close-button,
+.reasoning-parcel-popup a.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+  top: 8px !important;
+  right: 8px !important;
+  font-size: 16px !important;
+  text-decoration: none !important;
+  transition: color 0.15s ease !important;
+}
+
+#reasoningMap a.leaflet-popup-close-button:hover,
+.reasoning-parcel-popup a.leaflet-popup-close-button:hover {
+  color: #f8fafc !important;
+}
+
+

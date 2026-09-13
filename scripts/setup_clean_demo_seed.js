@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { generateResidentialParcelsFromEvidence } from '../server/services/residentialParcelGenerator.js';
 
 // Coastal image dimensions (740 x 480)
 const WIDTH = 740;
@@ -242,218 +243,35 @@ export function buildCoastalDemoDataset() {
   });
 
   // 5. Spatially Reasoned Preliminary Parcels
-  // Supported by roads, fields, walls, fences, land-block structure (NOT rectangles around buildings)
-  const parcels = [
-    {
-      id: 'PM-DEMO-0001',
-      parcel_id: 'PM-DEMO-0001',
-      project_id: projectId,
-      imagery_id: imageryId,
-      detection_run_id: 'run_demo_coastal_01',
-      is_demo: true,
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [415, 20],
-          [530, 20],
-          [535, 140],
-          [420, 140],
-          [350, 150],
-          [270, 76],
-          [415, 20]
-        ]]
-      },
-      image_coordinates: [[
-        [415, 20],
-        [530, 20],
-        [535, 140],
-        [420, 140],
-        [350, 150],
-        [270, 76],
-        [415, 20]
-      ]],
-      geo_geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [72.8335, 18.9230],
-          [72.8355, 18.9230],
-          [72.8356, 18.9215],
-          [72.8336, 18.9215],
-          [72.8322, 18.9213],
-          [72.8308, 18.9223],
-          [72.8335, 18.9230]
-        ]]
-      },
-      area: 'Image-space preliminary area',
-      area_sqm: null,
-      area_hectares: null,
-      area_acres: null,
-      area_px: 24650,
-      confidence: 0.91,
-      confidence_label: 'High',
-      status: 'preliminary',
-      candidate_status: 'ACCEPTED',
-      source: 'spatial_reasoning',
-      generation_reason: 'Demarcated agricultural field parcel (feat_demo_field_4) within Northern Cadastral Block fronting North Coastal Ridge Road. Contains 1 homestead structure (context only).',
-      supporting_evidence: {
-        roads: ['feat_demo_rd_2'],
-        road_names: ['North Coastal Ridge Road'],
-        field_boundaries: ['feat_demo_field_4'],
-        field_names: ['North-East Cultivated Plot'],
-        walls_fences: ['feat_demo_wall_5'],
-        wall_fence_names: ['Compound Wall (West Holding)'],
-        buildings: ['feat_demo_bldg_8'],
-        building_names: ['Homestead Structure #2 (Context Only)']
-      },
-      supporting_features: [
-        'Road Corridor (North Coastal Ridge Road)',
-        'Field Boundary (North-East Cultivated Plot)',
-        'Compound Wall (West Holding)',
-        'Homestead Structure #2 — Supporting Context'
-      ],
-      created_at: '2026-09-01T08:05:00.000Z',
-      updated_at: '2026-09-01T08:05:00.000Z'
+  // Dynamically synthesized from validated detections (house anchors, road corridors, walls, fences, water mask)
+  const parcels = generateResidentialParcelsFromEvidence({
+    projectId,
+    imagery,
+    detectionRunId: 'run_demo_coastal_01',
+    isGeoreferenced: false,
+    imageWidth: WIDTH,
+    imageHeight: HEIGHT,
+    centerLat: 18.9220,
+    centerLng: 72.8347,
+    geoDelta: 0.0035,
+    roadGraph: {
+      segments: [{
+        id: 'det_img_demo_coastal_road_14',
+        name: 'Road Corridor 1 (Primary)',
+        coordinates: detectedFeatures.find(f => f.id === 'det_img_demo_coastal_road_14')?.image_coordinates || []
+      }]
     },
-    {
-      id: 'PM-DEMO-0002',
-      parcel_id: 'PM-DEMO-0002',
-      project_id: projectId,
-      imagery_id: imageryId,
-      detection_run_id: 'run_demo_coastal_01',
-      is_demo: true,
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [420, 140],
-          [535, 140],
-          [670, 200],
-          [670, 320],
-          [545, 372],
-          [410, 203],
-          [420, 140]
-        ]]
-      },
-      image_coordinates: [[
-        [420, 140],
-        [535, 140],
-        [670, 200],
-        [670, 320],
-        [545, 372],
-        [410, 203],
-        [420, 140]
-      ]],
-      geo_geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [72.8336, 18.9215],
-          [72.8356, 18.9215],
-          [72.8378, 18.9205],
-          [72.8378, 18.9185],
-          [72.8357, 18.9177],
-          [72.8334, 18.9204],
-          [72.8336, 18.9215]
-        ]]
-      },
-      area: 'Image-space preliminary area',
-      area_sqm: null,
-      area_hectares: null,
-      area_acres: null,
-      area_px: 38200,
-      confidence: 0.86,
-      confidence_label: 'High',
-      status: 'preliminary',
-      candidate_status: 'ACCEPTED',
-      source: 'spatial_reasoning',
-      generation_reason: 'Cohesive residential settlement holding demarcated by Settlement Enclosure Fence and North Coastal Ridge Road corridor. Contains 3 settlement structures providing land-use evidence.',
-      supporting_evidence: {
-        roads: ['feat_demo_rd_2'],
-        road_names: ['North Coastal Ridge Road'],
-        field_boundaries: [],
-        field_names: [],
-        walls_fences: ['feat_demo_fence_6'],
-        wall_fence_names: ['Settlement Enclosure Fence'],
-        buildings: ['feat_demo_bldg_7', 'feat_demo_bldg_10', 'feat_demo_bldg_11'],
-        building_names: ['Homestead Structure #1', 'Residential House #4', 'Residential House #5']
-      },
-      supporting_features: [
-        'Road Corridor (North Coastal Ridge Road)',
-        'Settlement Enclosure Fence',
-        '3 Settlement Structures — Supporting Context'
-      ],
-      created_at: '2026-09-01T08:05:00.000Z',
-      updated_at: '2026-09-01T08:05:00.000Z'
-    },
-    {
-      id: 'PM-DEMO-0003',
-      parcel_id: 'PM-DEMO-0003',
-      project_id: projectId,
-      imagery_id: imageryId,
-      detection_run_id: 'run_demo_coastal_01',
-      is_demo: true,
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [545, 372],
-          [670, 320],
-          [710, 360],
-          [700, 460],
-          [580, 440],
-          [546, 402],
-          [545, 372]
-        ]]
-      },
-      image_coordinates: [[
-        [545, 372],
-        [670, 320],
-        [710, 360],
-        [700, 460],
-        [580, 440],
-        [546, 402],
-        [545, 372]
-      ]],
-      geo_geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [72.8357, 18.9177],
-          [72.8378, 18.9185],
-          [72.8385, 18.9178],
-          [72.8383, 18.9162],
-          [72.8363, 18.9165],
-          [72.8357, 18.9171],
-          [72.8357, 18.9177]
-        ]]
-      },
-      area: 'Image-space preliminary area',
-      area_sqm: null,
-      area_hectares: null,
-      area_acres: null,
-      area_px: 19400,
-      confidence: 0.58,
-      confidence_label: 'Low',
-      status: 'Needs Review',
-      candidate_status: 'REVIEW',
-      source: 'spatial_reasoning',
-      topology_issue: 'Proximity to coastal water exclusion boundary requires surveyor verification',
-      generation_reason: 'Coastal settlement holding fronting South Coastal Settlement Lane. Flagged for review due to proximity to coastal water exclusion mask and transitional vegetation boundary.',
-      supporting_evidence: {
-        roads: ['feat_demo_rd_3'],
-        road_names: ['South Coastal Settlement Lane'],
-        field_boundaries: [],
-        field_names: [],
-        walls_fences: [],
-        wall_fence_names: [],
-        buildings: ['feat_demo_bldg_12'],
-        building_names: ['Settlement Facility #6 (Context Only)']
-      },
-      supporting_features: [
-        'Road Corridor (South Coastal Settlement Lane)',
-        'Coastal Boundary Review Required',
-        'Settlement Facility #6 — Supporting Context'
-      ],
-      created_at: '2026-09-01T08:05:00.000Z',
-      updated_at: '2026-09-01T08:05:00.000Z'
+    waterRings: [waterCoords],
+    evidence: {
+      buildings: detectedFeatures.filter(f => f.feature_type === 'Building'),
+      roads: detectedFeatures.filter(f => f.feature_type === 'Road'),
+      walls: detectedFeatures.filter(f => f.feature_type === 'Wall'),
+      fences: detectedFeatures.filter(f => f.feature_type === 'Fence'),
+      boundaries: detectedFeatures.filter(f => f.feature_type === 'Boundary' || f.feature_type === 'Wall' || f.feature_type === 'Fence'),
+      water: detectedFeatures.filter(f => f.feature_type === 'Water Body'),
+      fields: detectedFeatures.filter(f => f.feature_type === 'Field')
     }
-  ];
+  });
 
   // 6. Parcel version history
   const parcel_versions = parcels.map(p => ({
