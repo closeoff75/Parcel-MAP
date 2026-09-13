@@ -923,7 +923,6 @@ export class RoadSpatialReasoningService {
               building_names: supportingBldgNames
             },
             supporting_features: supportingSummary,
-            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
 
@@ -1136,7 +1135,6 @@ export class RoadSpatialReasoningService {
             building_names: enclosedBldgs.map(bg => bg.name || bg.id)
           },
           supporting_features: supportingSummary,
-          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
 
@@ -1420,7 +1418,6 @@ export class RoadSpatialReasoningService {
                 building_names: compound.map(bg => bg.name || bg.id)
               },
               supporting_features: suppFeatures,
-              created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
 

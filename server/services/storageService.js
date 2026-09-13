@@ -10,11 +10,24 @@
 
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { getStore } from '@netlify/blobs';
 
 export class StorageService {
   static STORE_NAME = 'parcelmap-imagery';
   static _blobStore = null;
+
+  /**
+   * Determine the appropriate storage directory. In serverless/read-only environments,
+   * local disk fallbacks MUST use os.tmpdir().
+   */
+  static getStorageDir() {
+    const isServerless = Boolean(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT);
+    if (isServerless) {
+      return path.join(os.tmpdir(), 'parcelmap_uploads');
+    }
+    return path.join(process.cwd(), 'uploads');
+  }
 
   /**
    * Resolve or initialize the Netlify Blob store if available.
@@ -109,15 +122,20 @@ export class StorageService {
   }
 
   /**
-   * Save to local disk under uploads/ matching the storage key hierarchy.
+   * Save to disk under safe storage dir matching the storage key hierarchy.
    */
   static _saveToLocalDisk(storageKey, buffer) {
-    const localPath = path.join(process.cwd(), 'uploads', storageKey);
+    const baseDir = this.getStorageDir();
+    const localPath = path.join(baseDir, storageKey);
     const dir = path.dirname(localPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(localPath, buffer);
+    } catch (e) {
+      console.warn('[StorageService] Local disk write error (safe fallback):', e.message);
     }
-    fs.writeFileSync(localPath, buffer);
     return localPath;
   }
 
@@ -142,10 +160,13 @@ export class StorageService {
       }
     }
 
-    // Check local disk fallback
+    // Check local disk candidates
+    const baseDir = this.getStorageDir();
     const localCandidates = [
+      path.join(baseDir, storageKey),
       path.join(process.cwd(), 'uploads', storageKey),
       path.join(process.cwd(), storageKey),
+      path.join(baseDir, path.basename(storageKey)),
       path.join(process.cwd(), 'uploads', path.basename(storageKey))
     ];
 
@@ -178,7 +199,9 @@ export class StorageService {
     }
 
     // Also remove local copy if present
+    const baseDir = this.getStorageDir();
     const localCandidates = [
+      path.join(baseDir, storageKey),
       path.join(process.cwd(), 'uploads', storageKey),
       path.join(process.cwd(), 'uploads', path.basename(storageKey))
     ];
@@ -212,11 +235,15 @@ export class StorageService {
       }
     }
 
-    // Local disk staging
-    const chunkPath = path.join(process.cwd(), 'uploads', 'temp_chunks', sessionId, `part_${String(chunkIndex).padStart(5, '0')}`);
-    const dir = path.dirname(chunkPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(chunkPath, buf);
+    // Safe disk staging
+    const chunkDir = path.join(this.getStorageDir(), 'temp_chunks', sessionId);
+    const chunkPath = path.join(chunkDir, `part_${String(chunkIndex).padStart(5, '0')}`);
+    try {
+      if (!fs.existsSync(chunkDir)) fs.mkdirSync(chunkDir, { recursive: true });
+      fs.writeFileSync(chunkPath, buf);
+    } catch (e) {
+      console.warn('[StorageService] Local chunk write error:', e.message);
+    }
     return { chunkKey, size: buf.length };
   }
 
@@ -239,9 +266,15 @@ export class StorageService {
       }
 
       if (!chunkData) {
-        const localPath = path.join(process.cwd(), 'uploads', 'temp_chunks', sessionId, `part_${String(i).padStart(5, '0')}`);
-        if (fs.existsSync(localPath)) {
-          chunkData = fs.readFileSync(localPath);
+        const localCandidates = [
+          path.join(this.getStorageDir(), 'temp_chunks', sessionId, `part_${String(i).padStart(5, '0')}`),
+          path.join(process.cwd(), 'uploads', 'temp_chunks', sessionId, `part_${String(i).padStart(5, '0')}`)
+        ];
+        for (const cand of localCandidates) {
+          if (fs.existsSync(cand)) {
+            chunkData = fs.readFileSync(cand);
+            break;
+          }
         }
       }
 
@@ -285,9 +318,14 @@ export class StorageService {
         try { await blobStore.delete(chunkKey); } catch (e) {}
       }
     }
-    const localDir = path.join(process.cwd(), 'uploads', 'temp_chunks', sessionId);
-    if (fs.existsSync(localDir)) {
-      try { fs.rmSync(localDir, { recursive: true, force: true }); } catch (e) {}
+    const localCandidates = [
+      path.join(this.getStorageDir(), 'temp_chunks', sessionId),
+      path.join(process.cwd(), 'uploads', 'temp_chunks', sessionId)
+    ];
+    for (const dir of localCandidates) {
+      if (fs.existsSync(dir)) {
+        try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) {}
+      }
     }
   }
 

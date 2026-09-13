@@ -5,19 +5,32 @@
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import os from 'os';
 import { GISEngine } from '../services/gisEngine.js';
 import { buildCoastalDemoDataset } from '../../scripts/setup_clean_demo_seed.js';
 import { getStore } from '@netlify/blobs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, '../../data');
+// Safe environment directory determination that works in ESM, CJS, and Lambda
+const isServerless = Boolean(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT);
+let currentDir = process.cwd();
+try {
+  if (typeof __dirname !== 'undefined') {
+    currentDir = __dirname;
+  }
+} catch (e) {}
+
+const DATA_DIR = isServerless 
+  ? path.join(os.tmpdir(), 'parcelmap_data') 
+  : path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'parcelmap_db.json');
 
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// Ensure data directory exists safely without crashing on read-only serverless filesystems
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.warn('[Database] Read-only filesystem notice:', e.message);
 }
 
 // Initial Clean Demonstration Seed Data: ParcelMap Demo — Coastal Settlement
@@ -52,8 +65,16 @@ class Database {
 
   init() {
     try {
-      if (fs.existsSync(DB_FILE)) {
-        const raw = fs.readFileSync(DB_FILE, 'utf8');
+      let fileToRead = fs.existsSync(DB_FILE) ? DB_FILE : null;
+      if (!fileToRead) {
+        const candidateStatic = path.join(process.cwd(), 'data', 'parcelmap_db.json');
+        if (fs.existsSync(candidateStatic)) {
+          fileToRead = candidateStatic;
+        }
+      }
+
+      if (fileToRead) {
+        const raw = fs.readFileSync(fileToRead, 'utf8');
         this.data = JSON.parse(raw);
         if (!this.data.parcel_versions) {
           this.data.parcel_versions = [];
@@ -61,7 +82,7 @@ class Database {
         if (!this.data.activities) {
           this.data.activities = [];
         }
-        this.lastMtime = fs.statSync(DB_FILE).mtimeMs;
+        this.lastMtime = fs.existsSync(DB_FILE) ? fs.statSync(DB_FILE).mtimeMs : Date.now();
         // Ensure all legacy demo features/parcels have imagery_id: 'img_wagholi_ortho' so they don't leak into user uploads
         if (this.data.detectedFeatures) {
           this.data.detectedFeatures.forEach(f => {
@@ -129,12 +150,16 @@ class Database {
 
   save() {
     try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
       fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf8');
       if (fs.existsSync(DB_FILE)) {
         this.lastMtime = fs.statSync(DB_FILE).mtimeMs;
       }
     } catch (err) {
-      console.warn('Failed to persist database to disk:', err.message);
+      // Non-fatal warning on read-only serverless filesystems
+      console.warn('[Database] Persist to disk skipped/failed:', err.message);
     }
     this._syncToNetlifyBlobs();
   }
