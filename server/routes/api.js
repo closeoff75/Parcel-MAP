@@ -16,6 +16,7 @@ import { JobQueueService } from '../services/jobQueueService.js';
 import { ReportService, LEGAL_DISCLAIMER } from '../services/reportService.js';
 import { EnvConfig } from '../config/envConfig.js';
 import { StorageService } from '../services/storageService.js';
+import * as turf from '@turf/turf';
 
 const router = Router();
 
@@ -512,7 +513,7 @@ router.get('/projects/:id/imagery', (req, res) => {
 });
 
 // DELETE /api/projects/:projectId/imagery/:imageryId
-router.delete('/projects/:projectId/imagery/:imageryId', (req, res) => {
+router.delete('/projects/:projectId/imagery/:imageryId', async (req, res) => {
   try {
     const { projectId, imageryId } = req.params;
     const deleted = db.deleteImagery(imageryId, projectId);
@@ -520,11 +521,24 @@ router.delete('/projects/:projectId/imagery/:imageryId', (req, res) => {
       return res.status(404).json({ success: false, error: 'Imagery not found or already deleted' });
     }
     
-    // Safely remove physical uploaded file (except baseline demo orthomosaic)
-    if (deleted.file_url) {
-      const fname = path.basename(deleted.file_url);
-      if (fname && !fname.includes('coastal_settlement_demo') && !fname.includes('wagholi_east_ortho')) {
-        const filePath = path.join(uploadDir, fname);
+    // Safely remove from persistent StorageService (Netlify Blobs / local disk)
+    if (deleted.storage_key) {
+      try {
+        await StorageService.deleteImage(deleted.storage_key);
+      } catch (sErr) {
+        console.warn(`[Delete Imagery] StorageService delete warning: ${sErr.message}`);
+      }
+    }
+
+    // Safely remove physical uploaded file if present (except baseline demo orthomosaic)
+    const storageBase = StorageService.getStorageDir();
+    const fname = path.basename(deleted.file_url || deleted.file_name || '');
+    if (fname && !fname.includes('coastal_settlement_demo') && !fname.includes('wagholi_east_ortho')) {
+      const candidates = [
+        path.join(storageBase, fname),
+        path.join(process.cwd(), 'uploads', fname)
+      ];
+      for (const filePath of candidates) {
         if (fs.existsSync(filePath)) {
           try {
             fs.unlinkSync(filePath);
@@ -548,18 +562,31 @@ router.delete('/projects/:projectId/imagery/:imageryId', (req, res) => {
 });
 
 // DELETE /api/imagery/:id
-router.delete('/imagery/:id', (req, res) => {
+router.delete('/imagery/:id', async (req, res) => {
   try {
     const deleted = db.deleteImagery(req.params.id);
     if (!deleted) {
       return res.status(404).json({ success: false, error: 'Imagery not found or already deleted' });
     }
     
-    // Safely remove physical uploaded file (except baseline demo orthomosaic)
-    if (deleted.file_url) {
-      const fname = path.basename(deleted.file_url);
-      if (fname && !fname.includes('coastal_settlement_demo') && !fname.includes('wagholi_east_ortho')) {
-        const filePath = path.join(uploadDir, fname);
+    // Safely remove from persistent StorageService (Netlify Blobs / local disk)
+    if (deleted.storage_key) {
+      try {
+        await StorageService.deleteImage(deleted.storage_key);
+      } catch (sErr) {
+        console.warn(`[Delete Imagery] StorageService delete warning: ${sErr.message}`);
+      }
+    }
+
+    // Safely remove physical uploaded file if present (except baseline demo orthomosaic)
+    const storageBase = StorageService.getStorageDir();
+    const fname = path.basename(deleted.file_url || deleted.file_name || '');
+    if (fname && !fname.includes('coastal_settlement_demo') && !fname.includes('wagholi_east_ortho')) {
+      const candidates = [
+        path.join(storageBase, fname),
+        path.join(process.cwd(), 'uploads', fname)
+      ];
+      for (const filePath of candidates) {
         if (fs.existsSync(filePath)) {
           try {
             fs.unlinkSync(filePath);

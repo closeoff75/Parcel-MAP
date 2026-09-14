@@ -5,6 +5,7 @@
 
 import serverless from 'serverless-http';
 import { app } from '../../server/app.js';
+import { db } from '../../server/db/database.js';
 
 const serverlessHandler = serverless(app, {
   binary: [
@@ -45,6 +46,7 @@ export const handler = async (event, context) => {
   };
 
   try {
+    await db.syncFromNetlifyBlobs();
     return await serverlessHandler(modifiedEvent, context);
   } catch (err) {
     console.error('[Netlify Function API Error]:', err);

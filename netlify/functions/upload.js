@@ -7,6 +7,7 @@
 
 import serverless from 'serverless-http';
 import { app } from '../../server/app.js';
+import { db } from '../../server/db/database.js';
 
 const handlerInstance = serverless(app, {
   binary: [
@@ -33,14 +34,14 @@ export const handler = async (event, context) => {
 
   // Normalize route to corresponding Express API upload route
   let targetPath = '/api/upload';
-  const p = event.path || '';
-  const action = event.queryStringParameters?.action || '';
+  const p = (event.path || '').toLowerCase();
+  const action = (event.queryStringParameters?.action || '').toLowerCase();
 
-  if (p.endsWith('/init') || action === 'init') {
+  if (p.includes('/init') || action === 'init') {
     targetPath = '/api/upload/init';
-  } else if (p.endsWith('/chunk') || action === 'chunk') {
+  } else if (p.includes('/chunk') || action === 'chunk') {
     targetPath = '/api/upload/chunk';
-  } else if (p.endsWith('/complete') || action === 'complete') {
+  } else if (p.includes('/complete') || action === 'complete') {
     targetPath = '/api/upload/complete';
   }
 
@@ -50,6 +51,7 @@ export const handler = async (event, context) => {
   };
 
   try {
+    await db.syncFromNetlifyBlobs();
     return await handlerInstance(modifiedEvent, context);
   } catch (err) {
     console.error('[Netlify Upload Function Error]:', err);

@@ -51,8 +51,12 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Static uploads folder
 const uploadDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (e) {
+  // Read-only filesystem in serverless environments
 }
 app.use('/uploads', express.static(uploadDir));
 

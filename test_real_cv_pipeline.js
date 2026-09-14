@@ -12,16 +12,38 @@
 
 import fs from 'fs';
 import path from 'path';
+import http from 'http';
+import { app } from './server/app.js';
 
-const API_BASE = 'http://localhost:3001/api';
+let API_BASE = 'http://localhost:3001/api';
+let embeddedServer = null;
 
 async function runEndToEndVerification() {
   console.log('===============================================================');
   console.log('🧪 RUNNING COMPREHENSIVE AI DETECTION & SPATIAL PIPELINE AUDIT');
   console.log('===============================================================');
 
-  // 1. Health check
+  // 1. Health check with self-healing server startup
   console.log('\n[TEST 1] Checking API Server Health...');
+  let serverOnline = false;
+  try {
+    const healthRes = await fetch(`${API_BASE}/health`);
+    if (healthRes.ok) serverOnline = true;
+  } catch (e) {}
+
+  if (!serverOnline) {
+    console.log('⚡ API server not running. Starting ephemeral test server...');
+    embeddedServer = http.createServer(app);
+    await new Promise((resolve) => {
+      embeddedServer.listen(0, '127.0.0.1', () => {
+        const port = embeddedServer.address().port;
+        API_BASE = `http://127.0.0.1:${port}/api`;
+        console.log(`📡 Ephemeral test server active on ${API_BASE}`);
+        resolve();
+      });
+    });
+  }
+
   const healthRes = await fetch(`${API_BASE}/health`);
   if (!healthRes.ok) throw new Error('API server not responding at ' + API_BASE);
   const health = await healthRes.json();
@@ -234,7 +256,13 @@ async function runEndToEndVerification() {
   console.log('===============================================================');
 }
 
-runEndToEndVerification().catch(err => {
-  console.error('❌ Test Audit Failed:', err);
-  process.exit(1);
-});
+runEndToEndVerification()
+  .catch(err => {
+    console.error('❌ Test Audit Failed:', err);
+    process.exitCode = 1;
+  })
+  .finally(() => {
+    if (embeddedServer) {
+      embeddedServer.close();
+    }
+  });

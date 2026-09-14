@@ -46,6 +46,19 @@ class Database {
     this.init();
   }
 
+  _ensureCollections() {
+    if (!this.data) this.data = {};
+    if (!Array.isArray(this.data.projects)) this.data.projects = [];
+    if (!Array.isArray(this.data.imagery)) this.data.imagery = [];
+    if (!Array.isArray(this.data.detectedFeatures)) this.data.detectedFeatures = [];
+    if (!Array.isArray(this.data.parcels)) this.data.parcels = [];
+    if (!Array.isArray(this.data.verifications)) this.data.verifications = [];
+    if (!Array.isArray(this.data.processingJobs)) this.data.processingJobs = [];
+    if (!Array.isArray(this.data.parcel_versions)) this.data.parcel_versions = [];
+    if (!Array.isArray(this.data.activities)) this.data.activities = [];
+    if (!Array.isArray(this.data.users)) this.data.users = [];
+  }
+
   reload() {
     try {
       if (fs.existsSync(DB_FILE)) {
@@ -53,14 +66,14 @@ class Database {
         if (stats.mtimeMs !== this.lastMtime) {
           const raw = fs.readFileSync(DB_FILE, 'utf8');
           this.data = JSON.parse(raw);
-          if (!this.data.parcel_versions) this.data.parcel_versions = [];
-          if (!this.data.activities) this.data.activities = [];
+          this._ensureCollections();
           this.lastMtime = stats.mtimeMs;
         }
       }
     } catch (err) {
       // Ignore read error during concurrent writes
     }
+    this._ensureCollections();
   }
 
   init() {
@@ -76,12 +89,7 @@ class Database {
       if (fileToRead) {
         const raw = fs.readFileSync(fileToRead, 'utf8');
         this.data = JSON.parse(raw);
-        if (!this.data.parcel_versions) {
-          this.data.parcel_versions = [];
-        }
-        if (!this.data.activities) {
-          this.data.activities = [];
-        }
+        this._ensureCollections();
         this.lastMtime = fs.existsSync(DB_FILE) ? fs.statSync(DB_FILE).mtimeMs : Date.now();
         // Ensure all legacy demo features/parcels have imagery_id: 'img_wagholi_ortho' so they don't leak into user uploads
         if (this.data.detectedFeatures) {
@@ -101,11 +109,13 @@ class Database {
         this.save();
       } else {
         this.data = getInitialSeed();
+        this._ensureCollections();
         this.save();
       }
     } catch (err) {
       console.warn('Could not read existing database file, re-seeding:', err.message);
       this.data = getInitialSeed();
+      this._ensureCollections();
       this.save();
     }
   }
@@ -141,6 +151,7 @@ class Database {
         const cloudData = await store.get('db_state', { type: 'json' });
         if (cloudData && cloudData.projects) {
           this.data = cloudData;
+          this._ensureCollections();
           return true;
         }
       }
@@ -549,18 +560,23 @@ class Database {
         let lat = proj?.coordinates?.[0] || 18.5512;
         let lng = proj?.coordinates?.[1] || 73.9341;
         let boundary = null;
-        const geom = p.geo_geometry || p.geometry;
+        const geom = p.geo_geometry || (p.is_georeferenced ? p.geometry : null);
         if (geom && geom.coordinates && geom.coordinates[0] && geom.coordinates[0].length >= 3) {
           const ring = geom.coordinates[0];
           let sumLat = 0, sumLng = 0;
-          boundary = [];
+          const tempBoundary = [];
           ring.forEach(pt => {
             sumLng += pt[0];
             sumLat += pt[1];
-            boundary.push([pt[1], pt[0]]);
+            tempBoundary.push([pt[1], pt[0]]);
           });
-          lat = +(sumLat / ring.length).toFixed(5);
-          lng = +(sumLng / ring.length).toFixed(5);
+          const avgLat = +(sumLat / ring.length).toFixed(5);
+          const avgLng = +(sumLng / ring.length).toFixed(5);
+          if (Math.abs(avgLat) <= 90 && Math.abs(avgLng) <= 180) {
+            lat = avgLat;
+            lng = avgLng;
+            boundary = tempBoundary;
+          }
         }
 
         const formattedId = p.parcel_id || p.id;
@@ -791,13 +807,17 @@ class Database {
 
   // --- Verification ---
   getVerificationsByProjectId(projectId) {
+    this.reload();
     const parcelIds = new Set(this.getParcelsByProjectId(projectId).map(p => p.parcel_id));
-    return this.data.verifications.filter(v => parcelIds.has(v.parcel_id));
+    return (this.data.verifications || []).filter(v => parcelIds.has(v.parcel_id));
   }
   getVerificationsByParcelId(parcelId) {
-    return this.data.verifications.filter(v => v.parcel_id === parcelId);
+    this.reload();
+    return (this.data.verifications || []).filter(v => v.parcel_id === parcelId);
   }
   addVerification(ver) {
+    this.reload();
+    if (!this.data.verifications) this.data.verifications = [];
     const item = {
       id: ver.id || `ver_${Date.now()}`,
       parcel_id: ver.parcel_id,
@@ -901,12 +921,16 @@ class Database {
 
   // --- Processing Jobs ---
   getJobsByProjectId(projectId) {
-    return this.data.processingJobs.filter(j => j.project_id === projectId);
+    this.reload();
+    return (this.data.processingJobs || []).filter(j => j.project_id === projectId);
   }
   getJobById(jobId) {
-    return this.data.processingJobs.find(j => j.id === jobId);
+    this.reload();
+    return (this.data.processingJobs || []).find(j => j.id === jobId);
   }
   createJob(job) {
+    this.reload();
+    if (!this.data.processingJobs) this.data.processingJobs = [];
     const newJob = {
       id: job.id || `job_${Date.now()}`,
       project_id: job.project_id,
@@ -922,6 +946,7 @@ class Database {
     return newJob;
   }
   updateJob(jobId, updates) {
+    this.reload();
     const j = this.getJobById(jobId);
     if (!j) return null;
     Object.assign(j, updates);

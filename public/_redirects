@@ -1,5 +1,5 @@
 # API and Upload Routes to Netlify Serverless Functions
-/api/upload/*    /.netlify/functions/upload       200!
+/api/upload/*    /.netlify/functions/upload/:splat       200!
 /api/upload      /.netlify/functions/upload       200!
 /api/*           /.netlify/functions/api/:splat   200!
 /uploads/*       /.netlify/functions/api/uploads/:splat 200!
@@ -11,6 +11,5 @@
 /intelligence      /intelligence.html      200
 /enterprise        /enterprise.html        200
 /solutions         /solutions.html         200
-/login             /login.html             200
 /platform          /platform.html          200
 /                  /index.html             200

@@ -44,7 +44,6 @@ A full-stack web application for interactive cadastral mapping, AI-powered land 
 ├── intelligence.html       # Parcel intelligence dossier viewer
 ├── enterprise.html         # API documentation & sandbox
 ├── solutions.html          # Industry solutions & ROI calculator
-├── login.html              # Authentication page
 ├── map-app.js              # CadastralMapEngine class (Leaflet)
 ├── map-data.js             # Cadastral plot data, location hierarchy, infrastructure
 ├── globe.js                # Three.js 3D satellite globe engine
@@ -132,7 +131,6 @@ Vite proxies `/api` and `/uploads` requests to the backend automatically.
 | `intelligence.html` | Parcel dossier viewer with chain-of-title, zoning, environmental screening |
 | `enterprise.html` | API sandbox with cURL/Python/Node/Go code samples |
 | `solutions.html` | Industry workflows for surveyors, brokers, energy developers, municipal GIS |
-| `login.html` | Auth page with SSO options and demo access |
 
 ## Demo Dataset
 

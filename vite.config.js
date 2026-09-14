@@ -30,7 +30,6 @@ export default defineConfig({
         layers: resolve(__dirname, 'layers.html'),
         intelligence: resolve(__dirname, 'intelligence.html'),
         enterprise: resolve(__dirname, 'enterprise.html'),
-        login: resolve(__dirname, 'login.html'),
         solutions: resolve(__dirname, 'solutions.html')
       }
     }

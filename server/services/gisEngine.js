@@ -853,6 +853,33 @@ export class GISEngine {
   }
 
   /**
+   * Merges two polygon geometries into a single validated polygon.
+   */
+  static mergePolygons(geomA, geomB) {
+    const cleanA = this.cleanGeometry(geomA);
+    const cleanB = this.cleanGeometry(geomB);
+    try {
+      const featA = turf.polygon(cleanA.coordinates);
+      const featB = turf.polygon(cleanB.coordinates);
+      const union = turf.union(turf.featureCollection([featA, featB]));
+      if (union && union.geometry) {
+        if (union.geometry.type === 'Polygon') {
+          return this.cleanGeometry(union.geometry);
+        } else if (union.geometry.type === 'MultiPolygon') {
+          const hull = turf.convex(turf.multiPoint([...cleanA.coordinates[0], ...cleanB.coordinates[0]]));
+          return hull ? this.cleanGeometry(hull.geometry) : this.cleanGeometry({ type: 'Polygon', coordinates: [union.geometry.coordinates[0][0]] });
+        }
+      }
+    } catch (e) {
+      // fallback to convex hull
+    }
+    const pts1 = cleanA.coordinates[0] || [];
+    const pts2 = cleanB.coordinates[0] || [];
+    const hull = turf.convex(turf.multiPoint([...pts1, ...pts2]));
+    return hull ? this.cleanGeometry(hull.geometry) : cleanA;
+  }
+
+  /**
    * Snaps a vertex to the nearest vertex in a set within distance tolerance in meters.
    */
   static snapCoordinate(targetCoord, referenceCoords, toleranceMeters = 2.0) {
