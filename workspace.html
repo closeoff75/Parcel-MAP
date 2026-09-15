@@ -317,7 +317,7 @@
 
           <!-- Preview Frame with Actual Image -->
           <div style="position: relative; height: 260px; width: 100%; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-subtle); background: #0b0f17; display: flex; align-items: center; justify-content: center;">
-            <img id="imgUavPreview" src="/uploads/coastal_settlement_demo.png" alt="Drone Orthomosaic" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: brightness(0.95);">
+            <img id="imgUavPreview" src="/uploads/coastal_settlement_demo.png" alt="Drone Orthomosaic" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: brightness(0.95);" onerror="if(!this.dataset.errored){this.dataset.errored='1';this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'260\' viewBox=\'0 0 600 260\'><rect fill=\'%230b0f17\' width=\'600\' height=\'260\'/><text fill=\'%2310b981\' font-family=\'sans-serif\' font-weight=\'bold\' font-size=\'15\' x=\'50%\' y=\'45%\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🛰️ Drone Orthomosaic Dataset Active</text><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'13\' x=\'50%\' y=\'58%\' text-anchor=\'middle\' dominant-baseline=\'middle\'>Coastal Settlement Demo</text></svg>';}">
             <div id="uavPreviewBadge" style="position: absolute; bottom: 10px; left: 10px; background: rgba(13, 18, 28, 0.85); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-family: var(--font-mono); color: var(--text-secondary);">
               Uploaded Drone Imagery &bull; Source Imagery Active
             </div>

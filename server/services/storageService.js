@@ -113,9 +113,11 @@ export class StorageService {
     }
 
     const storageUrl = `/api/imagery/${imageryId}/file`;
+    const dataUrl = buf.length <= 4.5 * 1024 * 1024 ? `data:${mimeType || 'image/jpeg'};base64,${buf.toString('base64')}` : null;
     return {
       storage_key: storageKey,
       storage_url: storageUrl,
+      data_url: dataUrl,
       file_size: buf.length,
       mime_type: mimeType || 'image/jpeg'
     };
@@ -335,17 +337,34 @@ export class StorageService {
   static async ensureLocalBuffer(imagery) {
     if (!imagery) return null;
 
-    // 1. Try storage_key
+    // 1. Try embedded data_url if present
+    if (imagery.data_url && typeof imagery.data_url === 'string' && imagery.data_url.includes('base64,')) {
+      try {
+        return Buffer.from(imagery.data_url.split('base64,')[1], 'base64');
+      } catch (e) {}
+    }
+
+    // 2. Try storage_key
     if (imagery.storage_key) {
       const stored = await this.getImageBuffer(imagery.storage_key);
       if (stored && stored.buffer) return stored.buffer;
     }
 
-    // 2. Try file_url candidates
+    // 3. Try file_url and file_name candidates across all potential static/upload roots
+    const urlBase = imagery.file_url ? path.basename(imagery.file_url) : null;
+    const nameBase = imagery.file_name ? path.basename(imagery.file_name) : null;
+    const directPath = imagery.file_url ? imagery.file_url.replace(/^\//, '') : null;
+
     const candidates = [
-      imagery.file_url ? path.join(process.cwd(), imagery.file_url.replace(/^\//, '')) : null,
-      imagery.file_url ? path.join(process.cwd(), 'uploads', path.basename(imagery.file_url)) : null,
-      imagery.file_name ? path.join(process.cwd(), 'uploads', path.basename(imagery.file_name)) : null
+      directPath ? path.join(process.cwd(), directPath) : null,
+      urlBase ? path.join(process.cwd(), 'uploads', urlBase) : null,
+      urlBase ? path.join(process.cwd(), 'public', 'uploads', urlBase) : null,
+      urlBase ? path.join(process.cwd(), 'dist', 'uploads', urlBase) : null,
+      urlBase ? path.join(this.getStorageDir(), urlBase) : null,
+      nameBase ? path.join(process.cwd(), 'uploads', nameBase) : null,
+      nameBase ? path.join(process.cwd(), 'public', 'uploads', nameBase) : null,
+      nameBase ? path.join(process.cwd(), 'dist', 'uploads', nameBase) : null,
+      nameBase ? path.join(this.getStorageDir(), nameBase) : null
     ].filter(Boolean);
 
     for (const p of candidates) {

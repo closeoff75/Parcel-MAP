@@ -2,7 +2,7 @@
 /api/upload/*    /.netlify/functions/upload/:splat       200!
 /api/upload      /.netlify/functions/upload       200!
 /api/*           /.netlify/functions/api/:splat   200!
-/uploads/*       /.netlify/functions/api/uploads/:splat 200!
+/uploads/*       /.netlify/functions/api/uploads/:splat 200
 
 # Netlify Clean URL Rewrites for Multi-Page App
 /workspace         /workspace.html         200

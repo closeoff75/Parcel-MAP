@@ -49,16 +49,24 @@ app.options('*', cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Static uploads folder
-const uploadDir = path.join(process.cwd(), 'uploads');
-try {
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+// Static uploads folder - support all possible runtime and serverless locations
+import os from 'os';
+const uploadCandidates = [
+  path.join(process.cwd(), 'uploads'),
+  path.join(process.cwd(), 'public', 'uploads'),
+  path.join(process.cwd(), 'dist', 'uploads'),
+  path.join(os.tmpdir(), 'parcelmap_uploads')
+];
+for (const dir of uploadCandidates) {
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (e) {}
+  if (fs.existsSync(dir)) {
+    app.use('/uploads', express.static(dir));
   }
-} catch (e) {
-  // Read-only filesystem in serverless environments
 }
-app.use('/uploads', express.static(uploadDir));
 
 // Health Check
 app.get('/api/health', (req, res) => {

@@ -17,6 +17,150 @@
   ],
   "projects": [
     {
+      "id": "proj_1789452995637",
+      "name": "Project Beta Isolation Block",
+      "description": "",
+      "location": "Unknown Location",
+      "coordinates": [
+        0,
+        0
+      ],
+      "project_type": "Cadastral Survey Project",
+      "created_by": "Cadastral Surveyor",
+      "status": "Uploaded",
+      "progress": 25,
+      "is_demo": false,
+      "created_at": "2026-09-15T06:16:35.637Z",
+      "updated_at": "2026-09-15T06:16:35.703Z"
+    },
+    {
+      "id": "proj_1789452995427",
+      "name": "Field Block Alfa Survey",
+      "description": "",
+      "location": "Coastal Parcel Sector 7",
+      "coordinates": [
+        0,
+        0
+      ],
+      "project_type": "Cadastral Survey Project",
+      "created_by": "Cadastral Surveyor",
+      "status": "Detection Complete",
+      "progress": 40,
+      "is_demo": false,
+      "created_at": "2026-09-15T06:16:35.427Z",
+      "updated_at": "2026-09-15T06:16:37.221Z"
+    },
+    {
+      "id": "proj_1789452982343",
+      "name": "Alpha Agricultural Cadastre 2026",
+      "description": "Rural parcel boundary demarcation using UAV drone orthomosaic imagery and genuine Computer Vision.",
+      "location": "Baramati Pilot District, Pune",
+      "coordinates": [
+        18.1512,
+        74.5771
+      ],
+      "project_type": "Rural Cadastral Mapping",
+      "created_by": "Cadastral Surveyor",
+      "status": "Parcel Generation",
+      "progress": 65,
+      "is_demo": false,
+      "created_at": "2026-09-15T06:16:22.343Z",
+      "updated_at": "2026-09-15T06:16:30.037Z",
+      "spatial_reasoning_summary": {
+        "validated_detections": 6,
+        "road_network": 1,
+        "boundary_evidence": 5,
+        "land_blocks": 2,
+        "candidate_parcels": 5,
+        "accepted_parcels": 5,
+        "needs_review": 0,
+        "rejected_parcels": 0,
+        "rejection_reasons": {
+          "building-box artifact": 0,
+          "insufficient boundary evidence": 0,
+          "unsupported closure": 0,
+          "water overlap": 0,
+          "invalid geometry": 0,
+          "duplicate": 0,
+          "excessive size": 0,
+          "disconnected geometry": 0,
+          "Water overlap": 0,
+          "Invalid geometry": 0,
+          "Insufficient evidence": 0,
+          "Unsupported edge": 0,
+          "Huge polygon": 0,
+          "Duplicate": 0,
+          "Disconnected geometry": 0,
+          "Weak boundary evidence": 0
+        },
+        "rejections_list": []
+      },
+      "diagnostic_summary": {
+        "validated_detections": 6,
+        "road_network_segments": 1,
+        "boundary_evidence_count": 5,
+        "land_blocks": 2,
+        "candidate_parcels": 5,
+        "accepted_parcels": 5,
+        "needs_review": 0,
+        "review_parcels": 0,
+        "rejected_parcels": 0,
+        "rejection_reasons": {
+          "building-box artifact": 0,
+          "insufficient boundary evidence": 0,
+          "unsupported closure": 0,
+          "water overlap": 0,
+          "invalid geometry": 0,
+          "duplicate": 0,
+          "excessive size": 0,
+          "disconnected geometry": 0,
+          "Water overlap": 0,
+          "Invalid geometry": 0,
+          "Insufficient evidence": 0,
+          "Unsupported edge": 0,
+          "Huge polygon": 0,
+          "Duplicate": 0,
+          "Disconnected geometry": 0,
+          "Weak boundary evidence": 0
+        },
+        "rejections_list": []
+      }
+    },
+    {
+      "id": "proj_1789452954705",
+      "name": "Survey Project — survey_field_sample",
+      "description": "User-uploaded aerial drone imagery survey project.",
+      "location": "Field Survey Block",
+      "coordinates": [
+        0,
+        0
+      ],
+      "project_type": "Cadastral Survey Project",
+      "created_by": "Cadastral Surveyor",
+      "status": "Uploaded",
+      "progress": 25,
+      "is_demo": false,
+      "created_at": "2026-09-15T06:15:54.705Z",
+      "updated_at": "2026-09-15T06:15:54.705Z"
+    },
+    {
+      "id": "proj_demo_coastal",
+      "name": "ParcelMap Demo — Coastal Settlement",
+      "description": "AI-assisted parcel mapping demonstration using aerial imagery.",
+      "location": "Coastal Bay Sector, Cadastral Block 4",
+      "coordinates": [
+        18.922,
+        72.8347
+      ],
+      "project_type": "Coastal Cadastral Demonstration",
+      "created_by": "ParcelMap System",
+      "status": "Demo / Ready",
+      "progress": 75,
+      "is_demo": true,
+      "created_at": "2026-09-01T08:00:00.000Z",
+      "updated_at": "2026-09-15T06:15:54.636Z"
+    },
+    {
       "id": "proj_1789387136388",
       "name": "Alpha Agricultural Cadastre 2026",
       "description": "Rural parcel boundary demarcation using UAV drone orthomosaic imagery and genuine Computer Vision.",
@@ -235,23 +379,6 @@
         },
         "rejections_list": []
       }
-    },
-    {
-      "id": "proj_demo_coastal",
-      "name": "ParcelMap Demo — Coastal Settlement",
-      "description": "AI-assisted parcel mapping demonstration using aerial imagery.",
-      "location": "Coastal Bay Sector, Cadastral Block 4",
-      "coordinates": [
-        18.922,
-        72.8347
-      ],
-      "project_type": "Coastal Cadastral Demonstration",
-      "created_by": "ParcelMap System",
-      "status": "Demo / Ready",
-      "progress": 75,
-      "is_demo": true,
-      "created_at": "2026-09-01T08:00:00.000Z",
-      "updated_at": "2026-09-13T12:08:27.397Z"
     },
     {
       "id": "proj_1789301303744",
@@ -2095,6 +2222,180 @@
       "metadata": {
         "storage_key": "projects/proj_1789387136388/imagery/img_1789387148924_tdjm/flight_gamma_solar.png",
         "storage_url": "/api/imagery/img_1789387148924_tdjm/file",
+        "coordinate_mode": "image-space"
+      }
+    },
+    {
+      "id": "img_1789452982391_n1nb",
+      "imagery_id": "img_1789452982391_n1nb",
+      "project_id": "proj_1789452982343",
+      "file_name": "flight_alpha_farmland.png",
+      "filename": "flight_alpha_farmland.png",
+      "file_url": "/api/imagery/img_1789452982391_n1nb/file",
+      "storage_key": "projects/proj_1789452982343/imagery/img_1789452982391_n1nb/flight_alpha_farmland.png",
+      "storage_url": "/api/imagery/img_1789452982391_n1nb/file",
+      "mime_type": "image/png",
+      "file_size": "10 KB",
+      "width": 600,
+      "height": 400,
+      "resolution": "2.8 cm/pixel GSD",
+      "sensor": "DJI Zenmuse P1 45MP Full-Frame",
+      "flight_altitude": "120m AGL",
+      "capture_date": "2026-09-15",
+      "status": "READY",
+      "processing_status": "DETECTION COMPLETE",
+      "is_georeferenced": false,
+      "coordinate_mode": "image-space",
+      "is_demo": false,
+      "created_at": "2026-09-15T06:16:22.393Z",
+      "metadata": {
+        "storage_key": "projects/proj_1789452982343/imagery/img_1789452982391_n1nb/flight_alpha_farmland.png",
+        "storage_url": "/api/imagery/img_1789452982391_n1nb/file",
+        "coordinate_mode": "image-space"
+      }
+    },
+    {
+      "id": "img_1789452983843_1dbl",
+      "imagery_id": "img_1789452983843_1dbl",
+      "project_id": "proj_1789452982343",
+      "file_name": "flight_beta_settlement.png",
+      "filename": "flight_beta_settlement.png",
+      "file_url": "/api/imagery/img_1789452983843_1dbl/file",
+      "storage_key": "projects/proj_1789452982343/imagery/img_1789452983843_1dbl/flight_beta_settlement.png",
+      "storage_url": "/api/imagery/img_1789452983843_1dbl/file",
+      "mime_type": "image/png",
+      "file_size": "2 KB",
+      "width": 600,
+      "height": 400,
+      "resolution": "2.8 cm/pixel GSD",
+      "sensor": "DJI Zenmuse P1 45MP Full-Frame",
+      "flight_altitude": "120m AGL",
+      "capture_date": "2026-09-15",
+      "status": "READY",
+      "processing_status": "DETECTION COMPLETE",
+      "is_georeferenced": false,
+      "coordinate_mode": "image-space",
+      "is_demo": false,
+      "created_at": "2026-09-15T06:16:23.844Z",
+      "metadata": {
+        "storage_key": "projects/proj_1789452982343/imagery/img_1789452983843_1dbl/flight_beta_settlement.png",
+        "storage_url": "/api/imagery/img_1789452983843_1dbl/file",
+        "coordinate_mode": "image-space"
+      }
+    },
+    {
+      "id": "img_1789452985874_tiv7",
+      "imagery_id": "img_1789452985874_tiv7",
+      "project_id": "proj_1789452982343",
+      "file_name": "flight_gamma_solar.png",
+      "filename": "flight_gamma_solar.png",
+      "file_url": "/api/imagery/img_1789452985874_tiv7/file",
+      "storage_key": "projects/proj_1789452982343/imagery/img_1789452985874_tiv7/flight_gamma_solar.png",
+      "storage_url": "/api/imagery/img_1789452985874_tiv7/file",
+      "mime_type": "image/png",
+      "file_size": "2 KB",
+      "width": 600,
+      "height": 400,
+      "resolution": "2.8 cm/pixel GSD",
+      "sensor": "DJI Zenmuse P1 45MP Full-Frame",
+      "flight_altitude": "120m AGL",
+      "capture_date": "2026-09-15",
+      "status": "READY",
+      "processing_status": "DETECTION COMPLETE",
+      "is_georeferenced": false,
+      "coordinate_mode": "image-space",
+      "is_demo": false,
+      "created_at": "2026-09-15T06:16:25.877Z",
+      "metadata": {
+        "storage_key": "projects/proj_1789452982343/imagery/img_1789452985874_tiv7/flight_gamma_solar.png",
+        "storage_url": "/api/imagery/img_1789452985874_tiv7/file",
+        "coordinate_mode": "image-space"
+      }
+    },
+    {
+      "id": "img_1789452995492_22g2",
+      "imagery_id": "img_1789452995492_22g2",
+      "project_id": "proj_1789452995427",
+      "file_name": "drone_survey_alfa.png",
+      "filename": "drone_survey_alfa.png",
+      "file_url": "/api/imagery/img_1789452995492_22g2/file",
+      "storage_key": "projects/proj_1789452995427/imagery/img_1789452995492_22g2/drone_survey_alfa.png",
+      "storage_url": "/api/imagery/img_1789452995492_22g2/file",
+      "mime_type": "image/png",
+      "file_size": "10 KB",
+      "width": 600,
+      "height": 450,
+      "resolution": "2.8 cm/pixel GSD",
+      "sensor": "DJI Zenmuse P1 45MP Full-Frame",
+      "flight_altitude": "120m AGL",
+      "capture_date": "2026-09-15",
+      "status": "READY",
+      "processing_status": "DETECTION COMPLETE",
+      "is_georeferenced": false,
+      "coordinate_mode": "image-space",
+      "is_demo": false,
+      "created_at": "2026-09-15T06:16:35.493Z",
+      "metadata": {
+        "storage_key": "projects/proj_1789452995427/imagery/img_1789452995492_22g2/drone_survey_alfa.png",
+        "storage_url": "/api/imagery/img_1789452995492_22g2/file",
+        "coordinate_mode": "image-space"
+      }
+    },
+    {
+      "id": "img_1789452995578_qs8e",
+      "imagery_id": "img_1789452995578_qs8e",
+      "project_id": "proj_1789452995427",
+      "file_name": "heavy_orthomosaic_highres.jpg",
+      "filename": "heavy_orthomosaic_highres.jpg",
+      "file_url": "/api/imagery/img_1789452995578_qs8e/file",
+      "storage_key": "projects/proj_1789452995427/imagery/img_1789452995578_qs8e/heavy_orthomosaic_highres.jpg",
+      "storage_url": "/api/imagery/img_1789452995578_qs8e/file",
+      "mime_type": "image/jpeg",
+      "file_size": "20 KB",
+      "width": 4000,
+      "height": 3000,
+      "resolution": "2.8 cm/pixel GSD",
+      "sensor": "DJI Zenmuse P1 45MP Full-Frame",
+      "flight_altitude": "120m AGL",
+      "capture_date": "2026-09-15",
+      "status": "READY",
+      "processing_status": "READY",
+      "is_georeferenced": false,
+      "coordinate_mode": "image-space",
+      "is_demo": false,
+      "created_at": "2026-09-15T06:16:35.581Z",
+      "metadata": {
+        "storage_key": "projects/proj_1789452995427/imagery/img_1789452995578_qs8e/heavy_orthomosaic_highres.jpg",
+        "storage_url": "/api/imagery/img_1789452995578_qs8e/file",
+        "coordinate_mode": "image-space"
+      }
+    },
+    {
+      "id": "img_1789452995682_x1r6",
+      "imagery_id": "img_1789452995682_x1r6",
+      "project_id": "proj_1789452995637",
+      "file_name": "project_b_boundary.png",
+      "filename": "project_b_boundary.png",
+      "file_url": "/api/imagery/img_1789452995682_x1r6/file",
+      "storage_key": "projects/proj_1789452995637/imagery/img_1789452995682_x1r6/project_b_boundary.png",
+      "storage_url": "/api/imagery/img_1789452995682_x1r6/file",
+      "mime_type": "image/png",
+      "file_size": "0 KB",
+      "width": 1,
+      "height": 1,
+      "resolution": "2.8 cm/pixel GSD",
+      "sensor": "DJI Zenmuse P1 45MP Full-Frame",
+      "flight_altitude": "120m AGL",
+      "capture_date": "2026-09-15",
+      "status": "READY",
+      "processing_status": "READY",
+      "is_georeferenced": false,
+      "coordinate_mode": "image-space",
+      "is_demo": false,
+      "created_at": "2026-09-15T06:16:35.683Z",
+      "metadata": {
+        "storage_key": "projects/proj_1789452995637/imagery/img_1789452995682_x1r6/project_b_boundary.png",
+        "storage_url": "/api/imagery/img_1789452995682_x1r6/file",
         "coordinate_mode": "image-space"
       }
     }
@@ -10424,1206 +10725,6 @@
         "detection_run_id": "run_1789301299050_bgr9v"
       },
       "created_at": "2026-09-13T12:08:19.695Z"
-    },
-    {
-      "id": "feat_demo_water_1",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Water Body",
-      "sub_type": "Coastal Bay / Ocean",
-      "name": "Coastal Bay Water Exclusion Mask",
-      "confidence": 0.98,
-      "source": "CV-derived Evidence (Spectral NDVI & Shoreline Edge Mask)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              0,
-              0
-            ],
-            [
-              0,
-              479
-            ],
-            [
-              501,
-              479
-            ],
-            [
-              497,
-              467
-            ],
-            [
-              481,
-              465
-            ],
-            [
-              463,
-              453
-            ],
-            [
-              450,
-              453
-            ],
-            [
-              428,
-              429
-            ],
-            [
-              423,
-              427
-            ],
-            [
-              417,
-              431
-            ],
-            [
-              408,
-              431
-            ],
-            [
-              401,
-              416
-            ],
-            [
-              405,
-              406
-            ],
-            [
-              405,
-              394
-            ],
-            [
-              415,
-              387
-            ],
-            [
-              423,
-              373
-            ],
-            [
-              431,
-              369
-            ],
-            [
-              432,
-              361
-            ],
-            [
-              454,
-              343
-            ],
-            [
-              452,
-              325
-            ],
-            [
-              458,
-              318
-            ],
-            [
-              458,
-              313
-            ],
-            [
-              443,
-              300
-            ],
-            [
-              431,
-              299
-            ],
-            [
-              415,
-              288
-            ],
-            [
-              372,
-              270
-            ],
-            [
-              365,
-              261
-            ],
-            [
-              354,
-              258
-            ],
-            [
-              349,
-              253
-            ],
-            [
-              345,
-              241
-            ],
-            [
-              332,
-              235
-            ],
-            [
-              332,
-              224
-            ],
-            [
-              324,
-              221
-            ],
-            [
-              317,
-              210
-            ],
-            [
-              322,
-              193
-            ],
-            [
-              302,
-              177
-            ],
-            [
-              287,
-              149
-            ],
-            [
-              268,
-              134
-            ],
-            [
-              267,
-              123
-            ],
-            [
-              262,
-              118
-            ],
-            [
-              256,
-              118
-            ],
-            [
-              246,
-              125
-            ],
-            [
-              239,
-              123
-            ],
-            [
-              232,
-              114
-            ],
-            [
-              226,
-              113
-            ],
-            [
-              218,
-              106
-            ],
-            [
-              217,
-              94
-            ],
-            [
-              208,
-              87
-            ],
-            [
-              150,
-              70
-            ],
-            [
-              133,
-              68
-            ],
-            [
-              123,
-              60
-            ],
-            [
-              114,
-              60
-            ],
-            [
-              104,
-              43
-            ],
-            [
-              85,
-              37
-            ],
-            [
-              49,
-              9
-            ],
-            [
-              34,
-              0
-            ],
-            [
-              0,
-              0
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            0,
-            0
-          ],
-          [
-            0,
-            479
-          ],
-          [
-            501,
-            479
-          ],
-          [
-            497,
-            467
-          ],
-          [
-            481,
-            465
-          ],
-          [
-            463,
-            453
-          ],
-          [
-            450,
-            453
-          ],
-          [
-            428,
-            429
-          ],
-          [
-            423,
-            427
-          ],
-          [
-            417,
-            431
-          ],
-          [
-            408,
-            431
-          ],
-          [
-            401,
-            416
-          ],
-          [
-            405,
-            406
-          ],
-          [
-            405,
-            394
-          ],
-          [
-            415,
-            387
-          ],
-          [
-            423,
-            373
-          ],
-          [
-            431,
-            369
-          ],
-          [
-            432,
-            361
-          ],
-          [
-            454,
-            343
-          ],
-          [
-            452,
-            325
-          ],
-          [
-            458,
-            318
-          ],
-          [
-            458,
-            313
-          ],
-          [
-            443,
-            300
-          ],
-          [
-            431,
-            299
-          ],
-          [
-            415,
-            288
-          ],
-          [
-            372,
-            270
-          ],
-          [
-            365,
-            261
-          ],
-          [
-            354,
-            258
-          ],
-          [
-            349,
-            253
-          ],
-          [
-            345,
-            241
-          ],
-          [
-            332,
-            235
-          ],
-          [
-            332,
-            224
-          ],
-          [
-            324,
-            221
-          ],
-          [
-            317,
-            210
-          ],
-          [
-            322,
-            193
-          ],
-          [
-            302,
-            177
-          ],
-          [
-            287,
-            149
-          ],
-          [
-            268,
-            134
-          ],
-          [
-            267,
-            123
-          ],
-          [
-            262,
-            118
-          ],
-          [
-            256,
-            118
-          ],
-          [
-            246,
-            125
-          ],
-          [
-            239,
-            123
-          ],
-          [
-            232,
-            114
-          ],
-          [
-            226,
-            113
-          ],
-          [
-            218,
-            106
-          ],
-          [
-            217,
-            94
-          ],
-          [
-            208,
-            87
-          ],
-          [
-            150,
-            70
-          ],
-          [
-            133,
-            68
-          ],
-          [
-            123,
-            60
-          ],
-          [
-            114,
-            60
-          ],
-          [
-            104,
-            43
-          ],
-          [
-            85,
-            37
-          ],
-          [
-            49,
-            9
-          ],
-          [
-            34,
-            0
-          ],
-          [
-            0,
-            0
-          ]
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:00.000Z"
-    },
-    {
-      "id": "feat_demo_rd_2",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Road",
-      "sub_type": "Paved Corridor",
-      "name": "North Coastal Ridge Road",
-      "confidence": 0.95,
-      "source": "CV-derived Evidence (Ridge Contrast & Morphological Tracing)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [
-            126,
-            19
-          ],
-          [
-            270,
-            76
-          ],
-          [
-            342,
-            155
-          ],
-          [
-            410,
-            203
-          ],
-          [
-            545,
-            372
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          126,
-          19
-        ],
-        [
-          270,
-          76
-        ],
-        [
-          342,
-          155
-        ],
-        [
-          410,
-          203
-        ],
-        [
-          545,
-          372
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:05.000Z"
-    },
-    {
-      "id": "feat_demo_rd_3",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Road",
-      "sub_type": "Access Lane",
-      "name": "South Coastal Settlement Lane",
-      "confidence": 0.92,
-      "source": "CV-derived Evidence (Ridge Contrast & Morphological Tracing)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [
-            545,
-            372
-          ],
-          [
-            546,
-            402
-          ],
-          [
-            580,
-            440
-          ],
-          [
-            700,
-            460
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          545,
-          372
-        ],
-        [
-          546,
-          402
-        ],
-        [
-          580,
-          440
-        ],
-        [
-          700,
-          460
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:08.000Z"
-    },
-    {
-      "id": "feat_demo_field_4",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Field",
-      "sub_type": "Agricultural Holding",
-      "name": "North-East Cultivated Plot",
-      "confidence": 0.89,
-      "source": "CV-derived Evidence (Field Boundary Contrast)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              415,
-              20
-            ],
-            [
-              530,
-              20
-            ],
-            [
-              535,
-              140
-            ],
-            [
-              420,
-              140
-            ],
-            [
-              415,
-              20
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            415,
-            20
-          ],
-          [
-            530,
-            20
-          ],
-          [
-            535,
-            140
-          ],
-          [
-            420,
-            140
-          ],
-          [
-            415,
-            20
-          ]
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:10.000Z"
-    },
-    {
-      "id": "feat_demo_wall_5",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Wall",
-      "sub_type": "Stone Compound Barrier",
-      "name": "Compound Wall (West Holding)",
-      "confidence": 0.91,
-      "source": "CV-derived Evidence (Bilateral Gradient Contrast)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [
-            380,
-            160
-          ],
-          [
-            480,
-            160
-          ],
-          [
-            480,
-            260
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          380,
-          160
-        ],
-        [
-          480,
-          160
-        ],
-        [
-          480,
-          260
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:12.000Z"
-    },
-    {
-      "id": "feat_demo_fence_6",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Fence",
-      "sub_type": "Perimeter Fence",
-      "name": "Settlement Enclosure Fence",
-      "confidence": 0.87,
-      "source": "CV-derived Evidence (Linear Boundary Filter)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [
-            540,
-            210
-          ],
-          [
-            660,
-            210
-          ],
-          [
-            660,
-            310
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          540,
-          210
-        ],
-        [
-          660,
-          210
-        ],
-        [
-          660,
-          310
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:14.000Z"
-    },
-    {
-      "id": "feat_demo_veg_7",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Vegetation",
-      "sub_type": "Tree Canopy & Green Buffer",
-      "name": "Coastal Green Buffer",
-      "confidence": 0.88,
-      "source": "CV-derived Evidence (NDVI Vegetative Contrast)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              280,
-              50
-            ],
-            [
-              350,
-              40
-            ],
-            [
-              360,
-              95
-            ],
-            [
-              310,
-              105
-            ],
-            [
-              280,
-              80
-            ],
-            [
-              280,
-              50
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            280,
-            50
-          ],
-          [
-            350,
-            40
-          ],
-          [
-            360,
-            95
-          ],
-          [
-            310,
-            105
-          ],
-          [
-            280,
-            80
-          ],
-          [
-            280,
-            50
-          ]
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:16.000Z"
-    },
-    {
-      "id": "feat_demo_bldg_8",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Building",
-      "sub_type": "Settlement Footprint",
-      "name": "Homestead Structure #1",
-      "confidence": 0.88,
-      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              665,
-              275
-            ],
-            [
-              695,
-              275
-            ],
-            [
-              695,
-              295
-            ],
-            [
-              665,
-              295
-            ],
-            [
-              665,
-              275
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            665,
-            275
-          ],
-          [
-            695,
-            275
-          ],
-          [
-            695,
-            295
-          ],
-          [
-            665,
-            295
-          ],
-          [
-            665,
-            275
-          ]
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:18.000Z"
-    },
-    {
-      "id": "feat_demo_bldg_9",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Building",
-      "sub_type": "Settlement Footprint",
-      "name": "Homestead Structure #2",
-      "confidence": 0.85,
-      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              455,
-              110
-            ],
-            [
-              485,
-              110
-            ],
-            [
-              485,
-              130
-            ],
-            [
-              455,
-              130
-            ],
-            [
-              455,
-              110
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            455,
-            110
-          ],
-          [
-            485,
-            110
-          ],
-          [
-            485,
-            130
-          ],
-          [
-            455,
-            130
-          ],
-          [
-            455,
-            110
-          ]
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:18.000Z"
-    },
-    {
-      "id": "feat_demo_bldg_10",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Building",
-      "sub_type": "Settlement Footprint",
-      "name": "Farm Storage Outbuilding",
-      "confidence": 0.82,
-      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              365,
-              55
-            ],
-            [
-              390,
-              55
-            ],
-            [
-              390,
-              75
-            ],
-            [
-              365,
-              75
-            ],
-            [
-              365,
-              55
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            365,
-            55
-          ],
-          [
-            390,
-            55
-          ],
-          [
-            390,
-            75
-          ],
-          [
-            365,
-            75
-          ],
-          [
-            365,
-            55
-          ]
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:18.000Z"
-    },
-    {
-      "id": "feat_demo_bldg_11",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Building",
-      "sub_type": "Settlement Footprint",
-      "name": "Residential House #4",
-      "confidence": 0.84,
-      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              555,
-              285
-            ],
-            [
-              585,
-              285
-            ],
-            [
-              585,
-              310
-            ],
-            [
-              555,
-              310
-            ],
-            [
-              555,
-              285
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            555,
-            285
-          ],
-          [
-            585,
-            285
-          ],
-          [
-            585,
-            310
-          ],
-          [
-            555,
-            310
-          ],
-          [
-            555,
-            285
-          ]
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:18.000Z"
-    },
-    {
-      "id": "feat_demo_bldg_12",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Building",
-      "sub_type": "Settlement Footprint",
-      "name": "Residential House #5",
-      "confidence": 0.81,
-      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              620,
-              235
-            ],
-            [
-              650,
-              235
-            ],
-            [
-              650,
-              255
-            ],
-            [
-              620,
-              255
-            ],
-            [
-              620,
-              235
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            620,
-            235
-          ],
-          [
-            650,
-            235
-          ],
-          [
-            650,
-            255
-          ],
-          [
-            620,
-            255
-          ],
-          [
-            620,
-            235
-          ]
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:18.000Z"
-    },
-    {
-      "id": "feat_demo_bldg_13",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "feature_type": "Building",
-      "sub_type": "Settlement Footprint",
-      "name": "Settlement Facility #6",
-      "confidence": 0.8,
-      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
-      "is_demo": true,
-      "is_valid": true,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              595,
-              315
-            ],
-            [
-              630,
-              315
-            ],
-            [
-              630,
-              340
-            ],
-            [
-              595,
-              340
-            ],
-            [
-              595,
-              315
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            595,
-            315
-          ],
-          [
-            630,
-            315
-          ],
-          [
-            630,
-            340
-          ],
-          [
-            595,
-            340
-          ],
-          [
-            595,
-            315
-          ]
-        ]
-      ],
-      "created_at": "2026-09-01T08:02:18.000Z"
     },
     {
       "id": "det_img_1789359207940_4a14_road_1",
@@ -42493,6 +41594,3679 @@
         "detection_run_id": "run_1789387149214_6l9o7"
       },
       "created_at": "2026-09-14T11:59:13.134Z"
+    },
+    {
+      "id": "feat_demo_water_1",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Water Body",
+      "sub_type": "Coastal Bay / Ocean",
+      "name": "Coastal Bay Water Exclusion Mask",
+      "confidence": 0.98,
+      "source": "CV-derived Evidence (Spectral NDVI & Shoreline Edge Mask)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              479
+            ],
+            [
+              501,
+              479
+            ],
+            [
+              497,
+              467
+            ],
+            [
+              481,
+              465
+            ],
+            [
+              463,
+              453
+            ],
+            [
+              450,
+              453
+            ],
+            [
+              428,
+              429
+            ],
+            [
+              423,
+              427
+            ],
+            [
+              417,
+              431
+            ],
+            [
+              408,
+              431
+            ],
+            [
+              401,
+              416
+            ],
+            [
+              405,
+              406
+            ],
+            [
+              405,
+              394
+            ],
+            [
+              415,
+              387
+            ],
+            [
+              423,
+              373
+            ],
+            [
+              431,
+              369
+            ],
+            [
+              432,
+              361
+            ],
+            [
+              454,
+              343
+            ],
+            [
+              452,
+              325
+            ],
+            [
+              458,
+              318
+            ],
+            [
+              458,
+              313
+            ],
+            [
+              443,
+              300
+            ],
+            [
+              431,
+              299
+            ],
+            [
+              415,
+              288
+            ],
+            [
+              372,
+              270
+            ],
+            [
+              365,
+              261
+            ],
+            [
+              354,
+              258
+            ],
+            [
+              349,
+              253
+            ],
+            [
+              345,
+              241
+            ],
+            [
+              332,
+              235
+            ],
+            [
+              332,
+              224
+            ],
+            [
+              324,
+              221
+            ],
+            [
+              317,
+              210
+            ],
+            [
+              322,
+              193
+            ],
+            [
+              302,
+              177
+            ],
+            [
+              287,
+              149
+            ],
+            [
+              268,
+              134
+            ],
+            [
+              267,
+              123
+            ],
+            [
+              262,
+              118
+            ],
+            [
+              256,
+              118
+            ],
+            [
+              246,
+              125
+            ],
+            [
+              239,
+              123
+            ],
+            [
+              232,
+              114
+            ],
+            [
+              226,
+              113
+            ],
+            [
+              218,
+              106
+            ],
+            [
+              217,
+              94
+            ],
+            [
+              208,
+              87
+            ],
+            [
+              150,
+              70
+            ],
+            [
+              133,
+              68
+            ],
+            [
+              123,
+              60
+            ],
+            [
+              114,
+              60
+            ],
+            [
+              104,
+              43
+            ],
+            [
+              85,
+              37
+            ],
+            [
+              49,
+              9
+            ],
+            [
+              34,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            479
+          ],
+          [
+            501,
+            479
+          ],
+          [
+            497,
+            467
+          ],
+          [
+            481,
+            465
+          ],
+          [
+            463,
+            453
+          ],
+          [
+            450,
+            453
+          ],
+          [
+            428,
+            429
+          ],
+          [
+            423,
+            427
+          ],
+          [
+            417,
+            431
+          ],
+          [
+            408,
+            431
+          ],
+          [
+            401,
+            416
+          ],
+          [
+            405,
+            406
+          ],
+          [
+            405,
+            394
+          ],
+          [
+            415,
+            387
+          ],
+          [
+            423,
+            373
+          ],
+          [
+            431,
+            369
+          ],
+          [
+            432,
+            361
+          ],
+          [
+            454,
+            343
+          ],
+          [
+            452,
+            325
+          ],
+          [
+            458,
+            318
+          ],
+          [
+            458,
+            313
+          ],
+          [
+            443,
+            300
+          ],
+          [
+            431,
+            299
+          ],
+          [
+            415,
+            288
+          ],
+          [
+            372,
+            270
+          ],
+          [
+            365,
+            261
+          ],
+          [
+            354,
+            258
+          ],
+          [
+            349,
+            253
+          ],
+          [
+            345,
+            241
+          ],
+          [
+            332,
+            235
+          ],
+          [
+            332,
+            224
+          ],
+          [
+            324,
+            221
+          ],
+          [
+            317,
+            210
+          ],
+          [
+            322,
+            193
+          ],
+          [
+            302,
+            177
+          ],
+          [
+            287,
+            149
+          ],
+          [
+            268,
+            134
+          ],
+          [
+            267,
+            123
+          ],
+          [
+            262,
+            118
+          ],
+          [
+            256,
+            118
+          ],
+          [
+            246,
+            125
+          ],
+          [
+            239,
+            123
+          ],
+          [
+            232,
+            114
+          ],
+          [
+            226,
+            113
+          ],
+          [
+            218,
+            106
+          ],
+          [
+            217,
+            94
+          ],
+          [
+            208,
+            87
+          ],
+          [
+            150,
+            70
+          ],
+          [
+            133,
+            68
+          ],
+          [
+            123,
+            60
+          ],
+          [
+            114,
+            60
+          ],
+          [
+            104,
+            43
+          ],
+          [
+            85,
+            37
+          ],
+          [
+            49,
+            9
+          ],
+          [
+            34,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:00.000Z"
+    },
+    {
+      "id": "feat_demo_rd_2",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Road",
+      "sub_type": "Paved Corridor",
+      "name": "North Coastal Ridge Road",
+      "confidence": 0.95,
+      "source": "CV-derived Evidence (Ridge Contrast & Morphological Tracing)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            126,
+            19
+          ],
+          [
+            270,
+            76
+          ],
+          [
+            342,
+            155
+          ],
+          [
+            410,
+            203
+          ],
+          [
+            545,
+            372
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          126,
+          19
+        ],
+        [
+          270,
+          76
+        ],
+        [
+          342,
+          155
+        ],
+        [
+          410,
+          203
+        ],
+        [
+          545,
+          372
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:05.000Z"
+    },
+    {
+      "id": "feat_demo_rd_3",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Road",
+      "sub_type": "Access Lane",
+      "name": "South Coastal Settlement Lane",
+      "confidence": 0.92,
+      "source": "CV-derived Evidence (Ridge Contrast & Morphological Tracing)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            545,
+            372
+          ],
+          [
+            546,
+            402
+          ],
+          [
+            580,
+            440
+          ],
+          [
+            700,
+            460
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          545,
+          372
+        ],
+        [
+          546,
+          402
+        ],
+        [
+          580,
+          440
+        ],
+        [
+          700,
+          460
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:08.000Z"
+    },
+    {
+      "id": "feat_demo_field_4",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Field",
+      "sub_type": "Agricultural Holding",
+      "name": "North-East Cultivated Plot",
+      "confidence": 0.89,
+      "source": "CV-derived Evidence (Field Boundary Contrast)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              415,
+              20
+            ],
+            [
+              530,
+              20
+            ],
+            [
+              535,
+              140
+            ],
+            [
+              420,
+              140
+            ],
+            [
+              415,
+              20
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            415,
+            20
+          ],
+          [
+            530,
+            20
+          ],
+          [
+            535,
+            140
+          ],
+          [
+            420,
+            140
+          ],
+          [
+            415,
+            20
+          ]
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:10.000Z"
+    },
+    {
+      "id": "feat_demo_wall_5",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Wall",
+      "sub_type": "Stone Compound Barrier",
+      "name": "Compound Wall (West Holding)",
+      "confidence": 0.91,
+      "source": "CV-derived Evidence (Bilateral Gradient Contrast)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            380,
+            160
+          ],
+          [
+            480,
+            160
+          ],
+          [
+            480,
+            260
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          380,
+          160
+        ],
+        [
+          480,
+          160
+        ],
+        [
+          480,
+          260
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:12.000Z"
+    },
+    {
+      "id": "feat_demo_fence_6",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Fence",
+      "sub_type": "Perimeter Fence",
+      "name": "Settlement Enclosure Fence",
+      "confidence": 0.87,
+      "source": "CV-derived Evidence (Linear Boundary Filter)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            540,
+            210
+          ],
+          [
+            660,
+            210
+          ],
+          [
+            660,
+            310
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          540,
+          210
+        ],
+        [
+          660,
+          210
+        ],
+        [
+          660,
+          310
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:14.000Z"
+    },
+    {
+      "id": "feat_demo_veg_7",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Vegetation",
+      "sub_type": "Tree Canopy & Green Buffer",
+      "name": "Coastal Green Buffer",
+      "confidence": 0.88,
+      "source": "CV-derived Evidence (NDVI Vegetative Contrast)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              280,
+              50
+            ],
+            [
+              350,
+              40
+            ],
+            [
+              360,
+              95
+            ],
+            [
+              310,
+              105
+            ],
+            [
+              280,
+              80
+            ],
+            [
+              280,
+              50
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            280,
+            50
+          ],
+          [
+            350,
+            40
+          ],
+          [
+            360,
+            95
+          ],
+          [
+            310,
+            105
+          ],
+          [
+            280,
+            80
+          ],
+          [
+            280,
+            50
+          ]
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:16.000Z"
+    },
+    {
+      "id": "feat_demo_bldg_8",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Building",
+      "sub_type": "Settlement Footprint",
+      "name": "Homestead Structure #1",
+      "confidence": 0.88,
+      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              665,
+              275
+            ],
+            [
+              695,
+              275
+            ],
+            [
+              695,
+              295
+            ],
+            [
+              665,
+              295
+            ],
+            [
+              665,
+              275
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            665,
+            275
+          ],
+          [
+            695,
+            275
+          ],
+          [
+            695,
+            295
+          ],
+          [
+            665,
+            295
+          ],
+          [
+            665,
+            275
+          ]
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:18.000Z"
+    },
+    {
+      "id": "feat_demo_bldg_9",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Building",
+      "sub_type": "Settlement Footprint",
+      "name": "Homestead Structure #2",
+      "confidence": 0.85,
+      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              455,
+              110
+            ],
+            [
+              485,
+              110
+            ],
+            [
+              485,
+              130
+            ],
+            [
+              455,
+              130
+            ],
+            [
+              455,
+              110
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            455,
+            110
+          ],
+          [
+            485,
+            110
+          ],
+          [
+            485,
+            130
+          ],
+          [
+            455,
+            130
+          ],
+          [
+            455,
+            110
+          ]
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:18.000Z"
+    },
+    {
+      "id": "feat_demo_bldg_10",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Building",
+      "sub_type": "Settlement Footprint",
+      "name": "Farm Storage Outbuilding",
+      "confidence": 0.82,
+      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              365,
+              55
+            ],
+            [
+              390,
+              55
+            ],
+            [
+              390,
+              75
+            ],
+            [
+              365,
+              75
+            ],
+            [
+              365,
+              55
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            365,
+            55
+          ],
+          [
+            390,
+            55
+          ],
+          [
+            390,
+            75
+          ],
+          [
+            365,
+            75
+          ],
+          [
+            365,
+            55
+          ]
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:18.000Z"
+    },
+    {
+      "id": "feat_demo_bldg_11",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Building",
+      "sub_type": "Settlement Footprint",
+      "name": "Residential House #4",
+      "confidence": 0.84,
+      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              555,
+              285
+            ],
+            [
+              585,
+              285
+            ],
+            [
+              585,
+              310
+            ],
+            [
+              555,
+              310
+            ],
+            [
+              555,
+              285
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            555,
+            285
+          ],
+          [
+            585,
+            285
+          ],
+          [
+            585,
+            310
+          ],
+          [
+            555,
+            310
+          ],
+          [
+            555,
+            285
+          ]
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:18.000Z"
+    },
+    {
+      "id": "feat_demo_bldg_12",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Building",
+      "sub_type": "Settlement Footprint",
+      "name": "Residential House #5",
+      "confidence": 0.81,
+      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              620,
+              235
+            ],
+            [
+              650,
+              235
+            ],
+            [
+              650,
+              255
+            ],
+            [
+              620,
+              255
+            ],
+            [
+              620,
+              235
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            620,
+            235
+          ],
+          [
+            650,
+            235
+          ],
+          [
+            650,
+            255
+          ],
+          [
+            620,
+            255
+          ],
+          [
+            620,
+            235
+          ]
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:18.000Z"
+    },
+    {
+      "id": "feat_demo_bldg_13",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "feature_type": "Building",
+      "sub_type": "Settlement Footprint",
+      "name": "Settlement Facility #6",
+      "confidence": 0.8,
+      "source": "ML Detection (YOLOv8 Aerial Segmentation)",
+      "is_demo": true,
+      "is_valid": true,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              595,
+              315
+            ],
+            [
+              630,
+              315
+            ],
+            [
+              630,
+              340
+            ],
+            [
+              595,
+              340
+            ],
+            [
+              595,
+              315
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            595,
+            315
+          ],
+          [
+            630,
+            315
+          ],
+          [
+            630,
+            340
+          ],
+          [
+            595,
+            340
+          ],
+          [
+            595,
+            315
+          ]
+        ]
+      ],
+      "created_at": "2026-09-01T08:02:18.000Z"
+    },
+    {
+      "id": "det_img_1789452982391_n1nb_road_1",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "type": "road",
+      "detection_type": "ROAD",
+      "feature_type": "Road Corridor",
+      "name": "Road Corridor 1",
+      "sub_type": "Primary Arterial Corridor",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            9,
+            168
+          ],
+          [
+            54,
+            201
+          ],
+          [
+            99,
+            218
+          ],
+          [
+            128,
+            217
+          ],
+          [
+            156,
+            209
+          ],
+          [
+            211,
+            183
+          ],
+          [
+            253,
+            170
+          ],
+          [
+            282,
+            171
+          ],
+          [
+            327,
+            186
+          ],
+          [
+            407,
+            253
+          ],
+          [
+            457,
+            281
+          ],
+          [
+            484,
+            286
+          ],
+          [
+            514,
+            283
+          ],
+          [
+            591,
+            253
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          9,
+          168
+        ],
+        [
+          54,
+          201
+        ],
+        [
+          99,
+          218
+        ],
+        [
+          128,
+          217
+        ],
+        [
+          156,
+          209
+        ],
+        [
+          211,
+          183
+        ],
+        [
+          253,
+          170
+        ],
+        [
+          282,
+          171
+        ],
+        [
+          327,
+          186
+        ],
+        [
+          407,
+          253
+        ],
+        [
+          457,
+          281
+        ],
+        [
+          484,
+          286
+        ],
+        [
+          514,
+          283
+        ],
+        [
+          591,
+          253
+        ]
+      ],
+      "confidence": 0.9,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "continuous_linear_corridor",
+        "consistent_width_28px",
+        "asphalt_pavement_spectral_signature",
+        "high_elongation_aspect"
+      ],
+      "properties": {
+        "name": "Road Corridor 1",
+        "type": "road",
+        "confidence": 0.9,
+        "confidence_label": "High",
+        "evidence": [
+          "continuous_linear_corridor",
+          "consistent_width_28px",
+          "asphalt_pavement_spectral_signature",
+          "high_elongation_aspect"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 645,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452982495_4zjhm"
+      },
+      "created_at": "2026-09-15T06:16:23.755Z"
+    },
+    {
+      "id": "det_img_1789452982391_n1nb_wall_2",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "type": "wall",
+      "detection_type": "WALL",
+      "feature_type": "Masonry Wall",
+      "name": "Masonry Wall 2",
+      "sub_type": "Stone / Masonry Retaining Wall",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            259,
+            151
+          ],
+          [
+            227,
+            159
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          259,
+          151
+        ],
+        [
+          227,
+          159
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "high_gradient_linear_edge",
+        "continuous_masonry_boundary",
+        "edge_contrast_161"
+      ],
+      "properties": {
+        "name": "Masonry Wall 2",
+        "type": "wall",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "high_gradient_linear_edge",
+          "continuous_masonry_boundary",
+          "edge_contrast_161"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 33,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452982495_4zjhm"
+      },
+      "created_at": "2026-09-15T06:16:23.755Z"
+    },
+    {
+      "id": "det_img_1789452982391_n1nb_wall_3",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "type": "wall",
+      "detection_type": "WALL",
+      "feature_type": "Masonry Wall",
+      "name": "Masonry Wall 4",
+      "sub_type": "Stone / Masonry Retaining Wall",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            247,
+            189
+          ],
+          [
+            278,
+            188
+          ],
+          [
+            298,
+            193
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          247,
+          189
+        ],
+        [
+          278,
+          188
+        ],
+        [
+          298,
+          193
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "high_gradient_linear_edge",
+        "continuous_masonry_boundary",
+        "edge_contrast_185"
+      ],
+      "properties": {
+        "name": "Masonry Wall 4",
+        "type": "wall",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "high_gradient_linear_edge",
+          "continuous_masonry_boundary",
+          "edge_contrast_185"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 52,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452982495_4zjhm"
+      },
+      "created_at": "2026-09-15T06:16:23.755Z"
+    },
+    {
+      "id": "det_img_1789452982391_n1nb_wall_4",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "type": "wall",
+      "detection_type": "WALL",
+      "feature_type": "Masonry Wall",
+      "name": "Masonry Wall 5",
+      "sub_type": "Stone / Masonry Retaining Wall",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            73,
+            193
+          ],
+          [
+            117,
+            201
+          ],
+          [
+            154,
+            192
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          73,
+          193
+        ],
+        [
+          117,
+          201
+        ],
+        [
+          154,
+          192
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "high_gradient_linear_edge",
+        "continuous_masonry_boundary",
+        "edge_contrast_191"
+      ],
+      "properties": {
+        "name": "Masonry Wall 5",
+        "type": "wall",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "high_gradient_linear_edge",
+          "continuous_masonry_boundary",
+          "edge_contrast_191"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 83,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452982495_4zjhm"
+      },
+      "created_at": "2026-09-15T06:16:23.755Z"
+    },
+    {
+      "id": "det_img_1789452982391_n1nb_wall_5",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "type": "wall",
+      "detection_type": "WALL",
+      "feature_type": "Masonry Wall",
+      "name": "Masonry Wall 6",
+      "sub_type": "Stone / Masonry Retaining Wall",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            155,
+            227
+          ],
+          [
+            117,
+            237
+          ],
+          [
+            73,
+            229
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          155,
+          227
+        ],
+        [
+          117,
+          237
+        ],
+        [
+          73,
+          229
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "high_gradient_linear_edge",
+        "continuous_masonry_boundary",
+        "edge_contrast_220"
+      ],
+      "properties": {
+        "name": "Masonry Wall 6",
+        "type": "wall",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "high_gradient_linear_edge",
+          "continuous_masonry_boundary",
+          "edge_contrast_220"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 84,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452982495_4zjhm"
+      },
+      "created_at": "2026-09-15T06:16:23.755Z"
+    },
+    {
+      "id": "det_img_1789452982391_n1nb_wall_6",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "type": "wall",
+      "detection_type": "WALL",
+      "feature_type": "Masonry Wall",
+      "name": "Masonry Wall 7",
+      "sub_type": "Stone / Masonry Retaining Wall",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            513,
+            301
+          ],
+          [
+            493,
+            305
+          ],
+          [
+            466,
+            302
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          513,
+          301
+        ],
+        [
+          493,
+          305
+        ],
+        [
+          466,
+          302
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "high_gradient_linear_edge",
+        "continuous_masonry_boundary",
+        "edge_contrast_173"
+      ],
+      "properties": {
+        "name": "Masonry Wall 7",
+        "type": "wall",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "high_gradient_linear_edge",
+          "continuous_masonry_boundary",
+          "edge_contrast_173"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 48,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452982495_4zjhm"
+      },
+      "created_at": "2026-09-15T06:16:23.755Z"
+    },
+    {
+      "id": "det_img_1789452983843_1dbl_building_1",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452983843_1dbl",
+      "detection_run_id": "run_1789452983988_4w5vd",
+      "type": "building",
+      "detection_type": "BUILDING",
+      "feature_type": "Building Footprint",
+      "name": "Structure 1",
+      "sub_type": "Commercial / Industrial Complex",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              190,
+              45
+            ],
+            [
+              274,
+              45
+            ],
+            [
+              274,
+              109
+            ],
+            [
+              190,
+              109
+            ],
+            [
+              190,
+              45
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          190,
+          45
+        ],
+        [
+          274,
+          45
+        ],
+        [
+          274,
+          109
+        ],
+        [
+          190,
+          109
+        ],
+        [
+          190,
+          45
+        ]
+      ],
+      "confidence": 0.97,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "compact_closed_structure",
+        "rectilinear_rooftop_contrast",
+        "compactness_score_103pct",
+        "pixel_area_5525px"
+      ],
+      "properties": {
+        "name": "Structure 1",
+        "type": "building",
+        "confidence": 0.97,
+        "confidence_label": "High",
+        "evidence": [
+          "compact_closed_structure",
+          "rectilinear_rooftop_contrast",
+          "compactness_score_103pct",
+          "pixel_area_5525px"
+        ],
+        "area_image_pixels": 5376,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452983988_4w5vd"
+      },
+      "created_at": "2026-09-15T06:16:25.533Z"
+    },
+    {
+      "id": "det_img_1789452983843_1dbl_building_2",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452983843_1dbl",
+      "detection_run_id": "run_1789452983988_4w5vd",
+      "type": "building",
+      "detection_type": "BUILDING",
+      "feature_type": "Building Footprint",
+      "name": "Structure 5",
+      "sub_type": "Commercial / Industrial Complex",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100,
+              270
+            ],
+            [
+              179,
+              270
+            ],
+            [
+              179,
+              329
+            ],
+            [
+              100,
+              329
+            ],
+            [
+              100,
+              270
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          100,
+          270
+        ],
+        [
+          179,
+          270
+        ],
+        [
+          179,
+          329
+        ],
+        [
+          100,
+          329
+        ],
+        [
+          100,
+          270
+        ]
+      ],
+      "confidence": 0.97,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "compact_closed_structure",
+        "rectilinear_rooftop_contrast",
+        "compactness_score_103pct",
+        "pixel_area_4800px"
+      ],
+      "properties": {
+        "name": "Structure 5",
+        "type": "building",
+        "confidence": 0.97,
+        "confidence_label": "High",
+        "evidence": [
+          "compact_closed_structure",
+          "rectilinear_rooftop_contrast",
+          "compactness_score_103pct",
+          "pixel_area_4800px"
+        ],
+        "area_image_pixels": 4661,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452983988_4w5vd"
+      },
+      "created_at": "2026-09-15T06:16:25.533Z"
+    },
+    {
+      "id": "det_img_1789452983843_1dbl_building_3",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452983843_1dbl",
+      "detection_run_id": "run_1789452983988_4w5vd",
+      "type": "building",
+      "detection_type": "BUILDING",
+      "feature_type": "Building Footprint",
+      "name": "Structure 3",
+      "sub_type": "Commercial / Industrial Complex",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              380,
+              55
+            ],
+            [
+              469,
+              55
+            ],
+            [
+              469,
+              114
+            ],
+            [
+              380,
+              114
+            ],
+            [
+              380,
+              55
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          380,
+          55
+        ],
+        [
+          469,
+          55
+        ],
+        [
+          469,
+          114
+        ],
+        [
+          380,
+          114
+        ],
+        [
+          380,
+          55
+        ]
+      ],
+      "confidence": 0.9,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "compact_closed_structure",
+        "rectilinear_rooftop_contrast",
+        "compactness_score_103pct",
+        "pixel_area_5400px"
+      ],
+      "properties": {
+        "name": "Structure 3",
+        "type": "building",
+        "confidence": 0.9,
+        "confidence_label": "High",
+        "evidence": [
+          "compact_closed_structure",
+          "rectilinear_rooftop_contrast",
+          "compactness_score_103pct",
+          "pixel_area_5400px"
+        ],
+        "area_image_pixels": 5251,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452983988_4w5vd"
+      },
+      "created_at": "2026-09-15T06:16:25.533Z"
+    },
+    {
+      "id": "det_img_1789452983843_1dbl_building_4",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452983843_1dbl",
+      "detection_run_id": "run_1789452983988_4w5vd",
+      "type": "building",
+      "detection_type": "BUILDING",
+      "feature_type": "Building Footprint",
+      "name": "Structure 4",
+      "sub_type": "Commercial / Industrial Complex",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              320,
+              260
+            ],
+            [
+              429,
+              260
+            ],
+            [
+              429,
+              334
+            ],
+            [
+              320,
+              334
+            ],
+            [
+              320,
+              260
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          320,
+          260
+        ],
+        [
+          429,
+          260
+        ],
+        [
+          429,
+          334
+        ],
+        [
+          320,
+          334
+        ],
+        [
+          320,
+          260
+        ]
+      ],
+      "confidence": 0.88,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "compact_closed_structure",
+        "rectilinear_rooftop_contrast",
+        "compactness_score_102pct",
+        "pixel_area_8250px"
+      ],
+      "properties": {
+        "name": "Structure 4",
+        "type": "building",
+        "confidence": 0.88,
+        "confidence_label": "High",
+        "evidence": [
+          "compact_closed_structure",
+          "rectilinear_rooftop_contrast",
+          "compactness_score_102pct",
+          "pixel_area_8250px"
+        ],
+        "area_image_pixels": 8066,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452983988_4w5vd"
+      },
+      "created_at": "2026-09-15T06:16:25.533Z"
+    },
+    {
+      "id": "det_img_1789452983843_1dbl_building_5",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452983843_1dbl",
+      "detection_run_id": "run_1789452983988_4w5vd",
+      "type": "building",
+      "detection_type": "BUILDING",
+      "feature_type": "Building Footprint",
+      "name": "Structure 2",
+      "sub_type": "Commercial / Industrial Complex",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              60,
+              50
+            ],
+            [
+              129,
+              50
+            ],
+            [
+              129,
+              104
+            ],
+            [
+              60,
+              104
+            ],
+            [
+              60,
+              50
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          60,
+          50
+        ],
+        [
+          129,
+          50
+        ],
+        [
+          129,
+          104
+        ],
+        [
+          60,
+          104
+        ],
+        [
+          60,
+          50
+        ]
+      ],
+      "confidence": 0.87,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "compact_closed_structure",
+        "rectilinear_rooftop_contrast",
+        "compactness_score_103pct",
+        "pixel_area_3850px"
+      ],
+      "properties": {
+        "name": "Structure 2",
+        "type": "building",
+        "confidence": 0.87,
+        "confidence_label": "High",
+        "evidence": [
+          "compact_closed_structure",
+          "rectilinear_rooftop_contrast",
+          "compactness_score_103pct",
+          "pixel_area_3850px"
+        ],
+        "area_image_pixels": 3726,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452983988_4w5vd"
+      },
+      "created_at": "2026-09-15T06:16:25.533Z"
+    },
+    {
+      "id": "det_img_1789452983843_1dbl_wall_6",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452983843_1dbl",
+      "detection_run_id": "run_1789452983988_4w5vd",
+      "type": "wall",
+      "detection_type": "WALL",
+      "feature_type": "Masonry Wall",
+      "name": "Masonry Wall 1",
+      "sub_type": "Stone / Masonry Retaining Wall",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            189,
+            109
+          ],
+          [
+            190,
+            46
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          189,
+          109
+        ],
+        [
+          190,
+          46
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "high_gradient_linear_edge",
+        "continuous_masonry_boundary",
+        "edge_contrast_199"
+      ],
+      "properties": {
+        "name": "Masonry Wall 1",
+        "type": "wall",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "high_gradient_linear_edge",
+          "continuous_masonry_boundary",
+          "edge_contrast_199"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 63,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452983988_4w5vd"
+      },
+      "created_at": "2026-09-15T06:16:25.533Z"
+    },
+    {
+      "id": "det_img_1789452983843_1dbl_fence_7",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452983843_1dbl",
+      "detection_run_id": "run_1789452983988_4w5vd",
+      "type": "fence",
+      "detection_type": "FENCE",
+      "feature_type": "Boundary Fence",
+      "name": "Perimeter Fence 1",
+      "sub_type": "Wire / Agricultural Boundary Fence",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            189,
+            43
+          ],
+          [
+            276,
+            43
+          ],
+          [
+            275,
+            97
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          189,
+          43
+        ],
+        [
+          276,
+          43
+        ],
+        [
+          275,
+          97
+        ]
+      ],
+      "confidence": 0.78,
+      "confidence_label": "Medium",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "thin_linear_boundary_profile",
+        "field_property_separation",
+        "visible_post_alignment"
+      ],
+      "properties": {
+        "name": "Perimeter Fence 1",
+        "type": "fence",
+        "confidence": 0.78,
+        "confidence_label": "Medium",
+        "evidence": [
+          "thin_linear_boundary_profile",
+          "field_property_separation",
+          "visible_post_alignment"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 141,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452983988_4w5vd"
+      },
+      "created_at": "2026-09-15T06:16:25.533Z"
+    },
+    {
+      "id": "det_img_1789452983843_1dbl_fence_8",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452983843_1dbl",
+      "detection_run_id": "run_1789452983988_4w5vd",
+      "type": "fence",
+      "detection_type": "FENCE",
+      "feature_type": "Boundary Fence",
+      "name": "Perimeter Fence 2",
+      "sub_type": "Wire / Agricultural Boundary Fence",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            399,
+            115
+          ],
+          [
+            467,
+            115
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          399,
+          115
+        ],
+        [
+          467,
+          115
+        ]
+      ],
+      "confidence": 0.78,
+      "confidence_label": "Medium",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "thin_linear_boundary_profile",
+        "field_property_separation",
+        "visible_post_alignment"
+      ],
+      "properties": {
+        "name": "Perimeter Fence 2",
+        "type": "fence",
+        "confidence": 0.78,
+        "confidence_label": "Medium",
+        "evidence": [
+          "thin_linear_boundary_profile",
+          "field_property_separation",
+          "visible_post_alignment"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 68,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452983988_4w5vd"
+      },
+      "created_at": "2026-09-15T06:16:25.533Z"
+    },
+    {
+      "id": "det_img_1789452983843_1dbl_fence_9",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452983843_1dbl",
+      "detection_run_id": "run_1789452983988_4w5vd",
+      "type": "fence",
+      "detection_type": "FENCE",
+      "feature_type": "Boundary Fence",
+      "name": "Perimeter Fence 3",
+      "sub_type": "Wire / Agricultural Boundary Fence",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99,
+            269
+          ],
+          [
+            181,
+            269
+          ],
+          [
+            181,
+            323
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          99,
+          269
+        ],
+        [
+          181,
+          269
+        ],
+        [
+          181,
+          323
+        ]
+      ],
+      "confidence": 0.78,
+      "confidence_label": "Medium",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "thin_linear_boundary_profile",
+        "field_property_separation",
+        "visible_post_alignment"
+      ],
+      "properties": {
+        "name": "Perimeter Fence 3",
+        "type": "fence",
+        "confidence": 0.78,
+        "confidence_label": "Medium",
+        "evidence": [
+          "thin_linear_boundary_profile",
+          "field_property_separation",
+          "visible_post_alignment"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 136,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452983988_4w5vd"
+      },
+      "created_at": "2026-09-15T06:16:25.533Z"
+    },
+    {
+      "id": "det_img_1789452985874_tiv7_wall_1",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452985874_tiv7",
+      "detection_run_id": "run_1789452986187_0zz8v",
+      "type": "wall",
+      "detection_type": "WALL",
+      "feature_type": "Masonry Wall",
+      "name": "Masonry Wall 8",
+      "sub_type": "Stone / Masonry Retaining Wall",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79,
+            83
+          ],
+          [
+            78,
+            156
+          ],
+          [
+            79,
+            157
+          ],
+          [
+            78,
+            217
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          79,
+          83
+        ],
+        [
+          78,
+          156
+        ],
+        [
+          79,
+          157
+        ],
+        [
+          78,
+          217
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "high_gradient_linear_edge",
+        "continuous_masonry_boundary",
+        "edge_contrast_195"
+      ],
+      "properties": {
+        "name": "Masonry Wall 8",
+        "type": "wall",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "high_gradient_linear_edge",
+          "continuous_masonry_boundary",
+          "edge_contrast_195"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 73,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452986187_0zz8v"
+      },
+      "created_at": "2026-09-15T06:16:29.219Z"
+    },
+    {
+      "id": "det_img_1789452985874_tiv7_wall_2",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452985874_tiv7",
+      "detection_run_id": "run_1789452986187_0zz8v",
+      "type": "wall",
+      "detection_type": "WALL",
+      "feature_type": "Masonry Wall",
+      "name": "Masonry Wall 9",
+      "sub_type": "Stone / Masonry Retaining Wall",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            329,
+            83
+          ],
+          [
+            328,
+            156
+          ],
+          [
+            329,
+            157
+          ],
+          [
+            328,
+            217
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          329,
+          83
+        ],
+        [
+          328,
+          156
+        ],
+        [
+          329,
+          157
+        ],
+        [
+          328,
+          217
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "high_gradient_linear_edge",
+        "continuous_masonry_boundary",
+        "edge_contrast_195"
+      ],
+      "properties": {
+        "name": "Masonry Wall 9",
+        "type": "wall",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "high_gradient_linear_edge",
+          "continuous_masonry_boundary",
+          "edge_contrast_195"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 73,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452986187_0zz8v"
+      },
+      "created_at": "2026-09-15T06:16:29.219Z"
+    },
+    {
+      "id": "det_img_1789452985874_tiv7_water_3",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452985874_tiv7",
+      "detection_run_id": "run_1789452986187_0zz8v",
+      "type": "water",
+      "detection_type": "WATER",
+      "feature_type": "Water Feature",
+      "name": "Water Body / Retention Basin 1",
+      "sub_type": "Water Reservoir / Pond",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              80,
+              80
+            ],
+            [
+              259,
+              80
+            ],
+            [
+              259,
+              219
+            ],
+            [
+              80,
+              219
+            ],
+            [
+              80,
+              80
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          80,
+          80
+        ],
+        [
+          259,
+          80
+        ],
+        [
+          259,
+          219
+        ],
+        [
+          80,
+          219
+        ],
+        [
+          80,
+          80
+        ]
+      ],
+      "confidence": 0.78,
+      "confidence_label": "Medium",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "low_reflectance_spectral_signature",
+        "enclosed_retention_basin",
+        "surface_area_25200px"
+      ],
+      "properties": {
+        "name": "Water Body / Retention Basin 1",
+        "type": "water",
+        "confidence": 0.78,
+        "confidence_label": "Medium",
+        "evidence": [
+          "low_reflectance_spectral_signature",
+          "enclosed_retention_basin",
+          "surface_area_25200px"
+        ],
+        "area_image_pixels": 24881,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452986187_0zz8v"
+      },
+      "created_at": "2026-09-15T06:16:29.219Z"
+    },
+    {
+      "id": "det_img_1789452985874_tiv7_water_4",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452985874_tiv7",
+      "detection_run_id": "run_1789452986187_0zz8v",
+      "type": "water",
+      "detection_type": "WATER",
+      "feature_type": "Water Feature",
+      "name": "Water Body / Retention Basin 2",
+      "sub_type": "Water Reservoir / Pond",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              330,
+              80
+            ],
+            [
+              509,
+              80
+            ],
+            [
+              509,
+              219
+            ],
+            [
+              330,
+              219
+            ],
+            [
+              330,
+              80
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          330,
+          80
+        ],
+        [
+          509,
+          80
+        ],
+        [
+          509,
+          219
+        ],
+        [
+          330,
+          219
+        ],
+        [
+          330,
+          80
+        ]
+      ],
+      "confidence": 0.78,
+      "confidence_label": "Medium",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "low_reflectance_spectral_signature",
+        "enclosed_retention_basin",
+        "surface_area_25200px"
+      ],
+      "properties": {
+        "name": "Water Body / Retention Basin 2",
+        "type": "water",
+        "confidence": 0.78,
+        "confidence_label": "Medium",
+        "evidence": [
+          "low_reflectance_spectral_signature",
+          "enclosed_retention_basin",
+          "surface_area_25200px"
+        ],
+        "area_image_pixels": 24881,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452986187_0zz8v"
+      },
+      "created_at": "2026-09-15T06:16:29.219Z"
+    },
+    {
+      "id": "det_img_1789452995492_22g2_road_1",
+      "project_id": "proj_1789452995427",
+      "imagery_id": "img_1789452995492_22g2",
+      "detection_run_id": "run_1789452995779_sp9hh",
+      "type": "road",
+      "detection_type": "ROAD",
+      "feature_type": "Road Corridor",
+      "name": "Road Corridor 1",
+      "sub_type": "Primary Arterial Corridor",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            14,
+            232
+          ],
+          [
+            65,
+            264
+          ],
+          [
+            90,
+            269
+          ],
+          [
+            115,
+            267
+          ],
+          [
+            164,
+            240
+          ],
+          [
+            236,
+            184
+          ],
+          [
+            261,
+            174
+          ],
+          [
+            286,
+            171
+          ],
+          [
+            311,
+            176
+          ],
+          [
+            336,
+            189
+          ],
+          [
+            362,
+            196
+          ],
+          [
+            438,
+            245
+          ],
+          [
+            463,
+            252
+          ],
+          [
+            488,
+            252
+          ],
+          [
+            512,
+            245
+          ],
+          [
+            585,
+            203
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          14,
+          232
+        ],
+        [
+          65,
+          264
+        ],
+        [
+          90,
+          269
+        ],
+        [
+          115,
+          267
+        ],
+        [
+          164,
+          240
+        ],
+        [
+          236,
+          184
+        ],
+        [
+          261,
+          174
+        ],
+        [
+          286,
+          171
+        ],
+        [
+          311,
+          176
+        ],
+        [
+          336,
+          189
+        ],
+        [
+          362,
+          196
+        ],
+        [
+          438,
+          245
+        ],
+        [
+          463,
+          252
+        ],
+        [
+          488,
+          252
+        ],
+        [
+          512,
+          245
+        ],
+        [
+          585,
+          203
+        ]
+      ],
+      "confidence": 0.9,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "continuous_linear_corridor",
+        "consistent_width_28px",
+        "asphalt_pavement_spectral_signature",
+        "high_elongation_aspect"
+      ],
+      "properties": {
+        "name": "Road Corridor 1",
+        "type": "road",
+        "confidence": 0.9,
+        "confidence_label": "High",
+        "evidence": [
+          "continuous_linear_corridor",
+          "consistent_width_28px",
+          "asphalt_pavement_spectral_signature",
+          "high_elongation_aspect"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 641,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452995779_sp9hh"
+      },
+      "created_at": "2026-09-15T06:16:37.145Z"
+    },
+    {
+      "id": "det_img_1789452995492_22g2_building_2",
+      "project_id": "proj_1789452995427",
+      "imagery_id": "img_1789452995492_22g2",
+      "detection_run_id": "run_1789452995779_sp9hh",
+      "type": "building",
+      "detection_type": "BUILDING",
+      "feature_type": "Building Footprint",
+      "name": "Structure 1",
+      "sub_type": "Residential Building Footprint",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              120,
+              110
+            ],
+            [
+              180,
+              110
+            ],
+            [
+              180,
+              160
+            ],
+            [
+              120,
+              160
+            ],
+            [
+              120,
+              110
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          120,
+          110
+        ],
+        [
+          180,
+          110
+        ],
+        [
+          180,
+          160
+        ],
+        [
+          120,
+          160
+        ],
+        [
+          120,
+          110
+        ]
+      ],
+      "confidence": 0.83,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "compact_closed_structure",
+        "rectilinear_rooftop_contrast",
+        "compactness_score_104pct",
+        "pixel_area_3111px"
+      ],
+      "properties": {
+        "name": "Structure 1",
+        "type": "building",
+        "confidence": 0.83,
+        "confidence_label": "High",
+        "evidence": [
+          "compact_closed_structure",
+          "rectilinear_rooftop_contrast",
+          "compactness_score_104pct",
+          "pixel_area_3111px"
+        ],
+        "area_image_pixels": 3000,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452995779_sp9hh"
+      },
+      "created_at": "2026-09-15T06:16:37.145Z"
+    },
+    {
+      "id": "det_img_1789452995492_22g2_field_3",
+      "project_id": "proj_1789452995427",
+      "imagery_id": "img_1789452995492_22g2",
+      "detection_run_id": "run_1789452995779_sp9hh",
+      "type": "field",
+      "detection_type": "FIELD",
+      "feature_type": "Agricultural Field",
+      "name": "Agricultural Field Plot 1",
+      "sub_type": "Cultivated Land / Open Agricultural Field",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              3,
+              3
+            ],
+            [
+              596,
+              3
+            ],
+            [
+              596,
+              177
+            ],
+            [
+              517,
+              238
+            ],
+            [
+              488,
+              250
+            ],
+            [
+              460,
+              251
+            ],
+            [
+              422,
+              236
+            ],
+            [
+              327,
+              164
+            ],
+            [
+              299,
+              153
+            ],
+            [
+              271,
+              152
+            ],
+            [
+              232,
+              168
+            ],
+            [
+              157,
+              227
+            ],
+            [
+              126,
+              245
+            ],
+            [
+              106,
+              251
+            ],
+            [
+              74,
+              249
+            ],
+            [
+              45,
+              236
+            ],
+            [
+              3,
+              204
+            ],
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          3,
+          3
+        ],
+        [
+          596,
+          3
+        ],
+        [
+          596,
+          177
+        ],
+        [
+          517,
+          238
+        ],
+        [
+          488,
+          250
+        ],
+        [
+          460,
+          251
+        ],
+        [
+          422,
+          236
+        ],
+        [
+          327,
+          164
+        ],
+        [
+          299,
+          153
+        ],
+        [
+          271,
+          152
+        ],
+        [
+          232,
+          168
+        ],
+        [
+          157,
+          227
+        ],
+        [
+          126,
+          245
+        ],
+        [
+          106,
+          251
+        ],
+        [
+          74,
+          249
+        ],
+        [
+          45,
+          236
+        ],
+        [
+          3,
+          204
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "homogeneous_spectral_index",
+        "contiguous_agricultural_parcel",
+        "enclosed_area_120980px"
+      ],
+      "properties": {
+        "name": "Agricultural Field Plot 1",
+        "type": "field",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "homogeneous_spectral_index",
+          "contiguous_agricultural_parcel",
+          "enclosed_area_120980px"
+        ],
+        "area_image_pixels": 123266,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452995779_sp9hh"
+      },
+      "created_at": "2026-09-15T06:16:37.145Z"
+    },
+    {
+      "id": "det_img_1789452995492_22g2_field_4",
+      "project_id": "proj_1789452995427",
+      "imagery_id": "img_1789452995492_22g2",
+      "detection_run_id": "run_1789452995779_sp9hh",
+      "type": "field",
+      "detection_type": "FIELD",
+      "feature_type": "Agricultural Field",
+      "name": "Agricultural Field Plot 2",
+      "sub_type": "Cultivated Land / Open Agricultural Field",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              271,
+              189
+            ],
+            [
+              299,
+              190
+            ],
+            [
+              327,
+              201
+            ],
+            [
+              422,
+              273
+            ],
+            [
+              460,
+              288
+            ],
+            [
+              488,
+              287
+            ],
+            [
+              517,
+              275
+            ],
+            [
+              596,
+              214
+            ],
+            [
+              596,
+              446
+            ],
+            [
+              3,
+              446
+            ],
+            [
+              3,
+              241
+            ],
+            [
+              60,
+              281
+            ],
+            [
+              106,
+              288
+            ],
+            [
+              140,
+              275
+            ],
+            [
+              232,
+              205
+            ],
+            [
+              271,
+              189
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          271,
+          189
+        ],
+        [
+          299,
+          190
+        ],
+        [
+          327,
+          201
+        ],
+        [
+          422,
+          273
+        ],
+        [
+          460,
+          288
+        ],
+        [
+          488,
+          287
+        ],
+        [
+          517,
+          275
+        ],
+        [
+          596,
+          214
+        ],
+        [
+          596,
+          446
+        ],
+        [
+          3,
+          446
+        ],
+        [
+          3,
+          241
+        ],
+        [
+          60,
+          281
+        ],
+        [
+          106,
+          288
+        ],
+        [
+          140,
+          275
+        ],
+        [
+          232,
+          205
+        ],
+        [
+          271,
+          189
+        ]
+      ],
+      "confidence": 0.92,
+      "confidence_label": "High",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "homogeneous_spectral_index",
+        "contiguous_agricultural_parcel",
+        "enclosed_area_118250px"
+      ],
+      "properties": {
+        "name": "Agricultural Field Plot 2",
+        "type": "field",
+        "confidence": 0.92,
+        "confidence_label": "High",
+        "evidence": [
+          "homogeneous_spectral_index",
+          "contiguous_agricultural_parcel",
+          "enclosed_area_118250px"
+        ],
+        "area_image_pixels": 117712,
+        "length_pixels": null,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452995779_sp9hh"
+      },
+      "created_at": "2026-09-15T06:16:37.145Z"
+    },
+    {
+      "id": "det_img_1789452995492_22g2_fence_5",
+      "project_id": "proj_1789452995427",
+      "imagery_id": "img_1789452995492_22g2",
+      "detection_run_id": "run_1789452995779_sp9hh",
+      "type": "fence",
+      "detection_type": "FENCE",
+      "feature_type": "Boundary Fence",
+      "name": "Perimeter Fence 1",
+      "sub_type": "Wire / Agricultural Boundary Fence",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            115,
+            249
+          ],
+          [
+            76,
+            250
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          115,
+          249
+        ],
+        [
+          76,
+          250
+        ]
+      ],
+      "confidence": 0.78,
+      "confidence_label": "Medium",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "thin_linear_boundary_profile",
+        "field_property_separation",
+        "visible_post_alignment"
+      ],
+      "properties": {
+        "name": "Perimeter Fence 1",
+        "type": "fence",
+        "confidence": 0.78,
+        "confidence_label": "Medium",
+        "evidence": [
+          "thin_linear_boundary_profile",
+          "field_property_separation",
+          "visible_post_alignment"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 39,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452995779_sp9hh"
+      },
+      "created_at": "2026-09-15T06:16:37.145Z"
+    },
+    {
+      "id": "det_img_1789452995492_22g2_fence_6",
+      "project_id": "proj_1789452995427",
+      "imagery_id": "img_1789452995492_22g2",
+      "detection_run_id": "run_1789452995779_sp9hh",
+      "type": "fence",
+      "detection_type": "FENCE",
+      "feature_type": "Boundary Fence",
+      "name": "Perimeter Fence 2",
+      "sub_type": "Wire / Agricultural Boundary Fence",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            463,
+            251
+          ],
+          [
+            490,
+            250
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          463,
+          251
+        ],
+        [
+          490,
+          250
+        ]
+      ],
+      "confidence": 0.78,
+      "confidence_label": "Medium",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "thin_linear_boundary_profile",
+        "field_property_separation",
+        "visible_post_alignment"
+      ],
+      "properties": {
+        "name": "Perimeter Fence 2",
+        "type": "fence",
+        "confidence": 0.78,
+        "confidence_label": "Medium",
+        "evidence": [
+          "thin_linear_boundary_profile",
+          "field_property_separation",
+          "visible_post_alignment"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 27,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452995779_sp9hh"
+      },
+      "created_at": "2026-09-15T06:16:37.145Z"
+    },
+    {
+      "id": "det_img_1789452995492_22g2_fence_7",
+      "project_id": "proj_1789452995427",
+      "imagery_id": "img_1789452995492_22g2",
+      "detection_run_id": "run_1789452995779_sp9hh",
+      "type": "fence",
+      "detection_type": "FENCE",
+      "feature_type": "Boundary Fence",
+      "name": "Perimeter Fence 3",
+      "sub_type": "Wire / Agricultural Boundary Fence",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            127,
+            281
+          ],
+          [
+            101,
+            288
+          ],
+          [
+            64,
+            282
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          127,
+          281
+        ],
+        [
+          101,
+          288
+        ],
+        [
+          64,
+          282
+        ]
+      ],
+      "confidence": 0.78,
+      "confidence_label": "Medium",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "thin_linear_boundary_profile",
+        "field_property_separation",
+        "visible_post_alignment"
+      ],
+      "properties": {
+        "name": "Perimeter Fence 3",
+        "type": "fence",
+        "confidence": 0.78,
+        "confidence_label": "Medium",
+        "evidence": [
+          "thin_linear_boundary_profile",
+          "field_property_separation",
+          "visible_post_alignment"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 64,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452995779_sp9hh"
+      },
+      "created_at": "2026-09-15T06:16:37.145Z"
+    },
+    {
+      "id": "det_img_1789452995492_22g2_fence_8",
+      "project_id": "proj_1789452995427",
+      "imagery_id": "img_1789452995492_22g2",
+      "detection_run_id": "run_1789452995779_sp9hh",
+      "type": "fence",
+      "detection_type": "FENCE",
+      "feature_type": "Boundary Fence",
+      "name": "Perimeter Fence 4",
+      "sub_type": "Wire / Agricultural Boundary Fence",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            497,
+            283
+          ],
+          [
+            481,
+            288
+          ],
+          [
+            446,
+            284
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          497,
+          283
+        ],
+        [
+          481,
+          288
+        ],
+        [
+          446,
+          284
+        ]
+      ],
+      "confidence": 0.78,
+      "confidence_label": "Medium",
+      "coordinate_mode": "image",
+      "provider": "computer_vision",
+      "model_name": "Edge & Pixel Computer Vision Engine",
+      "source_feature_ids": [],
+      "source": "ai_detected",
+      "evidence": [
+        "thin_linear_boundary_profile",
+        "field_property_separation",
+        "visible_post_alignment"
+      ],
+      "properties": {
+        "name": "Perimeter Fence 4",
+        "type": "fence",
+        "confidence": 0.78,
+        "confidence_label": "Medium",
+        "evidence": [
+          "thin_linear_boundary_profile",
+          "field_property_separation",
+          "visible_post_alignment"
+        ],
+        "area_image_pixels": null,
+        "length_pixels": 52,
+        "provider": "computer_vision",
+        "model_name": "Edge & Pixel Computer Vision Engine",
+        "detection_run_id": "run_1789452995779_sp9hh"
+      },
+      "created_at": "2026-09-15T06:16:37.145Z"
     }
   ],
   "parcels": [
@@ -47493,450 +50267,6 @@
       "updated_at": "2026-09-13T12:08:23.698Z"
     },
     {
-      "id": "PM-0001",
-      "parcel_id": "PM-0001",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "detection_run_id": "run_demo_coastal_01",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              660,
-              210
-            ],
-            [
-              610,
-              228
-            ],
-            [
-              610,
-              262
-            ],
-            [
-              660,
-              262
-            ],
-            [
-              660,
-              210
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            660,
-            210
-          ],
-          [
-            610,
-            228
-          ],
-          [
-            610,
-            262
-          ],
-          [
-            660,
-            262
-          ],
-          [
-            660,
-            210
-          ]
-        ]
-      ],
-      "geo_geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              72.837443,
-              18.922438
-            ],
-            [
-              72.83697,
-              18.922175
-            ],
-            [
-              72.83697,
-              18.921679
-            ],
-            [
-              72.837443,
-              18.921679
-            ],
-            [
-              72.837443,
-              18.922438
-            ]
-          ]
-        ]
-      },
-      "confidence": 0.93,
-      "confidence_label": "High",
-      "status": "accepted",
-      "candidate_status": "ACCEPTED",
-      "area_px": 2150,
-      "area": "2,150 px²",
-      "area_sqm": null,
-      "area_hectares": null,
-      "area_acres": null,
-      "supported_perimeter_pct": 75,
-      "supported_edge_pct": 75,
-      "unsupported_perimeter_pct": 25,
-      "unsupported_edge_pct": 25,
-      "road_supported_pct": 0,
-      "wall_fence_supported_pct": 56,
-      "edge_analysis": {
-        "total_perimeter_px": 189,
-        "supported_perimeter_px": 105,
-        "supported_edge_pct": 75,
-        "unsupported_edge_pct": 25,
-        "road_supported_pct": 0,
-        "wall_fence_supported_pct": 56,
-        "field_supported_pct": 0,
-        "unsupported_direction": "interior"
-      },
-      "supporting_evidence": {
-        "roads": [],
-        "road_names": [],
-        "field_boundaries": [],
-        "field_names": [],
-        "walls_fences": [
-          "feat_demo_fence_6"
-        ],
-        "wall_fence_names": [
-          "Settlement Enclosure Fence"
-        ],
-        "buildings": [
-          "feat_demo_bldg_12"
-        ],
-        "building_names": [
-          "Residential House #5"
-        ]
-      },
-      "supporting_features": [
-        "✓ Building detection (Residential House #5)",
-        "✓ Boundary evidence (Settlement Enclosure Fence — 56% edge)",
-        "✓ Enclosed residential property curtilage"
-      ],
-      "decision_reason": "Residential parcel firmly anchored on Residential House #5 with 75% perimeter support, enclosed by Settlement Enclosure Fence.",
-      "generation_reason": "Residential parcel firmly anchored on Residential House #5 with 75% perimeter support, enclosed by Settlement Enclosure Fence.",
-      "source": "Human Edited",
-      "created_at": "2026-09-13T12:08:27.410Z",
-      "updated_at": "2026-09-13T12:08:27.410Z",
-      "version": 6,
-      "current_version": 6
-    },
-    {
-      "id": "PM-0002",
-      "parcel_id": "PM-0002",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "detection_run_id": "run_demo_coastal_01",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              495,
-              103
-            ],
-            [
-              445,
-              103
-            ],
-            [
-              445,
-              137
-            ],
-            [
-              480,
-              160
-            ],
-            [
-              495,
-              137
-            ],
-            [
-              495,
-              103
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            495,
-            103
-          ],
-          [
-            445,
-            103
-          ],
-          [
-            445,
-            137
-          ],
-          [
-            480,
-            160
-          ],
-          [
-            495,
-            137
-          ],
-          [
-            495,
-            103
-          ]
-        ]
-      ],
-      "geo_geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              72.835882,
-              18.923998
-            ],
-            [
-              72.835409,
-              18.923998
-            ],
-            [
-              72.835409,
-              18.923502
-            ],
-            [
-              72.835741,
-              18.923167
-            ],
-            [
-              72.835882,
-              18.923502
-            ],
-            [
-              72.835882,
-              18.923998
-            ]
-          ]
-        ]
-      },
-      "confidence": 0.91,
-      "confidence_label": "High",
-      "status": "accepted",
-      "candidate_status": "ACCEPTED",
-      "area_px": 2275,
-      "area": "2,275 px²",
-      "area_sqm": null,
-      "area_hectares": null,
-      "area_acres": null,
-      "supported_perimeter_pct": 50,
-      "supported_edge_pct": 50,
-      "unsupported_perimeter_pct": 50,
-      "unsupported_edge_pct": 50,
-      "road_supported_pct": 0,
-      "wall_fence_supported_pct": 37,
-      "edge_analysis": {
-        "total_perimeter_px": 187,
-        "supported_perimeter_px": 69,
-        "supported_edge_pct": 50,
-        "unsupported_edge_pct": 50,
-        "road_supported_pct": 0,
-        "wall_fence_supported_pct": 37,
-        "field_supported_pct": 0,
-        "unsupported_direction": "interior"
-      },
-      "supporting_evidence": {
-        "roads": [],
-        "road_names": [],
-        "field_boundaries": [],
-        "field_names": [],
-        "walls_fences": [
-          "feat_demo_wall_5"
-        ],
-        "wall_fence_names": [
-          "Compound Wall (West Holding)"
-        ],
-        "buildings": [
-          "feat_demo_bldg_9"
-        ],
-        "building_names": [
-          "Homestead Structure #2"
-        ]
-      },
-      "supporting_features": [
-        "✓ Building detection (Homestead Structure #2)",
-        "✓ Boundary evidence (Compound Wall (West Holding) — 37% edge)",
-        "✓ Enclosed residential property curtilage"
-      ],
-      "decision_reason": "Residential parcel firmly anchored on Homestead Structure #2 with 50% perimeter support, enclosed by Compound Wall (West Holding).",
-      "generation_reason": "Residential parcel firmly anchored on Homestead Structure #2 with 50% perimeter support, enclosed by Compound Wall (West Holding).",
-      "source": "AI Generated",
-      "created_at": "2026-09-13T12:08:27.410Z",
-      "updated_at": "2026-09-13T12:08:27.410Z",
-      "version": 6,
-      "current_version": 6
-    },
-    {
-      "id": "PM-0003",
-      "parcel_id": "PM-0003",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "detection_run_id": "run_demo_coastal_01",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              705,
-              268
-            ],
-            [
-              655,
-              268
-            ],
-            [
-              655,
-              302
-            ],
-            [
-              660,
-              310
-            ],
-            [
-              705,
-              302
-            ],
-            [
-              705,
-              268
-            ]
-          ]
-        ]
-      },
-      "image_coordinates": [
-        [
-          [
-            705,
-            268
-          ],
-          [
-            655,
-            268
-          ],
-          [
-            655,
-            302
-          ],
-          [
-            660,
-            310
-          ],
-          [
-            705,
-            302
-          ],
-          [
-            705,
-            268
-          ]
-        ]
-      ],
-      "geo_geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              72.837869,
-              18.921592
-            ],
-            [
-              72.837396,
-              18.921592
-            ],
-            [
-              72.837396,
-              18.921096
-            ],
-            [
-              72.837443,
-              18.920979
-            ],
-            [
-              72.837869,
-              18.921096
-            ],
-            [
-              72.837869,
-              18.921592
-            ]
-          ]
-        ]
-      },
-      "confidence": 0.74,
-      "confidence_label": "Medium",
-      "status": "needs_review",
-      "candidate_status": "REVIEW",
-      "area_px": 1900,
-      "area": "1,900 px²",
-      "area_sqm": null,
-      "area_hectares": null,
-      "area_acres": null,
-      "supported_perimeter_pct": 48,
-      "supported_edge_pct": 48,
-      "unsupported_perimeter_pct": 52,
-      "unsupported_edge_pct": 52,
-      "road_supported_pct": 0,
-      "wall_fence_supported_pct": 25,
-      "edge_analysis": {
-        "total_perimeter_px": 173,
-        "supported_perimeter_px": 43,
-        "supported_edge_pct": 48,
-        "unsupported_edge_pct": 52,
-        "road_supported_pct": 0,
-        "wall_fence_supported_pct": 25,
-        "field_supported_pct": 0,
-        "unsupported_direction": "interior"
-      },
-      "supporting_evidence": {
-        "roads": [],
-        "road_names": [],
-        "field_boundaries": [],
-        "field_names": [],
-        "walls_fences": [
-          "feat_demo_fence_6"
-        ],
-        "wall_fence_names": [
-          "Settlement Enclosure Fence"
-        ],
-        "buildings": [
-          "feat_demo_bldg_8"
-        ],
-        "building_names": [
-          "Homestead Structure #1"
-        ]
-      },
-      "supporting_features": [
-        "✓ Building detection (Homestead Structure #1)",
-        "✓ Boundary evidence (Settlement Enclosure Fence — 25% edge)",
-        "✓ Enclosed residential property curtilage"
-      ],
-      "decision_reason": "Residential parcel firmly anchored on Homestead Structure #1 with 48% perimeter support, enclosed by Settlement Enclosure Fence.",
-      "generation_reason": "Residential parcel firmly anchored on Homestead Structure #1 with 48% perimeter support, enclosed by Settlement Enclosure Fence.",
-      "source": "AI Generated",
-      "created_at": "2026-09-13T12:08:27.410Z",
-      "updated_at": "2026-09-13T12:08:27.410Z",
-      "version": 3,
-      "current_version": 3
-    },
-    {
       "id": "PM-207902-0001",
       "project_id": "proj_1789359207902",
       "imagery_id": "img_1789359207940_4a14",
@@ -50459,6 +52789,1557 @@
       "updated_at": "2026-09-14T11:59:13.555Z",
       "version": 1,
       "current_version": 1
+    },
+    {
+      "id": "PM-0001",
+      "parcel_id": "PM-0001",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "detection_run_id": "run_demo_coastal_01",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              660,
+              210
+            ],
+            [
+              610,
+              228
+            ],
+            [
+              610,
+              262
+            ],
+            [
+              660,
+              262
+            ],
+            [
+              660,
+              210
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            660,
+            210
+          ],
+          [
+            610,
+            228
+          ],
+          [
+            610,
+            262
+          ],
+          [
+            660,
+            262
+          ],
+          [
+            660,
+            210
+          ]
+        ]
+      ],
+      "geo_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              72.837443,
+              18.922438
+            ],
+            [
+              72.83697,
+              18.922175
+            ],
+            [
+              72.83697,
+              18.921679
+            ],
+            [
+              72.837443,
+              18.921679
+            ],
+            [
+              72.837443,
+              18.922438
+            ]
+          ]
+        ]
+      },
+      "confidence": 0.93,
+      "confidence_label": "High",
+      "status": "accepted",
+      "candidate_status": "ACCEPTED",
+      "area_px": 2150,
+      "area": "2,150 px²",
+      "area_sqm": null,
+      "area_hectares": null,
+      "area_acres": null,
+      "supported_perimeter_pct": 75,
+      "supported_edge_pct": 75,
+      "unsupported_perimeter_pct": 25,
+      "unsupported_edge_pct": 25,
+      "road_supported_pct": 0,
+      "wall_fence_supported_pct": 56,
+      "edge_analysis": {
+        "total_perimeter_px": 189,
+        "supported_perimeter_px": 105,
+        "supported_edge_pct": 75,
+        "unsupported_edge_pct": 25,
+        "road_supported_pct": 0,
+        "wall_fence_supported_pct": 56,
+        "field_supported_pct": 0,
+        "unsupported_direction": "interior"
+      },
+      "supporting_evidence": {
+        "roads": [],
+        "road_names": [],
+        "field_boundaries": [],
+        "field_names": [],
+        "walls_fences": [
+          "feat_demo_fence_6"
+        ],
+        "wall_fence_names": [
+          "Settlement Enclosure Fence"
+        ],
+        "buildings": [
+          "feat_demo_bldg_12"
+        ],
+        "building_names": [
+          "Residential House #5"
+        ]
+      },
+      "supporting_features": [
+        "✓ Building detection (Residential House #5)",
+        "✓ Boundary evidence (Settlement Enclosure Fence — 56% edge)",
+        "✓ Enclosed residential property curtilage"
+      ],
+      "decision_reason": "Residential parcel firmly anchored on Residential House #5 with 75% perimeter support, enclosed by Settlement Enclosure Fence.",
+      "generation_reason": "Residential parcel firmly anchored on Residential House #5 with 75% perimeter support, enclosed by Settlement Enclosure Fence.",
+      "source": "Human Edited",
+      "created_at": "2026-09-15T06:15:54.653Z",
+      "updated_at": "2026-09-15T06:15:54.653Z",
+      "version": 6,
+      "current_version": 6
+    },
+    {
+      "id": "PM-0002",
+      "parcel_id": "PM-0002",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "detection_run_id": "run_demo_coastal_01",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              495,
+              103
+            ],
+            [
+              445,
+              103
+            ],
+            [
+              445,
+              137
+            ],
+            [
+              480,
+              160
+            ],
+            [
+              495,
+              137
+            ],
+            [
+              495,
+              103
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            495,
+            103
+          ],
+          [
+            445,
+            103
+          ],
+          [
+            445,
+            137
+          ],
+          [
+            480,
+            160
+          ],
+          [
+            495,
+            137
+          ],
+          [
+            495,
+            103
+          ]
+        ]
+      ],
+      "geo_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              72.835882,
+              18.923998
+            ],
+            [
+              72.835409,
+              18.923998
+            ],
+            [
+              72.835409,
+              18.923502
+            ],
+            [
+              72.835741,
+              18.923167
+            ],
+            [
+              72.835882,
+              18.923502
+            ],
+            [
+              72.835882,
+              18.923998
+            ]
+          ]
+        ]
+      },
+      "confidence": 0.91,
+      "confidence_label": "High",
+      "status": "accepted",
+      "candidate_status": "ACCEPTED",
+      "area_px": 2275,
+      "area": "2,275 px²",
+      "area_sqm": null,
+      "area_hectares": null,
+      "area_acres": null,
+      "supported_perimeter_pct": 50,
+      "supported_edge_pct": 50,
+      "unsupported_perimeter_pct": 50,
+      "unsupported_edge_pct": 50,
+      "road_supported_pct": 0,
+      "wall_fence_supported_pct": 37,
+      "edge_analysis": {
+        "total_perimeter_px": 187,
+        "supported_perimeter_px": 69,
+        "supported_edge_pct": 50,
+        "unsupported_edge_pct": 50,
+        "road_supported_pct": 0,
+        "wall_fence_supported_pct": 37,
+        "field_supported_pct": 0,
+        "unsupported_direction": "interior"
+      },
+      "supporting_evidence": {
+        "roads": [],
+        "road_names": [],
+        "field_boundaries": [],
+        "field_names": [],
+        "walls_fences": [
+          "feat_demo_wall_5"
+        ],
+        "wall_fence_names": [
+          "Compound Wall (West Holding)"
+        ],
+        "buildings": [
+          "feat_demo_bldg_9"
+        ],
+        "building_names": [
+          "Homestead Structure #2"
+        ]
+      },
+      "supporting_features": [
+        "✓ Building detection (Homestead Structure #2)",
+        "✓ Boundary evidence (Compound Wall (West Holding) — 37% edge)",
+        "✓ Enclosed residential property curtilage"
+      ],
+      "decision_reason": "Residential parcel firmly anchored on Homestead Structure #2 with 50% perimeter support, enclosed by Compound Wall (West Holding).",
+      "generation_reason": "Residential parcel firmly anchored on Homestead Structure #2 with 50% perimeter support, enclosed by Compound Wall (West Holding).",
+      "source": "AI Generated",
+      "created_at": "2026-09-15T06:15:54.653Z",
+      "updated_at": "2026-09-15T06:15:54.653Z",
+      "version": 6,
+      "current_version": 6
+    },
+    {
+      "id": "PM-0003",
+      "parcel_id": "PM-0003",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "detection_run_id": "run_demo_coastal_01",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              705,
+              268
+            ],
+            [
+              655,
+              268
+            ],
+            [
+              655,
+              302
+            ],
+            [
+              660,
+              310
+            ],
+            [
+              705,
+              302
+            ],
+            [
+              705,
+              268
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            705,
+            268
+          ],
+          [
+            655,
+            268
+          ],
+          [
+            655,
+            302
+          ],
+          [
+            660,
+            310
+          ],
+          [
+            705,
+            302
+          ],
+          [
+            705,
+            268
+          ]
+        ]
+      ],
+      "geo_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              72.837869,
+              18.921592
+            ],
+            [
+              72.837396,
+              18.921592
+            ],
+            [
+              72.837396,
+              18.921096
+            ],
+            [
+              72.837443,
+              18.920979
+            ],
+            [
+              72.837869,
+              18.921096
+            ],
+            [
+              72.837869,
+              18.921592
+            ]
+          ]
+        ]
+      },
+      "confidence": 0.74,
+      "confidence_label": "Medium",
+      "status": "needs_review",
+      "candidate_status": "REVIEW",
+      "area_px": 1900,
+      "area": "1,900 px²",
+      "area_sqm": null,
+      "area_hectares": null,
+      "area_acres": null,
+      "supported_perimeter_pct": 48,
+      "supported_edge_pct": 48,
+      "unsupported_perimeter_pct": 52,
+      "unsupported_edge_pct": 52,
+      "road_supported_pct": 0,
+      "wall_fence_supported_pct": 25,
+      "edge_analysis": {
+        "total_perimeter_px": 173,
+        "supported_perimeter_px": 43,
+        "supported_edge_pct": 48,
+        "unsupported_edge_pct": 52,
+        "road_supported_pct": 0,
+        "wall_fence_supported_pct": 25,
+        "field_supported_pct": 0,
+        "unsupported_direction": "interior"
+      },
+      "supporting_evidence": {
+        "roads": [],
+        "road_names": [],
+        "field_boundaries": [],
+        "field_names": [],
+        "walls_fences": [
+          "feat_demo_fence_6"
+        ],
+        "wall_fence_names": [
+          "Settlement Enclosure Fence"
+        ],
+        "buildings": [
+          "feat_demo_bldg_8"
+        ],
+        "building_names": [
+          "Homestead Structure #1"
+        ]
+      },
+      "supporting_features": [
+        "✓ Building detection (Homestead Structure #1)",
+        "✓ Boundary evidence (Settlement Enclosure Fence — 25% edge)",
+        "✓ Enclosed residential property curtilage"
+      ],
+      "decision_reason": "Residential parcel firmly anchored on Homestead Structure #1 with 48% perimeter support, enclosed by Settlement Enclosure Fence.",
+      "generation_reason": "Residential parcel firmly anchored on Homestead Structure #1 with 48% perimeter support, enclosed by Settlement Enclosure Fence.",
+      "source": "AI Generated",
+      "created_at": "2026-09-15T06:15:54.653Z",
+      "updated_at": "2026-09-15T06:15:54.653Z",
+      "version": 3,
+      "current_version": 3
+    },
+    {
+      "id": "PM-982343-0001",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "parcel_id": "PM-982343-0001",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              259,
+              151
+            ],
+            [
+              227,
+              159
+            ],
+            [
+              232,
+              176
+            ],
+            [
+              258,
+              170
+            ],
+            [
+              259,
+              151
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            259,
+            151
+          ],
+          [
+            227,
+            159
+          ],
+          [
+            232,
+            176
+          ],
+          [
+            258,
+            170
+          ],
+          [
+            259,
+            151
+          ]
+        ]
+      ],
+      "geo_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              74.576622,
+              18.152057
+            ],
+            [
+              74.576248,
+              18.151917
+            ],
+            [
+              74.576307,
+              18.15162
+            ],
+            [
+              74.57661,
+              18.151725
+            ],
+            [
+              74.576622,
+              18.152057
+            ]
+          ]
+        ]
+      },
+      "area": "Image-space preliminary area. Real-world area unavailable until imagery is georeferenced.",
+      "area_sqm": null,
+      "area_hectares": null,
+      "area_acres": null,
+      "area_px": 536,
+      "confidence": 0.94,
+      "confidence_label": "High",
+      "status": "accepted",
+      "candidate_status": "ACCEPTED",
+      "created_at": "2026-09-15T06:16:29.494Z",
+      "supported_perimeter_pct": 100,
+      "supported_edge_pct": 100,
+      "unsupported_perimeter_pct": 0,
+      "unsupported_edge_pct": 0,
+      "road_supported_pct": 100,
+      "field_boundary_supported_pct": 0,
+      "field_supported_pct": 0,
+      "wall_fence_supported_pct": 0,
+      "supporting_detections_count": 2,
+      "edge_analysis": {
+        "total_perimeter_px": 96,
+        "supported_perimeter_px": 96,
+        "unsupported_perimeter_px": 0,
+        "supported_edge_pct": 100,
+        "unsupported_edge_pct": 0,
+        "road_supported_pct": 100,
+        "wall_fence_supported_pct": 0,
+        "field_supported_pct": 0,
+        "unsupported_direction": "interior",
+        "edge_segments": [
+          {
+            "start": [
+              259,
+              151
+            ],
+            "end": [
+              227,
+              159
+            ],
+            "length_px": 33,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              227,
+              159
+            ],
+            "end": [
+              232,
+              176
+            ],
+            "length_px": 18,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              232,
+              176
+            ],
+            "end": [
+              258,
+              170
+            ],
+            "length_px": 27,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              258,
+              170
+            ],
+            "end": [
+              259,
+              151
+            ],
+            "length_px": 19,
+            "type": "road",
+            "supported_ratio": 1
+          }
+        ]
+      },
+      "decision_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_2) and Road Corridor 1 frontage (100% perimeter supported).",
+      "source": "AI Generated",
+      "generation_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_2) fronting Road Corridor 1",
+      "supporting_evidence": {
+        "roads": [
+          "det_img_1789452982391_n1nb_road_1"
+        ],
+        "road_names": [
+          "Road Corridor 1"
+        ],
+        "field_boundaries": [],
+        "field_names": [],
+        "walls_fences": [
+          "det_img_1789452982391_n1nb_wall_2"
+        ],
+        "wall_fence_names": [
+          "Masonry Wall (Masonry Wall 2)"
+        ],
+        "buildings": [],
+        "building_names": []
+      },
+      "supporting_features": [
+        "Road boundary ✓ (100% edge)"
+      ],
+      "updated_at": "2026-09-15T06:16:30.109Z",
+      "version": 2,
+      "current_version": 2,
+      "comments": "Surveyor verified preliminary AI boundary against drone orthomosaic image.",
+      "remarks": "Surveyor verified preliminary AI boundary against drone orthomosaic image."
+    },
+    {
+      "id": "PM-982343-0002",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "parcel_id": "PM-982343-0002",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              247,
+              189
+            ],
+            [
+              298,
+              193
+            ],
+            [
+              303,
+              178
+            ],
+            [
+              253,
+              170
+            ],
+            [
+              242,
+              173
+            ],
+            [
+              247,
+              189
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            247,
+            189
+          ],
+          [
+            298,
+            193
+          ],
+          [
+            303,
+            178
+          ],
+          [
+            253,
+            170
+          ],
+          [
+            242,
+            173
+          ],
+          [
+            247,
+            189
+          ]
+        ]
+      ],
+      "geo_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              74.576482,
+              18.151393
+            ],
+            [
+              74.577077,
+              18.151322
+            ],
+            [
+              74.577135,
+              18.151585
+            ],
+            [
+              74.576552,
+              18.151725
+            ],
+            [
+              74.576423,
+              18.151672
+            ],
+            [
+              74.576482,
+              18.151393
+            ]
+          ]
+        ]
+      },
+      "area": "Image-space preliminary area. Real-world area unavailable until imagery is georeferenced.",
+      "area_sqm": null,
+      "area_hectares": null,
+      "area_acres": null,
+      "area_px": 987,
+      "confidence": 0.94,
+      "confidence_label": "High",
+      "status": "accepted",
+      "candidate_status": "ACCEPTED",
+      "created_at": "2026-09-15T06:16:29.494Z",
+      "supported_perimeter_pct": 100,
+      "supported_edge_pct": 100,
+      "unsupported_perimeter_pct": 0,
+      "unsupported_edge_pct": 0,
+      "road_supported_pct": 100,
+      "field_boundary_supported_pct": 0,
+      "field_supported_pct": 0,
+      "wall_fence_supported_pct": 0,
+      "supporting_detections_count": 2,
+      "edge_analysis": {
+        "total_perimeter_px": 146,
+        "supported_perimeter_px": 146,
+        "unsupported_perimeter_px": 0,
+        "supported_edge_pct": 100,
+        "unsupported_edge_pct": 0,
+        "road_supported_pct": 100,
+        "wall_fence_supported_pct": 0,
+        "field_supported_pct": 0,
+        "unsupported_direction": "interior",
+        "edge_segments": [
+          {
+            "start": [
+              247,
+              189
+            ],
+            "end": [
+              298,
+              193
+            ],
+            "length_px": 51,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              298,
+              193
+            ],
+            "end": [
+              303,
+              178
+            ],
+            "length_px": 16,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              303,
+              178
+            ],
+            "end": [
+              253,
+              170
+            ],
+            "length_px": 51,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              253,
+              170
+            ],
+            "end": [
+              242,
+              173
+            ],
+            "length_px": 11,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              242,
+              173
+            ],
+            "end": [
+              247,
+              189
+            ],
+            "length_px": 17,
+            "type": "road",
+            "supported_ratio": 1
+          }
+        ]
+      },
+      "decision_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_3) and Road Corridor 1 frontage (100% perimeter supported).",
+      "source": "AI Generated",
+      "generation_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_3) fronting Road Corridor 1",
+      "supporting_evidence": {
+        "roads": [
+          "det_img_1789452982391_n1nb_road_1"
+        ],
+        "road_names": [
+          "Road Corridor 1"
+        ],
+        "field_boundaries": [],
+        "field_names": [],
+        "walls_fences": [
+          "det_img_1789452982391_n1nb_wall_3"
+        ],
+        "wall_fence_names": [
+          "Masonry Wall (Masonry Wall 4)"
+        ],
+        "buildings": [],
+        "building_names": []
+      },
+      "supporting_features": [
+        "Road boundary ✓ (100% edge)"
+      ],
+      "updated_at": "2026-09-15T06:16:29.495Z",
+      "version": 1,
+      "current_version": 1
+    },
+    {
+      "id": "PM-982343-0003",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "parcel_id": "PM-982343-0003",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              73,
+              193
+            ],
+            [
+              117,
+              201
+            ],
+            [
+              154,
+              192
+            ],
+            [
+              161,
+              207
+            ],
+            [
+              99,
+              218
+            ],
+            [
+              68,
+              206
+            ],
+            [
+              73,
+              193
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            73,
+            193
+          ],
+          [
+            117,
+            201
+          ],
+          [
+            154,
+            192
+          ],
+          [
+            161,
+            207
+          ],
+          [
+            99,
+            218
+          ],
+          [
+            68,
+            206
+          ],
+          [
+            73,
+            193
+          ]
+        ]
+      ],
+      "geo_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              74.574452,
+              18.151322
+            ],
+            [
+              74.574965,
+              18.151182
+            ],
+            [
+              74.575397,
+              18.15134
+            ],
+            [
+              74.575478,
+              18.151077
+            ],
+            [
+              74.574755,
+              18.150885
+            ],
+            [
+              74.574393,
+              18.151095
+            ],
+            [
+              74.574452,
+              18.151322
+            ]
+          ]
+        ]
+      },
+      "area": "Image-space preliminary area. Real-world area unavailable until imagery is georeferenced.",
+      "area_sqm": null,
+      "area_hectares": null,
+      "area_acres": null,
+      "area_px": 1415,
+      "confidence": 0.94,
+      "confidence_label": "High",
+      "status": "accepted",
+      "candidate_status": "ACCEPTED",
+      "created_at": "2026-09-15T06:16:29.495Z",
+      "supported_perimeter_pct": 100,
+      "supported_edge_pct": 100,
+      "unsupported_perimeter_pct": 0,
+      "unsupported_edge_pct": 0,
+      "road_supported_pct": 100,
+      "field_boundary_supported_pct": 0,
+      "field_supported_pct": 0,
+      "wall_fence_supported_pct": 0,
+      "supporting_detections_count": 2,
+      "edge_analysis": {
+        "total_perimeter_px": 209,
+        "supported_perimeter_px": 209,
+        "unsupported_perimeter_px": 0,
+        "supported_edge_pct": 100,
+        "unsupported_edge_pct": 0,
+        "road_supported_pct": 100,
+        "wall_fence_supported_pct": 0,
+        "field_supported_pct": 0,
+        "unsupported_direction": "interior",
+        "edge_segments": [
+          {
+            "start": [
+              73,
+              193
+            ],
+            "end": [
+              117,
+              201
+            ],
+            "length_px": 45,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              117,
+              201
+            ],
+            "end": [
+              154,
+              192
+            ],
+            "length_px": 38,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              154,
+              192
+            ],
+            "end": [
+              161,
+              207
+            ],
+            "length_px": 17,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              161,
+              207
+            ],
+            "end": [
+              99,
+              218
+            ],
+            "length_px": 63,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              99,
+              218
+            ],
+            "end": [
+              68,
+              206
+            ],
+            "length_px": 33,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              68,
+              206
+            ],
+            "end": [
+              73,
+              193
+            ],
+            "length_px": 14,
+            "type": "road",
+            "supported_ratio": 1
+          }
+        ]
+      },
+      "decision_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_4) and Road Corridor 1 frontage (100% perimeter supported).",
+      "source": "AI Generated",
+      "generation_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_4) fronting Road Corridor 1",
+      "supporting_evidence": {
+        "roads": [
+          "det_img_1789452982391_n1nb_road_1"
+        ],
+        "road_names": [
+          "Road Corridor 1"
+        ],
+        "field_boundaries": [],
+        "field_names": [],
+        "walls_fences": [
+          "det_img_1789452982391_n1nb_wall_4"
+        ],
+        "wall_fence_names": [
+          "Masonry Wall (Masonry Wall 5)"
+        ],
+        "buildings": [],
+        "building_names": []
+      },
+      "supporting_features": [
+        "Road boundary ✓ (100% edge)"
+      ],
+      "updated_at": "2026-09-15T06:16:29.495Z",
+      "version": 1,
+      "current_version": 1
+    },
+    {
+      "id": "PM-982343-0004",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "parcel_id": "PM-982343-0004",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              155,
+              227
+            ],
+            [
+              117,
+              237
+            ],
+            [
+              73,
+              229
+            ],
+            [
+              80,
+              211
+            ],
+            [
+              99,
+              218
+            ],
+            [
+              150,
+              211
+            ],
+            [
+              155,
+              227
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            155,
+            227
+          ],
+          [
+            117,
+            237
+          ],
+          [
+            73,
+            229
+          ],
+          [
+            80,
+            211
+          ],
+          [
+            99,
+            218
+          ],
+          [
+            150,
+            211
+          ],
+          [
+            155,
+            227
+          ]
+        ]
+      ],
+      "geo_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              74.575408,
+              18.150727
+            ],
+            [
+              74.574965,
+              18.150552
+            ],
+            [
+              74.574452,
+              18.150692
+            ],
+            [
+              74.574533,
+              18.151007
+            ],
+            [
+              74.574755,
+              18.150885
+            ],
+            [
+              74.57535,
+              18.151007
+            ],
+            [
+              74.575408,
+              18.150727
+            ]
+          ]
+        ]
+      },
+      "area": "Image-space preliminary area. Real-world area unavailable until imagery is georeferenced.",
+      "area_sqm": null,
+      "area_hectares": null,
+      "area_acres": null,
+      "area_px": 1418,
+      "confidence": 0.94,
+      "confidence_label": "High",
+      "status": "accepted",
+      "candidate_status": "ACCEPTED",
+      "created_at": "2026-09-15T06:16:29.495Z",
+      "supported_perimeter_pct": 100,
+      "supported_edge_pct": 100,
+      "unsupported_perimeter_pct": 0,
+      "unsupported_edge_pct": 0,
+      "road_supported_pct": 100,
+      "field_boundary_supported_pct": 0,
+      "field_supported_pct": 0,
+      "wall_fence_supported_pct": 0,
+      "supporting_detections_count": 2,
+      "edge_analysis": {
+        "total_perimeter_px": 192,
+        "supported_perimeter_px": 192,
+        "unsupported_perimeter_px": 0,
+        "supported_edge_pct": 100,
+        "unsupported_edge_pct": 0,
+        "road_supported_pct": 100,
+        "wall_fence_supported_pct": 0,
+        "field_supported_pct": 0,
+        "unsupported_direction": "interior",
+        "edge_segments": [
+          {
+            "start": [
+              155,
+              227
+            ],
+            "end": [
+              117,
+              237
+            ],
+            "length_px": 39,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              117,
+              237
+            ],
+            "end": [
+              73,
+              229
+            ],
+            "length_px": 45,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              73,
+              229
+            ],
+            "end": [
+              80,
+              211
+            ],
+            "length_px": 19,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              80,
+              211
+            ],
+            "end": [
+              99,
+              218
+            ],
+            "length_px": 20,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              99,
+              218
+            ],
+            "end": [
+              150,
+              211
+            ],
+            "length_px": 51,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              150,
+              211
+            ],
+            "end": [
+              155,
+              227
+            ],
+            "length_px": 17,
+            "type": "road",
+            "supported_ratio": 1
+          }
+        ]
+      },
+      "decision_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_5) and Road Corridor 1 frontage (100% perimeter supported).",
+      "source": "AI Generated",
+      "generation_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_5) fronting Road Corridor 1",
+      "supporting_evidence": {
+        "roads": [
+          "det_img_1789452982391_n1nb_road_1"
+        ],
+        "road_names": [
+          "Road Corridor 1"
+        ],
+        "field_boundaries": [],
+        "field_names": [],
+        "walls_fences": [
+          "det_img_1789452982391_n1nb_wall_5"
+        ],
+        "wall_fence_names": [
+          "Masonry Wall (Masonry Wall 6)"
+        ],
+        "buildings": [],
+        "building_names": []
+      },
+      "supporting_features": [
+        "Road boundary ✓ (100% edge)"
+      ],
+      "updated_at": "2026-09-15T06:16:29.495Z",
+      "version": 1,
+      "current_version": 1
+    },
+    {
+      "id": "PM-982343-0005",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "detection_run_id": "run_1789452982495_4zjhm",
+      "parcel_id": "PM-982343-0005",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              513,
+              301
+            ],
+            [
+              466,
+              302
+            ],
+            [
+              469,
+              283
+            ],
+            [
+              511,
+              283
+            ],
+            [
+              513,
+              301
+            ]
+          ]
+        ]
+      },
+      "image_coordinates": [
+        [
+          [
+            513,
+            301
+          ],
+          [
+            466,
+            302
+          ],
+          [
+            469,
+            283
+          ],
+          [
+            511,
+            283
+          ],
+          [
+            513,
+            301
+          ]
+        ]
+      ],
+      "geo_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              74.579585,
+              18.149432
+            ],
+            [
+              74.579037,
+              18.149415
+            ],
+            [
+              74.579072,
+              18.149747
+            ],
+            [
+              74.579562,
+              18.149747
+            ],
+            [
+              74.579585,
+              18.149432
+            ]
+          ]
+        ]
+      },
+      "area": "Image-space preliminary area. Real-world area unavailable until imagery is georeferenced.",
+      "area_sqm": null,
+      "area_hectares": null,
+      "area_acres": null,
+      "area_px": 823,
+      "confidence": 0.94,
+      "confidence_label": "High",
+      "status": "accepted",
+      "candidate_status": "ACCEPTED",
+      "created_at": "2026-09-15T06:16:29.496Z",
+      "supported_perimeter_pct": 100,
+      "supported_edge_pct": 100,
+      "unsupported_perimeter_pct": 0,
+      "unsupported_edge_pct": 0,
+      "road_supported_pct": 100,
+      "field_boundary_supported_pct": 0,
+      "field_supported_pct": 0,
+      "wall_fence_supported_pct": 0,
+      "supporting_detections_count": 2,
+      "edge_analysis": {
+        "total_perimeter_px": 126,
+        "supported_perimeter_px": 126,
+        "unsupported_perimeter_px": 0,
+        "supported_edge_pct": 100,
+        "unsupported_edge_pct": 0,
+        "road_supported_pct": 100,
+        "wall_fence_supported_pct": 0,
+        "field_supported_pct": 0,
+        "unsupported_direction": "interior",
+        "edge_segments": [
+          {
+            "start": [
+              513,
+              301
+            ],
+            "end": [
+              466,
+              302
+            ],
+            "length_px": 47,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              466,
+              302
+            ],
+            "end": [
+              469,
+              283
+            ],
+            "length_px": 19,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              469,
+              283
+            ],
+            "end": [
+              511,
+              283
+            ],
+            "length_px": 42,
+            "type": "road",
+            "supported_ratio": 1
+          },
+          {
+            "start": [
+              511,
+              283
+            ],
+            "end": [
+              513,
+              301
+            ],
+            "length_px": 18,
+            "type": "road",
+            "supported_ratio": 1
+          }
+        ]
+      },
+      "decision_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_6) and Road Corridor 1 frontage (100% perimeter supported).",
+      "source": "AI Generated",
+      "generation_reason": "Physical land holding demarcated by Masonry Wall (det_img_1789452982391_n1nb_wall_6) fronting Road Corridor 1",
+      "supporting_evidence": {
+        "roads": [
+          "det_img_1789452982391_n1nb_road_1"
+        ],
+        "road_names": [
+          "Road Corridor 1"
+        ],
+        "field_boundaries": [],
+        "field_names": [],
+        "walls_fences": [
+          "det_img_1789452982391_n1nb_wall_6"
+        ],
+        "wall_fence_names": [
+          "Masonry Wall (Masonry Wall 7)"
+        ],
+        "buildings": [],
+        "building_names": []
+      },
+      "supporting_features": [
+        "Road boundary ✓ (100% edge)"
+      ],
+      "updated_at": "2026-09-15T06:16:29.496Z",
+      "version": 1,
+      "current_version": 1
     }
   ],
   "verifications": [
@@ -51267,6 +55148,44 @@
       },
       "edited_geometry": null,
       "timestamp": "2026-09-14T11:59:14.340Z"
+    },
+    {
+      "id": "ver_1789452990109",
+      "parcel_id": "PM-982343-0001",
+      "reviewer_id": "usr_2",
+      "reviewer_name": "Alex Morgan (Lead Surveyor)",
+      "action": "Accepted",
+      "comments": "Surveyor verified preliminary AI boundary against drone orthomosaic image.",
+      "remarks": "Surveyor verified preliminary AI boundary against drone orthomosaic image.",
+      "original_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              259,
+              151
+            ],
+            [
+              227,
+              159
+            ],
+            [
+              232,
+              176
+            ],
+            [
+              258,
+              170
+            ],
+            [
+              259,
+              151
+            ]
+          ]
+        ]
+      },
+      "edited_geometry": null,
+      "timestamp": "2026-09-15T06:16:30.109Z"
     }
   ],
   "processingJobs": [
@@ -56321,143 +60240,6 @@
       "created_at": "2026-09-13T12:08:23.706Z"
     },
     {
-      "id": "ver_PM-0001_v1",
-      "parcel_id": "PM-0001",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "version": 1,
-      "version_number": 1,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              660,
-              210
-            ],
-            [
-              610,
-              228
-            ],
-            [
-              610,
-              262
-            ],
-            [
-              660,
-              262
-            ],
-            [
-              660,
-              210
-            ]
-          ]
-        ]
-      },
-      "previous_geometry": null,
-      "action": "Generated",
-      "change_type": "generated",
-      "edited_by": "Spatial Reasoning Engine",
-      "comments": "Initial spatially derived parcel boundary",
-      "remarks": "Residential parcel firmly anchored on Residential House #5 with 75% perimeter support, enclosed by Settlement Enclosure Fence.",
-      "timestamp": "2026-09-01T08:05:00.000Z",
-      "created_at": "2026-09-01T08:05:00.000Z"
-    },
-    {
-      "id": "ver_PM-0002_v1",
-      "parcel_id": "PM-0002",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "version": 1,
-      "version_number": 1,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              495,
-              103
-            ],
-            [
-              445,
-              103
-            ],
-            [
-              445,
-              137
-            ],
-            [
-              480,
-              160
-            ],
-            [
-              495,
-              137
-            ],
-            [
-              495,
-              103
-            ]
-          ]
-        ]
-      },
-      "previous_geometry": null,
-      "action": "Generated",
-      "change_type": "generated",
-      "edited_by": "Spatial Reasoning Engine",
-      "comments": "Initial spatially derived parcel boundary",
-      "remarks": "Residential parcel firmly anchored on Homestead Structure #2 with 50% perimeter support, enclosed by Compound Wall (West Holding).",
-      "timestamp": "2026-09-01T08:05:00.000Z",
-      "created_at": "2026-09-01T08:05:00.000Z"
-    },
-    {
-      "id": "ver_PM-0003_v1",
-      "parcel_id": "PM-0003",
-      "project_id": "proj_demo_coastal",
-      "imagery_id": "img_demo_coastal",
-      "version": 1,
-      "version_number": 1,
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              705,
-              268
-            ],
-            [
-              655,
-              268
-            ],
-            [
-              655,
-              302
-            ],
-            [
-              660,
-              310
-            ],
-            [
-              705,
-              302
-            ],
-            [
-              705,
-              268
-            ]
-          ]
-        ]
-      },
-      "previous_geometry": null,
-      "action": "Generated",
-      "change_type": "generated",
-      "edited_by": "Spatial Reasoning Engine",
-      "comments": "Initial spatially derived parcel boundary",
-      "remarks": "Residential parcel firmly anchored on Homestead Structure #1 with 48% perimeter support, enclosed by Settlement Enclosure Fence.",
-      "timestamp": "2026-09-01T08:05:00.000Z",
-      "created_at": "2026-09-01T08:05:00.000Z"
-    },
-    {
       "id": "ver_PM-207902-0001_v1_1789359217284",
       "parcel_id": "PM-207902-0001",
       "project_id": "proj_1789359207902",
@@ -57488,9 +61270,570 @@
       "remarks": "Surveyor verified preliminary AI boundary against drone orthomosaic image.",
       "timestamp": "2026-09-14T11:59:14.341Z",
       "created_at": "2026-09-14T11:59:14.341Z"
+    },
+    {
+      "id": "ver_PM-0001_v1",
+      "parcel_id": "PM-0001",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "version": 1,
+      "version_number": 1,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              660,
+              210
+            ],
+            [
+              610,
+              228
+            ],
+            [
+              610,
+              262
+            ],
+            [
+              660,
+              262
+            ],
+            [
+              660,
+              210
+            ]
+          ]
+        ]
+      },
+      "previous_geometry": null,
+      "action": "Generated",
+      "change_type": "generated",
+      "edited_by": "Spatial Reasoning Engine",
+      "comments": "Initial spatially derived parcel boundary",
+      "remarks": "Residential parcel firmly anchored on Residential House #5 with 75% perimeter support, enclosed by Settlement Enclosure Fence.",
+      "timestamp": "2026-09-01T08:05:00.000Z",
+      "created_at": "2026-09-01T08:05:00.000Z"
+    },
+    {
+      "id": "ver_PM-0002_v1",
+      "parcel_id": "PM-0002",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "version": 1,
+      "version_number": 1,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              495,
+              103
+            ],
+            [
+              445,
+              103
+            ],
+            [
+              445,
+              137
+            ],
+            [
+              480,
+              160
+            ],
+            [
+              495,
+              137
+            ],
+            [
+              495,
+              103
+            ]
+          ]
+        ]
+      },
+      "previous_geometry": null,
+      "action": "Generated",
+      "change_type": "generated",
+      "edited_by": "Spatial Reasoning Engine",
+      "comments": "Initial spatially derived parcel boundary",
+      "remarks": "Residential parcel firmly anchored on Homestead Structure #2 with 50% perimeter support, enclosed by Compound Wall (West Holding).",
+      "timestamp": "2026-09-01T08:05:00.000Z",
+      "created_at": "2026-09-01T08:05:00.000Z"
+    },
+    {
+      "id": "ver_PM-0003_v1",
+      "parcel_id": "PM-0003",
+      "project_id": "proj_demo_coastal",
+      "imagery_id": "img_demo_coastal",
+      "version": 1,
+      "version_number": 1,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              705,
+              268
+            ],
+            [
+              655,
+              268
+            ],
+            [
+              655,
+              302
+            ],
+            [
+              660,
+              310
+            ],
+            [
+              705,
+              302
+            ],
+            [
+              705,
+              268
+            ]
+          ]
+        ]
+      },
+      "previous_geometry": null,
+      "action": "Generated",
+      "change_type": "generated",
+      "edited_by": "Spatial Reasoning Engine",
+      "comments": "Initial spatially derived parcel boundary",
+      "remarks": "Residential parcel firmly anchored on Homestead Structure #1 with 48% perimeter support, enclosed by Settlement Enclosure Fence.",
+      "timestamp": "2026-09-01T08:05:00.000Z",
+      "created_at": "2026-09-01T08:05:00.000Z"
+    },
+    {
+      "id": "ver_PM-982343-0001_v1_1789452989520",
+      "parcel_id": "PM-982343-0001",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "version": 1,
+      "version_number": 1,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              259,
+              151
+            ],
+            [
+              227,
+              159
+            ],
+            [
+              232,
+              176
+            ],
+            [
+              258,
+              170
+            ],
+            [
+              259,
+              151
+            ]
+          ]
+        ]
+      },
+      "previous_geometry": null,
+      "parent_parcel_id": null,
+      "child_parcel_ids": null,
+      "split_line": null,
+      "resulting_geometries": null,
+      "action": "Generated",
+      "operation": "GENERATED",
+      "change_type": "generated",
+      "edited_by": "Spatial Reasoning Engine",
+      "comments": "",
+      "remarks": "",
+      "timestamp": "2026-09-15T06:16:29.520Z",
+      "created_at": "2026-09-15T06:16:29.520Z"
+    },
+    {
+      "id": "ver_PM-982343-0002_v1_1789452989585",
+      "parcel_id": "PM-982343-0002",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "version": 1,
+      "version_number": 1,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              247,
+              189
+            ],
+            [
+              298,
+              193
+            ],
+            [
+              303,
+              178
+            ],
+            [
+              253,
+              170
+            ],
+            [
+              242,
+              173
+            ],
+            [
+              247,
+              189
+            ]
+          ]
+        ]
+      },
+      "previous_geometry": null,
+      "parent_parcel_id": null,
+      "child_parcel_ids": null,
+      "split_line": null,
+      "resulting_geometries": null,
+      "action": "Generated",
+      "operation": "GENERATED",
+      "change_type": "generated",
+      "edited_by": "Spatial Reasoning Engine",
+      "comments": "",
+      "remarks": "",
+      "timestamp": "2026-09-15T06:16:29.585Z",
+      "created_at": "2026-09-15T06:16:29.585Z"
+    },
+    {
+      "id": "ver_PM-982343-0003_v1_1789452989765",
+      "parcel_id": "PM-982343-0003",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "version": 1,
+      "version_number": 1,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              73,
+              193
+            ],
+            [
+              117,
+              201
+            ],
+            [
+              154,
+              192
+            ],
+            [
+              161,
+              207
+            ],
+            [
+              99,
+              218
+            ],
+            [
+              68,
+              206
+            ],
+            [
+              73,
+              193
+            ]
+          ]
+        ]
+      },
+      "previous_geometry": null,
+      "parent_parcel_id": null,
+      "child_parcel_ids": null,
+      "split_line": null,
+      "resulting_geometries": null,
+      "action": "Generated",
+      "operation": "GENERATED",
+      "change_type": "generated",
+      "edited_by": "Spatial Reasoning Engine",
+      "comments": "",
+      "remarks": "",
+      "timestamp": "2026-09-15T06:16:29.765Z",
+      "created_at": "2026-09-15T06:16:29.765Z"
+    },
+    {
+      "id": "ver_PM-982343-0004_v1_1789452989843",
+      "parcel_id": "PM-982343-0004",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "version": 1,
+      "version_number": 1,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              155,
+              227
+            ],
+            [
+              117,
+              237
+            ],
+            [
+              73,
+              229
+            ],
+            [
+              80,
+              211
+            ],
+            [
+              99,
+              218
+            ],
+            [
+              150,
+              211
+            ],
+            [
+              155,
+              227
+            ]
+          ]
+        ]
+      },
+      "previous_geometry": null,
+      "parent_parcel_id": null,
+      "child_parcel_ids": null,
+      "split_line": null,
+      "resulting_geometries": null,
+      "action": "Generated",
+      "operation": "GENERATED",
+      "change_type": "generated",
+      "edited_by": "Spatial Reasoning Engine",
+      "comments": "",
+      "remarks": "",
+      "timestamp": "2026-09-15T06:16:29.843Z",
+      "created_at": "2026-09-15T06:16:29.843Z"
+    },
+    {
+      "id": "ver_PM-982343-0005_v1_1789452989891",
+      "parcel_id": "PM-982343-0005",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "version": 1,
+      "version_number": 1,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              513,
+              301
+            ],
+            [
+              466,
+              302
+            ],
+            [
+              469,
+              283
+            ],
+            [
+              511,
+              283
+            ],
+            [
+              513,
+              301
+            ]
+          ]
+        ]
+      },
+      "previous_geometry": null,
+      "parent_parcel_id": null,
+      "child_parcel_ids": null,
+      "split_line": null,
+      "resulting_geometries": null,
+      "action": "Generated",
+      "operation": "GENERATED",
+      "change_type": "generated",
+      "edited_by": "Spatial Reasoning Engine",
+      "comments": "",
+      "remarks": "",
+      "timestamp": "2026-09-15T06:16:29.891Z",
+      "created_at": "2026-09-15T06:16:29.891Z"
+    },
+    {
+      "id": "ver_PM-982343-0001_v2_1789452990109",
+      "parcel_id": "PM-982343-0001",
+      "project_id": "proj_1789452982343",
+      "imagery_id": "img_1789452982391_n1nb",
+      "version": 2,
+      "version_number": 2,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              259,
+              151
+            ],
+            [
+              227,
+              159
+            ],
+            [
+              232,
+              176
+            ],
+            [
+              258,
+              170
+            ],
+            [
+              259,
+              151
+            ]
+          ]
+        ]
+      },
+      "previous_geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              259,
+              151
+            ],
+            [
+              227,
+              159
+            ],
+            [
+              232,
+              176
+            ],
+            [
+              258,
+              170
+            ],
+            [
+              259,
+              151
+            ]
+          ]
+        ]
+      },
+      "parent_parcel_id": null,
+      "child_parcel_ids": null,
+      "split_line": null,
+      "resulting_geometries": null,
+      "action": "Accepted",
+      "operation": "ACCEPTED",
+      "change_type": "accepted",
+      "edited_by": "Alex Morgan (Lead Surveyor)",
+      "comments": "Surveyor verified preliminary AI boundary against drone orthomosaic image.",
+      "remarks": "Surveyor verified preliminary AI boundary against drone orthomosaic image.",
+      "timestamp": "2026-09-15T06:16:30.109Z",
+      "created_at": "2026-09-15T06:16:30.109Z"
     }
   ],
   "activities": [
+    {
+      "id": "act_1789452997146_dtej",
+      "project_id": "proj_1789452995427",
+      "title": "AI Detection Completed",
+      "description": "8 features detected from drone imagery.",
+      "type": "detection",
+      "user": "Cadastral Surveyor",
+      "timestamp": "2026-09-15T06:16:37.146Z"
+    },
+    {
+      "id": "act_1789452995637_r6sq",
+      "project_id": "proj_1789452995637",
+      "title": "Project Initialized",
+      "description": "Project \"Project Beta Isolation Block\" created at Unknown Location.",
+      "type": "project",
+      "user": "Cadastral Surveyor",
+      "timestamp": "2026-09-15T06:16:35.637Z"
+    },
+    {
+      "id": "act_1789452995428_7cin",
+      "project_id": "proj_1789452995427",
+      "title": "Project Initialized",
+      "description": "Project \"Field Block Alfa Survey\" created at Coastal Parcel Sector 7.",
+      "type": "project",
+      "user": "Cadastral Surveyor",
+      "timestamp": "2026-09-15T06:16:35.428Z"
+    },
+    {
+      "id": "act_1789452990153_i2we",
+      "project_id": "proj_1789452982343",
+      "title": "Parcel PM-982343-0001 Accepted",
+      "description": "Surveyor verified preliminary AI boundary against drone orthomosaic image.",
+      "type": "accepted",
+      "user": "Alex Morgan (Lead Surveyor)",
+      "timestamp": "2026-09-15T06:16:30.153Z"
+    },
+    {
+      "id": "act_1789452989942_1psb",
+      "project_id": "proj_1789452982343",
+      "title": "Spatial Reasoning Completed",
+      "description": "5 preliminary parcels inferred from evidence.",
+      "type": "spatial_reasoning",
+      "user": "Cadastral Surveyor",
+      "timestamp": "2026-09-15T06:16:29.942Z"
+    },
+    {
+      "id": "act_1789452989219_ykp9",
+      "project_id": "proj_1789452982343",
+      "title": "AI Detection Completed",
+      "description": "4 features detected from drone imagery.",
+      "type": "detection",
+      "user": "Cadastral Surveyor",
+      "timestamp": "2026-09-15T06:16:29.219Z"
+    },
+    {
+      "id": "act_1789452985534_9if0",
+      "project_id": "proj_1789452982343",
+      "title": "AI Detection Completed",
+      "description": "9 features detected from drone imagery.",
+      "type": "detection",
+      "user": "Cadastral Surveyor",
+      "timestamp": "2026-09-15T06:16:25.534Z"
+    },
+    {
+      "id": "act_1789452983756_gysw",
+      "project_id": "proj_1789452982343",
+      "title": "AI Detection Completed",
+      "description": "6 features detected from drone imagery.",
+      "type": "detection",
+      "user": "Cadastral Surveyor",
+      "timestamp": "2026-09-15T06:16:23.756Z"
+    },
+    {
+      "id": "act_1789452982343_a0z1",
+      "project_id": "proj_1789452982343",
+      "title": "Project Initialized",
+      "description": "Project \"Alpha Agricultural Cadastre 2026\" created at Baramati Pilot District, Pune.",
+      "type": "project",
+      "user": "Cadastral Surveyor",
+      "timestamp": "2026-09-15T06:16:22.343Z"
+    },
+    {
+      "id": "act_1789452954705_vtyl",
+      "project_id": "proj_1789452954705",
+      "title": "Project Initialized",
+      "description": "Project \"Survey Project — survey_field_sample\" created at Field Survey Block.",
+      "type": "project",
+      "user": "Cadastral Surveyor",
+      "timestamp": "2026-09-15T06:15:54.705Z"
+    },
     {
       "id": "act_1789387154427_wy7u",
       "project_id": "proj_1789387136388",

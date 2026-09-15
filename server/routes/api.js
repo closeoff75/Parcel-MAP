@@ -135,12 +135,24 @@ const handleImageryUpload = async (req, res) => {
     let project = db.getProjectById(requestedId);
 
     if (!project) {
-      const errMsg = `Project '${requestedId}' not found. Please select or create a valid project before uploading imagery.`;
-      console.log(`[Upload] project_id: ${requestedId} - ${errMsg}`);
-      return res.status(404).json({ success: false, error: errMsg });
+      if (requestedId === 'proj_demo_coastal' || !requestedId) {
+        db.resetToDemo();
+        project = db.getProjectById('proj_demo_coastal');
+      } else {
+        const baseName = req.file ? path.parse(req.file.originalname).name : 'UAV Survey';
+        project = db.createProject({
+          id: requestedId.startsWith('proj_') ? requestedId : `proj_${Date.now()}`,
+          name: `Survey Project — ${baseName}`,
+          description: 'User-uploaded aerial drone imagery survey project.',
+          location: 'Field Survey Block',
+          status: 'Uploaded',
+          progress: 25,
+          is_demo: false
+        });
+      }
     }
 
-    if (project.is_demo) {
+    if (project && project.is_demo) {
       // User is uploading real imagery while in demo project.
       // Automatically fork into an isolated real user project to maintain strict demo isolation.
       const baseName = req.file ? path.parse(req.file.originalname).name : 'UAV Survey';
@@ -216,6 +228,7 @@ const handleImageryUpload = async (req, res) => {
       storage_key: storageResult.storage_key,
       storage_url: storageResult.storage_url,
       file_url: storageResult.storage_url,
+      data_url: storageResult.data_url || null,
       mime_type: req.file.mimetype || 'image/jpeg',
       file_size: fileSize,
       width,
@@ -236,11 +249,12 @@ const handleImageryUpload = async (req, res) => {
       }
     });
 
-    // Update project status to Uploaded
+    // Update project status to Uploaded and ensure persistence
     db.updateProject(project.id, {
       status: 'Uploaded',
       progress: 25
     });
+    await db.saveAsync();
 
     const requestCompleted = new Date().toISOString();
 
@@ -304,9 +318,24 @@ router.post('/upload/init', (req, res) => {
     if (!filename) return res.status(400).json({ success: false, error: 'Filename is required' });
 
     let project = db.getProjectById(project_id);
-    if (!project) return res.status(404).json({ success: false, error: `Project '${project_id}' not found` });
+    if (!project) {
+      if (project_id === 'proj_demo_coastal' || !project_id) {
+        db.resetToDemo();
+        project = db.getProjectById('proj_demo_coastal');
+      } else {
+        project = db.createProject({
+          id: project_id,
+          name: `Survey Project — ${path.parse(filename).name}`,
+          description: 'User-uploaded aerial drone imagery survey project.',
+          location: 'Field Survey Block',
+          status: 'Uploaded',
+          progress: 25,
+          is_demo: false
+        });
+      }
+    }
 
-    if (project.is_demo) {
+    if (project && project.is_demo) {
       project = db.createProject({
         name: `Survey Project — ${path.parse(filename).name}`,
         description: 'User-uploaded aerial drone imagery survey project.',
@@ -372,7 +401,22 @@ router.post('/upload/complete', async (req, res) => {
     }
 
     let project = db.getProjectById(project_id);
-    if (!project) return res.status(404).json({ success: false, error: `Project '${project_id}' not found` });
+    if (!project) {
+      if (project_id === 'proj_demo_coastal' || !project_id) {
+        db.resetToDemo();
+        project = db.getProjectById('proj_demo_coastal');
+      } else {
+        project = db.createProject({
+          id: project_id,
+          name: `Survey Project — ${path.parse(filename).name}`,
+          description: 'User-uploaded aerial drone imagery survey project.',
+          location: 'Field Survey Block',
+          status: 'Uploaded',
+          progress: 25,
+          is_demo: false
+        });
+      }
+    }
 
     const imageryId = `img_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const assembled = await StorageService.assembleChunks({
@@ -406,6 +450,9 @@ router.post('/upload/complete', async (req, res) => {
 
     const isTif = filename.toLowerCase().endsWith('.tif') || filename.toLowerCase().endsWith('.tiff');
     const isGeo = Boolean(is_georeferenced || isTif);
+    const dataUrl = (assembled.buffer && assembled.buffer.length <= 4.5 * 1024 * 1024)
+      ? `data:${mime_type || 'image/jpeg'};base64,${assembled.buffer.toString('base64')}`
+      : null;
 
     const imageryItem = db.addImagery({
       id: imageryId,
@@ -416,6 +463,7 @@ router.post('/upload/complete', async (req, res) => {
       storage_key: assembled.storage_key,
       storage_url: assembled.storage_url,
       file_url: assembled.storage_url,
+      data_url: dataUrl,
       mime_type: mime_type || 'image/jpeg',
       file_size: fileSize,
       width: finalW,
@@ -437,6 +485,7 @@ router.post('/upload/complete', async (req, res) => {
     });
 
     db.updateProject(project.id, { status: 'Uploaded', progress: 25 });
+    await db.saveAsync();
 
     res.status(201).json({
       success: true,
@@ -2351,20 +2400,24 @@ router.post('/projects/:id/pipeline', async (req, res) => {
 });
 
 // POST /api/demo/reset (Reset back to authentic demo seed)
-router.post('/demo/reset', (req, res) => {
-  const demoData = db.resetToDemo();
+router.post('/demo/reset', async (req, res) => {
+  const demoData = await db.resetToDemoAsync();
   res.json({ success: true, message: 'Database reset to demo state', demoData });
 });
 
 // POST /api/demo/load (Load isolated demo dataset)
-router.post('/demo/load', (req, res) => {
-  const demoData = db.resetToDemo();
+router.post('/demo/load', async (req, res) => {
+  const demoData = await db.resetToDemoAsync();
   res.json({ success: true, message: 'Loaded demo dataset', demoData });
 });
 
 // GET /api/demo (Get current demo dataset state)
 router.get('/demo', (req, res) => {
-  const project = db.getProjectById('proj_demo_coastal');
+  let project = db.getProjectById('proj_demo_coastal');
+  if (!project) {
+    db.resetToDemo();
+    project = db.getProjectById('proj_demo_coastal');
+  }
   const imagery = db.getImageryByProjectId('proj_demo_coastal');
   const features = db.getFeaturesByProjectId('proj_demo_coastal');
   const parcels = db.getParcelsByProjectId('proj_demo_coastal');

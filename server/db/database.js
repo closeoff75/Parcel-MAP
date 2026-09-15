@@ -57,6 +57,43 @@ class Database {
     if (!Array.isArray(this.data.parcel_versions)) this.data.parcel_versions = [];
     if (!Array.isArray(this.data.activities)) this.data.activities = [];
     if (!Array.isArray(this.data.users)) this.data.users = [];
+
+    // Remove legacy Wagholi demo remnants if present in old cloud or local data
+    this.data.projects = this.data.projects.filter(p => p.id !== 'proj_wagholi_demo');
+    this.data.imagery = this.data.imagery.filter(img => img.project_id !== 'proj_wagholi_demo' && img.id !== 'img_wagholi_ortho');
+    this.data.detectedFeatures = this.data.detectedFeatures.filter(f => f.project_id !== 'proj_wagholi_demo');
+    this.data.parcels = this.data.parcels.filter(p => p.project_id !== 'proj_wagholi_demo');
+
+    // Guarantee Coastal Settlement demo dataset is ALWAYS present
+    const demoProj = this.data.projects.find(p => p.id === 'proj_demo_coastal');
+    const demoImg = this.data.imagery.find(img => img.id === 'img_demo_coastal');
+    if (!demoProj || !demoImg) {
+      const cleanSeed = buildCoastalDemoDataset();
+      if (!demoProj) {
+        this.data.projects.unshift(cleanSeed.projects[0]);
+      }
+      if (!demoImg) {
+        this.data.imagery.unshift(cleanSeed.imagery[0]);
+      }
+      if (!this.data.detectedFeatures.some(f => f.project_id === 'proj_demo_coastal')) {
+        cleanSeed.detectedFeatures.forEach(f => this.data.detectedFeatures.push(f));
+      }
+      if (!this.data.parcels.some(p => p.project_id === 'proj_demo_coastal')) {
+        cleanSeed.parcels.forEach(p => this.data.parcels.push(p));
+      }
+      if (!this.data.processingJobs.some(j => j.project_id === 'proj_demo_coastal')) {
+        cleanSeed.processingJobs.forEach(j => this.data.processingJobs.push(j));
+      }
+      if (!this.data.parcel_versions.some(v => v.project_id === 'proj_demo_coastal')) {
+        seedParcelVersions: cleanSeed.parcel_versions.forEach(v => this.data.parcel_versions.push(v));
+      }
+      if (!this.data.activities.some(a => a.project_id === 'proj_demo_coastal')) {
+        cleanSeed.activities.forEach(a => this.data.activities.push(a));
+      }
+      if (!this.data.users || this.data.users.length === 0) {
+        this.data.users = cleanSeed.users;
+      }
+    }
   }
 
   reload() {
@@ -172,7 +209,22 @@ class Database {
       // Non-fatal warning on read-only serverless filesystems
       console.warn('[Database] Persist to disk skipped/failed:', err.message);
     }
-    this._syncToNetlifyBlobs();
+    this._syncToNetlifyBlobs().catch(() => {});
+  }
+
+  async saveAsync() {
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf8');
+      if (fs.existsSync(DB_FILE)) {
+        this.lastMtime = fs.statSync(DB_FILE).mtimeMs;
+      }
+    } catch (err) {
+      console.warn('[Database] Persist to disk skipped/failed:', err.message);
+    }
+    await this._syncToNetlifyBlobs();
   }
 
   // --- Users ---
@@ -996,6 +1048,12 @@ class Database {
       features: cleanSeed.detectedFeatures,
       parcels: cleanSeed.parcels
     };
+  }
+
+  async resetToDemoAsync() {
+    const res = this.resetToDemo();
+    await this.saveAsync();
+    return res;
   }
 }
 

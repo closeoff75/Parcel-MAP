@@ -184,21 +184,30 @@ class ParcelMapWorkspace {
       localStorage.setItem('pm_active_project_id', this.activeProjectId);
 
       // 1. Project details with auto-recovery if project ID doesn't exist
-      const pRes = await fetch(`${this.apiBase}/projects/${this.activeProjectId}`);
+      let pRes = await fetch(`${this.apiBase}/projects/${this.activeProjectId}`);
       if (!pRes.ok) {
         console.warn(`[Workspace] Project '${this.activeProjectId}' not found (HTTP ${pRes.status}). Checking available projects...`);
-        const allRes = await fetch(`${this.apiBase}/projects`);
-        if (allRes.ok) {
-          const allData = await allRes.json();
-          if (allData.success && allData.projects && allData.projects.length > 0) {
-            const fallback = allData.projects[0];
-            this.activeProjectId = fallback.id;
-            localStorage.setItem('pm_active_project_id', this.activeProjectId);
-            this.project = fallback;
-            return this.loadProjectData(fallback.id);
-          }
+        // If it's the demo project or no projects exist, try resetting/loading demo dataset
+        if (this.activeProjectId === 'proj_demo_coastal' || !this.activeProjectId) {
+          try {
+            await fetch(`${this.apiBase}/demo/reset`, { method: 'POST' });
+            pRes = await fetch(`${this.apiBase}/projects/proj_demo_coastal`);
+          } catch (e) {}
         }
-        throw new Error(`Project '${this.activeProjectId}' not found`);
+        if (!pRes.ok) {
+          const allRes = await fetch(`${this.apiBase}/projects`);
+          if (allRes.ok) {
+            const allData = await allRes.json();
+            if (allData.success && allData.projects && allData.projects.length > 0) {
+              const fallback = allData.projects[0];
+              this.activeProjectId = fallback.id;
+              localStorage.setItem('pm_active_project_id', this.activeProjectId);
+              this.project = fallback;
+              return this.loadProjectData(fallback.id);
+            }
+          }
+          throw new Error(`Project '${this.activeProjectId}' not found`);
+        }
       }
 
       const pData = await pRes.json();
@@ -1057,9 +1066,13 @@ class ParcelMapWorkspace {
       if (preview) {
         preview.onerror = () => {
           preview.onerror = null;
+          if (currentImg.file_name?.includes('coastal') && preview.src !== '/uploads/coastal_settlement_demo.png') {
+            preview.src = '/uploads/coastal_settlement_demo.png';
+            return;
+          }
           preview.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="260" viewBox="0 0 600 260"><rect fill="%230b0f17" width="600" height="260"/><text fill="%2310b981" font-family="sans-serif" font-weight="bold" font-size="15" x="50%" y="45%" text-anchor="middle" dominant-baseline="middle">🛰️ Drone Orthomosaic Dataset Active</text><text fill="%2394a3b8" font-family="sans-serif" font-size="13" x="50%" y="58%" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(currentImg.file_name)} (${currentImg.file_size})</text></svg>`;
         };
-        preview.src = this.getImageUrl(currentImg.file_url);
+        preview.src = currentImg.data_url || this.getImageUrl(currentImg.file_url);
         preview.alt = currentImg.file_name;
       }
       if (badge) {

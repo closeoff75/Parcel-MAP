@@ -8,6 +8,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  included_files = ["data/**", "uploads/**", "public/**"]
 
 [[headers]]
   for = "/*"
@@ -39,7 +40,7 @@
   from = "/uploads/*"
   to = "/.netlify/functions/api/uploads/:splat"
   status = 200
-  force = true
+  force = false
 
 [[redirects]]
   from = "/workspace"

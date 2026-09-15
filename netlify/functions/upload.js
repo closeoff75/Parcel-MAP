@@ -47,7 +47,15 @@ export const handler = async (event, context) => {
 
   const modifiedEvent = {
     ...event,
-    path: targetPath
+    path: targetPath,
+    rawPath: targetPath,
+    requestContext: {
+      ...(event.requestContext || {}),
+      http: {
+        ...(event.requestContext?.http || {}),
+        path: targetPath
+      }
+    }
   };
 
   try {

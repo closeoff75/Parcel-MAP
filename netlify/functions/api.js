@@ -42,7 +42,15 @@ export const handler = async (event, context) => {
 
   const modifiedEvent = {
     ...event,
-    path: normalizedPath
+    path: normalizedPath,
+    rawPath: normalizedPath,
+    requestContext: {
+      ...(event.requestContext || {}),
+      http: {
+        ...(event.requestContext?.http || {}),
+        path: normalizedPath
+      }
+    }
   };
 
   try {
